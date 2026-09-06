@@ -36,7 +36,8 @@
         "expo-camera",
         {
           "cameraPermission": "Allow $(PRODUCT_NAME) to use the camera to scan book barcodes.",
-          "recordAudioAndroid": false
+          "recordAudioAndroid": false,
+          "barcodeScannerEnabled": false
         }
       ],
       [

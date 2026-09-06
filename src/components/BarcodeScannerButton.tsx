@@ -1,7 +1,9 @@
 import React from 'react';
 import { Modal, Platform, Pressable, StyleSheet, Text, View } from 'react-native';
 import { CameraView, useCameraPermissions, type BarcodeScanningResult } from 'expo-camera';
+import { File } from 'expo-file-system';
 import { useTranslation } from 'react-i18next';
+import ExpoZxingScanner from '../../modules/expo-zxing-scanner';
 import { isValidIsbn, normalizeIsbn } from '@/utils/isbn';
 
 type Props = {
@@ -9,21 +11,27 @@ type Props = {
   onScan: (isbn: string) => void;
 };
 
+const ANDROID_INITIAL_SCAN_DELAY_MS = 250;
+const ANDROID_SCAN_INTERVAL_MS = 450;
+
 export default function BarcodeScannerButton({ disabled = false, onScan }: Props) {
   const { t } = useTranslation();
+  const cameraRef = React.useRef<CameraView>(null);
   const [visible, setVisible] = React.useState(false);
   const [permission, requestPermission] = useCameraPermissions();
   const [scanError, setScanError] = React.useState<string | undefined>();
   const [handled, setHandled] = React.useState(false);
+  const [cameraReady, setCameraReady] = React.useState(false);
 
   const close = React.useCallback(() => {
     setVisible(false);
     setHandled(false);
+    setCameraReady(false);
     setScanError(undefined);
   }, []);
 
-  const handleBarcode = React.useCallback(
-    ({ data }: BarcodeScanningResult) => {
+  const handleBarcodeData = React.useCallback(
+    (data: string) => {
       if (handled) return;
       const normalized = normalizeIsbn(data);
       if (normalized.length !== 13 || !isValidIsbn(normalized)) {
@@ -36,6 +44,65 @@ export default function BarcodeScannerButton({ disabled = false, onScan }: Props
     },
     [close, handled, onScan, t]
   );
+
+  const handleNativeBarcode = React.useCallback(
+    ({ data }: BarcodeScanningResult) => handleBarcodeData(data),
+    [handleBarcodeData]
+  );
+
+  React.useEffect(() => {
+    if (
+      Platform.OS !== 'android' ||
+      !visible ||
+      !permission?.granted ||
+      !cameraReady ||
+      handled
+    ) {
+      return;
+    }
+
+    let cancelled = false;
+    let timer: ReturnType<typeof setTimeout> | undefined;
+
+    const schedule = (delay: number) => {
+      timer = setTimeout(() => void scanFrame(), delay);
+    };
+
+    const scanFrame = async () => {
+      if (cancelled) return;
+      let photoUri: string | undefined;
+
+      try {
+        const photo = await cameraRef.current?.takePictureAsync({
+          quality: 0.45,
+          shutterSound: false,
+        });
+        photoUri = photo?.uri;
+        if (!photoUri || cancelled) return;
+
+        const barcode = await ExpoZxingScanner.scanImageAsync(photoUri);
+        if (!cancelled && barcode) handleBarcodeData(barcode);
+      } catch {
+        // A single camera/decode failure should not end the scanning session.
+      } finally {
+        if (photoUri) {
+          try {
+            new File(photoUri).delete();
+          } catch {
+            // Camera cache files are best-effort cleanup only.
+          }
+        }
+        if (!cancelled) schedule(ANDROID_SCAN_INTERVAL_MS);
+      }
+    };
+
+    schedule(ANDROID_INITIAL_SCAN_DELAY_MS);
+
+    return () => {
+      cancelled = true;
+      if (timer) clearTimeout(timer);
+    };
+  }, [cameraReady, handleBarcodeData, handled, permission?.granted, visible]);
 
   if (Platform.OS === 'web') return null;
 
@@ -82,10 +149,13 @@ export default function BarcodeScannerButton({ disabled = false, onScan }: Props
           ) : (
             <View style={styles.cameraArea}>
               <CameraView
+                ref={cameraRef}
                 style={StyleSheet.absoluteFill}
                 facing="back"
-                barcodeScannerSettings={{ barcodeTypes: ['ean13'] }}
-                onBarcodeScanned={handled ? undefined : handleBarcode}
+                animateShutter={false}
+                onCameraReady={() => setCameraReady(true)}
+                barcodeScannerSettings={Platform.OS === 'ios' ? { barcodeTypes: ['ean13'] } : undefined}
+                onBarcodeScanned={Platform.OS === 'ios' && !handled ? handleNativeBarcode : undefined}
               />
               <View style={styles.guide} pointerEvents="none">
                 <View style={styles.guideBox} />

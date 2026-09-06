@@ -1,0 +1,23 @@
+plugins {
+  id 'com.android.library'
+  id 'expo-module-gradle-plugin'
+}
+
+group = 'expo.modules.zxingscanner'
+version = '0.1.0'
+
+android {
+  namespace "expo.modules.zxingscanner"
+  defaultConfig {
+    versionCode 1
+    versionName "0.1.0"
+  }
+  lintOptions {
+    abortOnError false
+  }
+}
+
+dependencies {
+  // ZXing Core is Apache-2.0 licensed and does not depend on Google Play Services.
+  implementation 'com.google.zxing:core:3.5.4'
+}
