@@ -35,6 +35,14 @@ jobs:
       - name: Prebuild Android native project
         run: npx expo prebuild --no-install --platform android
 
+      - name: Check F-Droid Android dependency graph
+        run: bash scripts/check-fdroid-android-dependencies.sh
+
+      - name: Compile Android native project
+        run: |
+          cd android
+          ./gradlew :app:assembleDebug --no-daemon
+
       - name: Typecheck
         run: npm run typecheck
 

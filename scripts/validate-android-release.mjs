@@ -40,8 +40,22 @@ const pluginConfig = (name) => {
   const entry = (expo.plugins ?? []).find((plugin) => Array.isArray(plugin) && plugin[0] === name);
   return entry?.[1] ?? {};
 };
-expect(pluginConfig('expo-camera').recordAudioAndroid === false, 'expo-camera recordAudioAndroid must be false');
+const cameraPlugin = pluginConfig('expo-camera');
+expect(cameraPlugin.recordAudioAndroid === false, 'expo-camera recordAudioAndroid must be false');
+expect(cameraPlugin.barcodeScannerEnabled === false, 'expo-camera barcodeScannerEnabled must be false so Android ML Kit barcode dependencies are excluded');
 expect(pluginConfig('expo-image-picker').microphonePermission === false, 'expo-image-picker microphonePermission must be false');
+
+const androidBuildFromSource = new Set(pkg.expo?.autolinking?.android?.buildFromSource ?? []);
+expect(androidBuildFromSource.has('expo-camera'), 'expo-camera must be listed in expo.autolinking.android.buildFromSource so barcodeScannerEnabled=false affects native dependencies');
+
+const zxingGradle = path.join(root, 'modules/expo-zxing-scanner/android/build.gradle');
+const zxingModule = path.join(root, 'modules/expo-zxing-scanner/android/src/main/java/expo/modules/zxingscanner/ExpoZxingScannerModule.kt');
+expect(fs.existsSync(zxingGradle), 'local ZXing scanner Gradle configuration is missing');
+expect(fs.existsSync(zxingModule), 'local ZXing scanner native module is missing');
+if (fs.existsSync(zxingGradle)) {
+  const gradle = fs.readFileSync(zxingGradle, 'utf8');
+  expect(gradle.includes("com.google.zxing:core:3.5.4"), 'local scanner must use the reviewed ZXing Core 3.5.4 dependency');
+}
 
 const pngPaths = new Set([
   expo.icon,
@@ -84,4 +98,5 @@ if (errors.length > 0) {
 }
 
 process.stdout.write(`Android config OK: ${expo.name}, ${android.package}, app ${expo.version}, versionCode ${android.versionCode}.\n`);
+process.stdout.write('Android barcode scanning is configured for local Apache-2.0 ZXing Core with Expo Camera ML Kit support disabled.\n');
 process.stdout.write('This validates repository configuration only; F-Droid eligibility additionally requires a fully FLOSS dependency graph and a clean source build.\n');
