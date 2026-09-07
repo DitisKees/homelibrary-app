@@ -2,7 +2,7 @@
 
 HomeLibrary is a cross-platform client for managing a shared, self-hosted household book collection backed by PocketBase.
 
-> **F-Droid status:** HomeLibrary is being prepared for submission to the official F-Droid repository. The current Android barcode scanner uses Expo Camera's ML Kit integration, which does not meet F-Droid's fully-free dependency requirements. Barcode scanning will be replaced with a FLOSS implementation before the first F-Droid release.
+> **F-Droid status:** HomeLibrary is being prepared for submission to the official F-Droid repository. Android barcode scanning now uses the FLOSS ZXing Core implementation and CI guards against reintroducing Google Play Services, Firebase, ML Kit, or Play SDK artifacts. A broader dependency/license audit and clean source-build verification remain before submission.
 
 ## Features
 
@@ -16,10 +16,12 @@ HomeLibrary is a cross-platform client for managing a shared, self-hosted househ
 - Realtime refresh when other household members change shared data
 - English, Dutch, German, and French UI
 - Runtime configuration of the self-hosted PocketBase server
+- HTTPS-only remote server policy in release builds
+- OS-backed secure native authentication storage
 
 ## Development status
 
-HomeLibrary is early-stage software. The current source snapshot is functional, but the Android build is not yet eligible for official F-Droid inclusion because its barcode-scanning path currently pulls in Google ML Kit / Play Services. See `docs/fdroid.md` and the repository issues for the remaining work.
+HomeLibrary is early-stage software. The current source snapshot is functional and the proprietary Android barcode-scanning dependency has been removed. See `docs/fdroid.md` and the repository issues for the remaining F-Droid work.
 
 The permanent Android application ID is:
 
@@ -45,6 +47,8 @@ The required PocketBase schema is versioned in `pocketbase/pb_migrations/`. See 
 
 Public self-registration is intentionally disabled. Household members are provisioned by the PocketBase administrator.
 
+Before using HomeLibrary as an authoritative household library, follow the production baseline in [`docs/security-and-backups.md`](docs/security-and-backups.md), including HTTPS, rate limiting, superuser hardening, scheduled off-host backups, and a tested restore procedure.
+
 ## App setup
 
 Install dependencies:
@@ -60,6 +64,8 @@ cp .env.example .env
 ```
 
 and set `EXPO_PUBLIC_POCKETBASE_URL`, or leave it unset. With no build-time server configured, HomeLibrary opens the server-setup screen on first launch.
+
+Release builds require HTTPS for remote PocketBase endpoints. Development builds may use plain HTTP only for localhost, Android emulator host mappings, and private LAN development addresses.
 
 Start the app:
 
@@ -80,6 +86,12 @@ npm run build:web
 
 CI runs these checks and verifies that all committed PocketBase migrations apply cleanly to a fresh PocketBase 0.40.1 database.
 
+## Authentication storage
+
+Native Android/iOS builds persist PocketBase authentication state using Expo SecureStore (Android Keystore / iOS Keychain) rather than ordinary AsyncStorage. Existing native installs from before this change deliberately discard the old plain `pb_auth` entry and require one sign-in after upgrading.
+
+Web builds use browser-backed storage because SecureStore has no web equivalent.
+
 ## Internationalization
 
 The application currently supports:
@@ -89,7 +101,7 @@ The application currently supports:
 - German (`de`)
 - French (`fr`)
 
-Translations live under `src/i18n/locales/`. The product name **HomeLibrary** is a brand name and is not translated.
+Translations live under `src/i18n/locales/`, with server/security translations in `src/i18n/serverTranslations.ts`. The product name **HomeLibrary** is a brand name and is not translated.
 
 ## ISBN metadata providers
 
@@ -106,8 +118,8 @@ A Google Books API key stored in a client application is not a secret. Apply app
 
 Before submitting HomeLibrary to the official F-Droid repository we intend to:
 
-1. replace the current ML Kit barcode scanner with a fully FLOSS implementation;
-2. audit the generated Android dependency graph for non-free libraries;
+1. ~~replace the ML Kit barcode scanner with a fully FLOSS implementation~~ — completed with ZXing Core;
+2. audit the generated Android and npm dependency graph for non-free libraries;
 3. ensure the Android app builds from a clean checkout without relying on EAS or private services;
 4. add F-Droid/fastlane metadata, screenshots, and changelogs;
 5. create tagged source releases suitable for F-Droid's build recipe.

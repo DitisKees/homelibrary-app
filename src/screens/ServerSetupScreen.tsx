@@ -1,17 +1,12 @@
 import React from 'react';
 import { KeyboardAvoidingView, Platform, StyleSheet, Text, TextInput, View } from 'react-native';
+import { useTranslation } from 'react-i18next';
 import AppButton from '@/components/AppButton';
 import { useAuth } from '@/context/AuthContext';
 import { EndpointConfigurationError, testPocketBaseEndpoint } from '@/services/settings/pocketbase';
 
-function endpointError(error: unknown): string {
-  if (!(error instanceof EndpointConfigurationError)) return 'Unable to test this server. Try again.';
-  if (error.code === 'invalidUrl') return 'Enter a valid http:// or https:// server URL.';
-  if (error.code === 'unreachable') return 'This server could not be reached. Check the URL and connection.';
-  return 'The server responded unexpectedly. Check that it is a PocketBase server.';
-}
-
 export default function ServerSetupScreen() {
+  const { t } = useTranslation();
   const { changeEndpoint } = useAuth();
   const [endpoint, setEndpoint] = React.useState('');
   const [isSaving, setIsSaving] = React.useState(false);
@@ -25,7 +20,11 @@ export default function ServerSetupScreen() {
       const testedEndpoint = await testPocketBaseEndpoint(endpoint);
       await changeEndpoint(testedEndpoint);
     } catch (saveError) {
-      setError(endpointError(saveError));
+      if (!(saveError instanceof EndpointConfigurationError)) {
+        setError(t('server.errors.testFailed'));
+      } else {
+        setError(t(`server.errors.${saveError.code}`));
+      }
     } finally {
       setIsSaving(false);
     }
@@ -34,8 +33,8 @@ export default function ServerSetupScreen() {
   return (
     <KeyboardAvoidingView style={styles.container} behavior={Platform.OS === 'ios' ? 'padding' : undefined}>
       <View style={styles.card}>
-        <Text accessibilityRole="header" style={styles.title}>Connect to your library server</Text>
-        <Text style={styles.help}>Enter the URL of the PocketBase server that hosts your Home Library.</Text>
+        <Text accessibilityRole="header" style={styles.title}>{t('server.setup.title')}</Text>
+        <Text style={styles.help}>{t('server.setup.help')}</Text>
         <TextInput
           value={endpoint}
           onChangeText={setEndpoint}
@@ -44,11 +43,16 @@ export default function ServerSetupScreen() {
           autoCorrect={false}
           keyboardType="url"
           placeholder="https://books.example.com"
-          accessibilityLabel="PocketBase server URL"
+          accessibilityLabel={t('server.setup.urlLabel')}
           style={styles.input}
         />
         {!!error && <Text accessibilityRole="alert" style={styles.error}>{error}</Text>}
-        <AppButton label="Test and save server" loadingLabel="Testing server…" loading={isSaving} onPress={() => void save()} />
+        <AppButton
+          label={t('server.setup.save')}
+          loadingLabel={t('server.setup.testing')}
+          loading={isSaving}
+          onPress={() => void save()}
+        />
       </View>
     </KeyboardAvoidingView>
   );

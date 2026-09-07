@@ -16,12 +16,14 @@ const expo = app.expo ?? {};
 const android = expo.android ?? {};
 const adaptiveIcon = android.adaptiveIcon ?? {};
 const expoDependency = pkg.dependencies?.expo ?? '';
+const secureStoreDependency = pkg.dependencies?.['expo-secure-store'] ?? '';
 
 expect(expo.name === 'HomeLibrary', 'expo.name must be HomeLibrary');
 expect(android.package === 'io.github.ditiskees.homelibrary', 'android.package must be io.github.ditiskees.homelibrary');
 expect(Number.isInteger(android.versionCode) && android.versionCode >= 1, 'android.versionCode must be a positive integer');
 expect(typeof expo.version === 'string' && /^\d+\.\d+\.\d+/.test(expo.version), 'expo.version must use a semantic x.y.z version');
 expect(/^~57\./.test(expoDependency), `release validation assumes Expo SDK 57; found ${expoDependency || 'no Expo dependency'}. Re-review Android target API and native compatibility requirements after an SDK change.`);
+expect(/^~57\./.test(secureStoreDependency), `native auth requires the Expo SDK 57 compatible expo-secure-store package; found ${secureStoreDependency || 'no expo-secure-store dependency'}`);
 
 const requestedPermissions = new Set(android.permissions ?? []);
 expect(requestedPermissions.has('android.permission.CAMERA'), 'android.permission.CAMERA must be requested');
@@ -44,6 +46,24 @@ const cameraPlugin = pluginConfig('expo-camera');
 expect(cameraPlugin.recordAudioAndroid === false, 'expo-camera recordAudioAndroid must be false');
 expect(cameraPlugin.barcodeScannerEnabled === false, 'expo-camera barcodeScannerEnabled must be false so Android ML Kit barcode dependencies are excluded');
 expect(pluginConfig('expo-image-picker').microphonePermission === false, 'expo-image-picker microphonePermission must be false');
+expect(pluginConfig('expo-secure-store').configureAndroidBackup === true, 'expo-secure-store must configure Android backup exclusions for encrypted auth data');
+
+const nativeAuthStorage = path.join(root, 'src/lib/authStorage.native.ts');
+expect(fs.existsSync(nativeAuthStorage), 'native secure auth storage implementation is missing');
+if (fs.existsSync(nativeAuthStorage)) {
+  const authSource = fs.readFileSync(nativeAuthStorage, 'utf8');
+  expect(authSource.includes("from 'expo-secure-store'"), 'native auth storage must use expo-secure-store');
+  expect(authSource.includes('SecureStore.setItemAsync'), 'native auth storage must persist credentials through SecureStore');
+  expect(!authSource.includes('AsyncStorage.setItem'), 'native auth storage must not persist credentials through AsyncStorage');
+}
+
+const endpointSettings = path.join(root, 'src/services/settings/pocketbase.ts');
+expect(fs.existsSync(endpointSettings), 'PocketBase endpoint settings are missing');
+if (fs.existsSync(endpointSettings)) {
+  const endpointSource = fs.readFileSync(endpointSettings, 'utf8');
+  expect(endpointSource.includes("'insecureUrl'"), 'PocketBase endpoint validation must include the insecureUrl release guard');
+  expect(endpointSource.includes('defaultAllowsInsecureDevelopment'), 'plain HTTP exceptions must remain explicitly development-gated');
+}
 
 const androidBuildFromSource = new Set(pkg.expo?.autolinking?.android?.buildFromSource ?? []);
 expect(androidBuildFromSource.has('expo-camera'), 'expo-camera must be listed in expo.autolinking.android.buildFromSource so barcodeScannerEnabled=false affects native dependencies');
@@ -98,5 +118,6 @@ if (errors.length > 0) {
 }
 
 process.stdout.write(`Android config OK: ${expo.name}, ${android.package}, app ${expo.version}, versionCode ${android.versionCode}.\n`);
+process.stdout.write('Native PocketBase auth is configured for Expo SecureStore and production endpoint validation is HTTPS-only.\n');
 process.stdout.write('Android barcode scanning is configured for local Apache-2.0 ZXing Core with Expo Camera ML Kit support disabled.\n');
 process.stdout.write('This validates repository configuration only; F-Droid eligibility additionally requires a fully FLOSS dependency graph and a clean source build.\n');

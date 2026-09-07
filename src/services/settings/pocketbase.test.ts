@@ -60,6 +60,32 @@ describe('PocketBase endpoint settings', () => {
     expect(() => normalizePocketBaseEndpoint('books.example.com')).toThrow(EndpointConfigurationError);
   });
 
+  test('production policy rejects insecure remote HTTP endpoints', () => {
+    expect(() =>
+      normalizePocketBaseEndpoint('http://books.example.com', { allowInsecureDevelopment: false })
+    ).toThrow(expect.objectContaining({ code: 'insecureUrl' }));
+  });
+
+  test.each([
+    'http://localhost:8090',
+    'http://127.0.0.1:8090',
+    'http://10.0.2.2:8090',
+    'http://192.168.1.25:8090',
+  ])('development policy accepts local HTTP endpoint %s', (endpoint) => {
+    expect(normalizePocketBaseEndpoint(endpoint, { allowInsecureDevelopment: true })).toBe(endpoint);
+  });
+
+  test('development policy still rejects public HTTP hosts', () => {
+    expect(() =>
+      normalizePocketBaseEndpoint('http://books.example.com', { allowInsecureDevelopment: true })
+    ).toThrow(expect.objectContaining({ code: 'insecureUrl' }));
+  });
+
+  test('HTTPS is accepted under production policy', () => {
+    expect(normalizePocketBaseEndpoint('https://books.example.com/', { allowInsecureDevelopment: false }))
+      .toBe('https://books.example.com');
+  });
+
   test('reports an unreachable server separately', async () => {
     const fetchMock = jest.spyOn(globalThis, 'fetch').mockRejectedValueOnce(new Error('offline'));
     await expect(testPocketBaseEndpoint('https://books.example.com')).rejects.toMatchObject({ code: 'unreachable' });

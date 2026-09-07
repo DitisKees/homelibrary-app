@@ -46,6 +46,12 @@
           "photosPermission": "Allow $(PRODUCT_NAME) to access your photos to add a book cover.",
           "microphonePermission": false
         }
+      ],
+      [
+        "expo-secure-store",
+        {
+          "configureAndroidBackup": true
+        }
       ]
     ]
   }

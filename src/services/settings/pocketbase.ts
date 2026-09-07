@@ -2,7 +2,11 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 
 const STORAGE_KEY = 'homelibrary.settings.pocketbaseEndpoint';
 
-export type EndpointErrorCode = 'invalidUrl' | 'unreachable' | 'serverResponse';
+export type EndpointErrorCode = 'invalidUrl' | 'insecureUrl' | 'unreachable' | 'serverResponse';
+
+type EndpointPolicy = {
+  allowInsecureDevelopment?: boolean;
+};
 
 export class EndpointConfigurationError extends Error {
   constructor(readonly code: EndpointErrorCode) {
@@ -11,7 +15,36 @@ export class EndpointConfigurationError extends Error {
   }
 }
 
-export function normalizePocketBaseEndpoint(value: string): string {
+function isPrivateIpv4(hostname: string): boolean {
+  const parts = hostname.split('.').map(Number);
+  if (parts.length !== 4 || parts.some((part) => !Number.isInteger(part) || part < 0 || part > 255)) {
+    return false;
+  }
+  return (
+    parts[0] === 10 ||
+    (parts[0] === 172 && parts[1] >= 16 && parts[1] <= 31) ||
+    (parts[0] === 192 && parts[1] === 168)
+  );
+}
+
+function isLocalDevelopmentHost(hostname: string): boolean {
+  const normalized = hostname.toLowerCase().replace(/^\[|\]$/g, '');
+  return (
+    normalized === 'localhost' ||
+    normalized === '127.0.0.1' ||
+    normalized === '::1' ||
+    normalized === '10.0.2.2' ||
+    normalized === '10.0.3.2' ||
+    normalized.endsWith('.localhost') ||
+    isPrivateIpv4(normalized)
+  );
+}
+
+function defaultAllowsInsecureDevelopment(): boolean {
+  return typeof __DEV__ !== 'undefined' && __DEV__;
+}
+
+export function normalizePocketBaseEndpoint(value: string, policy: EndpointPolicy = {}): string {
   const trimmed = value.trim();
   let url: URL;
   try {
@@ -21,6 +54,12 @@ export function normalizePocketBaseEndpoint(value: string): string {
   }
   if (url.protocol !== 'http:' && url.protocol !== 'https:') {
     throw new EndpointConfigurationError('invalidUrl');
+  }
+  if (url.protocol === 'http:') {
+    const allowInsecureDevelopment = policy.allowInsecureDevelopment ?? defaultAllowsInsecureDevelopment();
+    if (!allowInsecureDevelopment || !isLocalDevelopmentHost(url.hostname)) {
+      throw new EndpointConfigurationError('insecureUrl');
+    }
   }
   url.hash = '';
   url.search = '';
