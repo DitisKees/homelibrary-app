@@ -31,9 +31,11 @@ io.github.ditiskees.homelibrary
 
 ## Prerequisites
 
+For application development:
+
 - Node.js 22.13 or newer, but below Node 23
 - npm
-- PocketBase 0.40.1 for the backend
+- PocketBase 0.40.1 for a manually run development backend
 
 If you use `nvm`, run:
 
@@ -41,9 +43,13 @@ If you use `nvm`, run:
 nvm use
 ```
 
-## Backend setup
+## Self-hosting
 
-The required PocketBase schema is versioned in `pocketbase/pb_migrations/`. See [`pocketbase/README.md`](pocketbase/README.md) for setup instructions and collection details.
+**Docker Compose is the recommended deployment path.** Tagged releases publish separate PocketBase backend and static web images for amd64 and arm64, with persistent storage, health checks, runtime web endpoint configuration, and committed migrations.
+
+See [`docs/self-hosting.md`](docs/self-hosting.md) for installation, first-superuser creation, household users, HTTPS/reverse proxy setup, upgrades, backups, restore drills, and Android first-run server configuration.
+
+The manual PocketBase procedure remains available in [`pocketbase/README.md`](pocketbase/README.md).
 
 Public self-registration is intentionally disabled. Household members are provisioned by the PocketBase administrator.
 
@@ -65,6 +71,8 @@ cp .env.example .env
 
 and set `EXPO_PUBLIC_POCKETBASE_URL`, or leave it unset. With no build-time server configured, HomeLibrary opens the server-setup screen on first launch.
 
+The production web container uses `POCKETBASE_URL` at **container startup**, so the same web image can be repointed to another PocketBase server without rebuilding the Expo bundle. A user-selected endpoint in HomeLibrary still takes precedence over that deployment default.
+
 Release builds require HTTPS for remote PocketBase endpoints. Development builds may use plain HTTP only for localhost, Android emulator host mappings, and private LAN development addresses.
 
 Start the app:
@@ -84,7 +92,7 @@ npm test
 npm run build:web
 ```
 
-CI runs these checks and verifies that all committed PocketBase migrations apply cleanly to a fresh PocketBase 0.40.1 database.
+CI runs these checks, verifies all committed PocketBase migrations against PocketBase 0.40.1, and validates the Docker self-hosting path when deployment-related files change.
 
 ## Authentication storage
 

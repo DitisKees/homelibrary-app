@@ -1,0 +1,15 @@
+.git
+.github
+.env
+.env.*
+!.env.example
+.npmrc
+android
+ios
+dist
+node_modules
+coverage
+pocketbase/pb_data
+*.aab
+*.apk
+npm-debug.log*
