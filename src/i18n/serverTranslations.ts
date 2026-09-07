@@ -4,6 +4,7 @@ const serverTranslations = {
       setup: {
         title: 'Connect to your library server',
         help: 'Enter the HTTPS URL of the PocketBase server that hosts your HomeLibrary.',
+        selfHost: 'No server yet? Read the HomeLibrary self-hosting guide.',
         urlLabel: 'PocketBase server URL',
         save: 'Test and save server',
         testing: 'Testing server…',
@@ -30,6 +31,7 @@ const serverTranslations = {
       setup: {
         title: 'Verbinden met je bibliotheekserver',
         help: 'Voer de HTTPS-URL in van de PocketBase-server waarop je HomeLibrary draait.',
+        selfHost: 'Nog geen server? Lees de handleiding voor het zelf hosten van HomeLibrary.',
         urlLabel: 'PocketBase-server-URL',
         save: 'Server testen en opslaan',
         testing: 'Server testen…',
@@ -56,6 +58,7 @@ const serverTranslations = {
       setup: {
         title: 'Mit dem Bibliotheksserver verbinden',
         help: 'Gib die HTTPS-URL des PocketBase-Servers ein, auf dem deine HomeLibrary läuft.',
+        selfHost: 'Noch kein Server? Lies die Anleitung zum Self-Hosting von HomeLibrary.',
         urlLabel: 'PocketBase-Server-URL',
         save: 'Server testen und speichern',
         testing: 'Server wird getestet…',
@@ -82,6 +85,7 @@ const serverTranslations = {
       setup: {
         title: 'Se connecter au serveur de bibliothèque',
         help: 'Saisissez l’URL HTTPS du serveur PocketBase qui héberge votre HomeLibrary.',
+        selfHost: 'Pas encore de serveur ? Consultez le guide d’auto-hébergement de HomeLibrary.',
         urlLabel: 'URL du serveur PocketBase',
         save: 'Tester et enregistrer le serveur',
         testing: 'Test du serveur…',

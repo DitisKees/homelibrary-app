@@ -1,0 +1,31 @@
+services:
+  backend:
+    image: ghcr.io/ditiskees/homelibrary-backend:${HOMELIBRARY_VERSION:?Set HOMELIBRARY_VERSION to a released version such as 1.0.0}
+    restart: unless-stopped
+    volumes:
+      - pb_data:/pb_data
+    ports:
+      - "${BIND_ADDRESS:-127.0.0.1}:${POCKETBASE_PORT:-8090}:8090"
+    networks:
+      - homelibrary
+
+  web:
+    image: ghcr.io/ditiskees/homelibrary-web:${HOMELIBRARY_VERSION:?Set HOMELIBRARY_VERSION to a released version such as 1.0.0}
+    restart: unless-stopped
+    environment:
+      POCKETBASE_URL: ${POCKETBASE_URL:-}
+    depends_on:
+      backend:
+        condition: service_healthy
+    ports:
+      - "${BIND_ADDRESS:-127.0.0.1}:${WEB_PORT:-8080}:8080"
+    networks:
+      - homelibrary
+
+volumes:
+  pb_data:
+    name: ${HOMELIBRARY_DATA_VOLUME:-homelibrary-pb-data}
+
+networks:
+  homelibrary:
+    name: ${HOMELIBRARY_NETWORK:-homelibrary}

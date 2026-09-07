@@ -4,8 +4,8 @@ import type { AuthModel } from 'pocketbase';
 import { clearPocketBaseSession, hydrateAuthStore, initializePocketBase, pb } from '@/lib/pocketbase';
 import {
   clearRuntimePocketBaseEndpoint,
-  getBuildTimePocketBaseEndpoint,
   getConfiguredPocketBaseEndpoint,
+  getDeploymentPocketBaseEndpoint,
   setRuntimePocketBaseEndpoint,
 } from '@/services/settings/pocketbase';
 
@@ -75,7 +75,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     await clearRuntimePocketBaseEndpoint();
     await clearPocketBaseSession();
     queryClient.clear();
-    const defaultEndpoint = getBuildTimePocketBaseEndpoint();
+    const defaultEndpoint = getDeploymentPocketBaseEndpoint();
     if (defaultEndpoint) initializePocketBase(defaultEndpoint);
     setUser(null);
     setEndpoint(defaultEndpoint);

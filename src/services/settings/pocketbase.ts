@@ -8,6 +8,14 @@ type EndpointPolicy = {
   allowInsecureDevelopment?: boolean;
 };
 
+type HomeLibraryRuntimeConfig = {
+  POCKETBASE_URL?: unknown;
+};
+
+type RuntimeGlobal = typeof globalThis & {
+  __HOMELIBRARY_RUNTIME_CONFIG__?: HomeLibraryRuntimeConfig;
+};
+
 export class EndpointConfigurationError extends Error {
   constructor(readonly code: EndpointErrorCode) {
     super(code);
@@ -55,6 +63,9 @@ export function normalizePocketBaseEndpoint(value: string, policy: EndpointPolic
   if (url.protocol !== 'http:' && url.protocol !== 'https:') {
     throw new EndpointConfigurationError('invalidUrl');
   }
+  if (url.username || url.password) {
+    throw new EndpointConfigurationError('invalidUrl');
+  }
   if (url.protocol === 'http:') {
     const allowInsecureDevelopment = policy.allowInsecureDevelopment ?? defaultAllowsInsecureDevelopment();
     if (!allowInsecureDevelopment || !isLocalDevelopmentHost(url.hostname)) {
@@ -67,10 +78,20 @@ export function normalizePocketBaseEndpoint(value: string, policy: EndpointPolic
   return url.toString().replace(/\/$/, '');
 }
 
+export function getInjectedPocketBaseEndpoint(): string | undefined {
+  const value = (globalThis as RuntimeGlobal).__HOMELIBRARY_RUNTIME_CONFIG__?.POCKETBASE_URL;
+  if (typeof value !== 'string' || !value.trim()) return undefined;
+  return normalizePocketBaseEndpoint(value);
+}
+
 export function getBuildTimePocketBaseEndpoint(): string | undefined {
   const buildTimeEndpoint = process.env.EXPO_PUBLIC_POCKETBASE_URL;
   if (!buildTimeEndpoint?.trim()) return undefined;
   return normalizePocketBaseEndpoint(buildTimeEndpoint);
+}
+
+export function getDeploymentPocketBaseEndpoint(): string | undefined {
+  return getInjectedPocketBaseEndpoint() ?? getBuildTimePocketBaseEndpoint();
 }
 
 export async function getRuntimePocketBaseEndpoint(): Promise<string | undefined> {
@@ -79,7 +100,7 @@ export async function getRuntimePocketBaseEndpoint(): Promise<string | undefined
 }
 
 export async function getConfiguredPocketBaseEndpoint(): Promise<string | undefined> {
-  return (await getRuntimePocketBaseEndpoint()) ?? getBuildTimePocketBaseEndpoint();
+  return (await getRuntimePocketBaseEndpoint()) ?? getDeploymentPocketBaseEndpoint();
 }
 
 export async function setRuntimePocketBaseEndpoint(endpoint: string): Promise<string> {

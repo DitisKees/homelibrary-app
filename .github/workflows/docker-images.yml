@@ -1,0 +1,153 @@
+name: Docker self-hosting
+
+on:
+  pull_request:
+    paths:
+      - '.github/workflows/docker-images.yml'
+      - 'compose.example.yml'
+      - 'docker/**'
+      - 'docs/self-hosting.md'
+      - 'package.json'
+      - 'package-lock.json'
+      - 'pocketbase/**'
+      - 'scripts/inject-web-runtime-config.mjs'
+      - 'scripts/test-docker-selfhost.sh'
+      - 'src/context/AuthContext.tsx'
+      - 'src/i18n/serverTranslations.ts'
+      - 'src/screens/ServerSetupScreen.tsx'
+      - 'src/services/settings/pocketbase.ts'
+      - 'src/services/settings/pocketbase.test.ts'
+  push:
+    branches:
+      - main
+    tags:
+      - 'v*.*.*'
+
+permissions:
+  contents: read
+
+env:
+  PB_VERSION: '0.40.1'
+
+jobs:
+  validate:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+
+      - name: Set up QEMU
+        uses: docker/setup-qemu-action@v3
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Validate Docker self-hosting stack
+        run: bash scripts/test-docker-selfhost.sh
+
+      - name: Validate backend multi-architecture build
+        uses: docker/build-push-action@v6
+        with:
+          context: .
+          file: docker/backend/Dockerfile
+          build-args: |
+            PB_VERSION=${{ env.PB_VERSION }}
+          platforms: linux/amd64,linux/arm64
+          push: false
+          cache-from: type=gha,scope=homelibrary-backend
+          cache-to: type=gha,mode=max,scope=homelibrary-backend
+
+      - name: Validate web multi-architecture build
+        uses: docker/build-push-action@v6
+        with:
+          context: .
+          file: docker/web/Dockerfile
+          platforms: linux/amd64,linux/arm64
+          push: false
+          cache-from: type=gha,scope=homelibrary-web
+          cache-to: type=gha,mode=max,scope=homelibrary-web
+
+  publish:
+    if: startsWith(github.ref, 'refs/tags/v')
+    needs: validate
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      packages: write
+
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+
+      - name: Verify tag matches application version
+        shell: bash
+        run: |
+          set -euo pipefail
+          app_version="$(node -p "require('./package.json').version")"
+          tag_version="${GITHUB_REF_NAME#v}"
+          if [ "${tag_version}" != "${app_version}" ]; then
+            echo "Tag ${GITHUB_REF_NAME} does not match package.json version ${app_version}." >&2
+            exit 1
+          fi
+
+      - name: Set up QEMU
+        uses: docker/setup-qemu-action@v3
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Sign in to GitHub Container Registry
+        uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Backend image metadata
+        id: backend-meta
+        uses: docker/metadata-action@v5
+        with:
+          images: ghcr.io/ditiskees/homelibrary-backend
+          tags: |
+            type=semver,pattern={{version}}
+            type=semver,pattern={{major}}.{{minor}}
+            type=semver,pattern={{major}}
+            type=raw,value=latest,enable=${{ !contains(github.ref_name, '-') }}
+
+      - name: Publish backend image
+        uses: docker/build-push-action@v6
+        with:
+          context: .
+          file: docker/backend/Dockerfile
+          build-args: |
+            PB_VERSION=${{ env.PB_VERSION }}
+          platforms: linux/amd64,linux/arm64
+          push: true
+          tags: ${{ steps.backend-meta.outputs.tags }}
+          labels: ${{ steps.backend-meta.outputs.labels }}
+          cache-from: type=gha,scope=homelibrary-backend
+          cache-to: type=gha,mode=max,scope=homelibrary-backend
+
+      - name: Web image metadata
+        id: web-meta
+        uses: docker/metadata-action@v5
+        with:
+          images: ghcr.io/ditiskees/homelibrary-web
+          tags: |
+            type=semver,pattern={{version}}
+            type=semver,pattern={{major}}.{{minor}}
+            type=semver,pattern={{major}}
+            type=raw,value=latest,enable=${{ !contains(github.ref_name, '-') }}
+
+      - name: Publish web image
+        uses: docker/build-push-action@v6
+        with:
+          context: .
+          file: docker/web/Dockerfile
+          platforms: linux/amd64,linux/arm64
+          push: true
+          tags: ${{ steps.web-meta.outputs.tags }}
+          labels: ${{ steps.web-meta.outputs.labels }}
+          cache-from: type=gha,scope=homelibrary-web
+          cache-to: type=gha,mode=max,scope=homelibrary-web
