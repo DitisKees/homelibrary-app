@@ -1,0 +1,104 @@
+name: Android release smoke
+
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  build-release-apk:
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+    env:
+      HOMELIBRARY_TEST_KEYSTORE_PASSWORD: ${{ secrets.ANDROID_TEST_KEYSTORE_PASSWORD }}
+      HOMELIBRARY_TEST_KEY_ALIAS: ${{ secrets.ANDROID_TEST_KEY_ALIAS }}
+      HOMELIBRARY_TEST_KEY_PASSWORD: ${{ secrets.ANDROID_TEST_KEY_PASSWORD }}
+
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '22.13.1'
+          cache: npm
+
+      - name: Set up Java
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '17'
+          cache: gradle
+
+      - name: Validate signing secrets
+        env:
+          ANDROID_TEST_KEYSTORE_BASE64: ${{ secrets.ANDROID_TEST_KEYSTORE_BASE64 }}
+        run: |
+          set -euo pipefail
+          for name in ANDROID_TEST_KEYSTORE_BASE64 HOMELIBRARY_TEST_KEYSTORE_PASSWORD HOMELIBRARY_TEST_KEY_ALIAS HOMELIBRARY_TEST_KEY_PASSWORD; do
+            if [ -z "${!name:-}" ]; then
+              echo "Missing required GitHub Actions secret for release-smoke signing: ${name}" >&2
+              exit 1
+            fi
+          done
+
+      - name: Restore test signing keystore
+        env:
+          ANDROID_TEST_KEYSTORE_BASE64: ${{ secrets.ANDROID_TEST_KEYSTORE_BASE64 }}
+        run: |
+          set -euo pipefail
+          install -d -m 700 "${RUNNER_TEMP}/homelibrary-signing"
+          printf '%s' "${ANDROID_TEST_KEYSTORE_BASE64}" | base64 --decode > "${RUNNER_TEMP}/homelibrary-signing/homelibrary-ci-test.jks"
+          chmod 600 "${RUNNER_TEMP}/homelibrary-signing/homelibrary-ci-test.jks"
+          echo "HOMELIBRARY_TEST_KEYSTORE_PATH=${RUNNER_TEMP}/homelibrary-signing/homelibrary-ci-test.jks" >> "${GITHUB_ENV}"
+
+          keytool -list -v \
+            -keystore "${RUNNER_TEMP}/homelibrary-signing/homelibrary-ci-test.jks" \
+            -storepass "${HOMELIBRARY_TEST_KEYSTORE_PASSWORD}" \
+            -alias "${HOMELIBRARY_TEST_KEY_ALIAS}" \
+            | grep -F 'SHA256: 0A:E7:21:EA:71:E0:24:65:A2:61:E5:61:25:F2:19:E6:9D:8C:92:1E:CA:91:F3:0C:9D:5C:FE:E8:9D:3B:46:61'
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Validate Android release configuration
+        run: npm run validate:android-release
+
+      - name: Prebuild Android native project
+        run: npx expo prebuild --no-install --platform android
+
+      - name: Check F-Droid Android dependency graph
+        run: bash scripts/check-fdroid-android-dependencies.sh
+
+      - name: Inject test-only release signing
+        run: |
+          printf '\napply from: "../../scripts/android-release-smoke-signing.gradle"\n' >> android/app/build.gradle
+
+      - name: Build signed release APK
+        run: |
+          cd android
+          ./gradlew :app:assembleRelease --no-daemon
+
+      - name: Verify release APK
+        run: |
+          set -euo pipefail
+          APK="${GITHUB_WORKSPACE}/android/app/build/outputs/apk/release/app-release.apk"
+          test -f "${APK}"
+
+          SDK_ROOT="${ANDROID_HOME:-${ANDROID_SDK_ROOT:-}}"
+          APKSIGNER="$(find "${SDK_ROOT}/build-tools" -maxdepth 2 -type f -name apksigner | sort -V | tail -n 1)"
+          test -n "${APKSIGNER}"
+          "${APKSIGNER}" verify --verbose --print-certs "${APK}"
+          sha256sum "${APK}" | tee "${APK}.sha256"
+
+      - name: Upload release APK
+        uses: actions/upload-artifact@v4
+        with:
+          name: homelibrary-release-smoke-${{ github.run_number }}-${{ github.sha }}
+          path: |
+            android/app/build/outputs/apk/release/app-release.apk
+            android/app/build/outputs/apk/release/app-release.apk.sha256
+          if-no-files-found: error
+          retention-days: 14

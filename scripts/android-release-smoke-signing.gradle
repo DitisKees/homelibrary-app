@@ -1,0 +1,24 @@
+def requiredEnv = { String name ->
+    def value = System.getenv(name)
+    if (value == null || value.trim().isEmpty()) {
+        throw new GradleException("Missing required release-smoke signing environment variable: ${name}")
+    }
+    return value
+}
+
+def keystorePath = requiredEnv('HOMELIBRARY_TEST_KEYSTORE_PATH')
+def keystorePassword = requiredEnv('HOMELIBRARY_TEST_KEYSTORE_PASSWORD')
+def keyAliasValue = requiredEnv('HOMELIBRARY_TEST_KEY_ALIAS')
+def keyPasswordValue = requiredEnv('HOMELIBRARY_TEST_KEY_PASSWORD')
+
+def releaseSmoke = android.signingConfigs.findByName('releaseSmoke')
+if (releaseSmoke == null) {
+    releaseSmoke = android.signingConfigs.create('releaseSmoke')
+}
+
+releaseSmoke.storeFile = file(keystorePath)
+releaseSmoke.storePassword = keystorePassword
+releaseSmoke.keyAlias = keyAliasValue
+releaseSmoke.keyPassword = keyPasswordValue
+
+android.buildTypes.getByName('release').signingConfig = releaseSmoke
