@@ -77,4 +77,14 @@ describe('internationalization', () => {
     expect(i18n.t('common.bookCount', { count: 1 })).toBe('1 book');
     expect(i18n.t('common.bookCount', { count: 3 })).toBe('3 books');
   });
+
+  test.each([
+    ['en', 'For security'],
+    ['nl', 'Voor de veiligheid'],
+    ['de', 'Aus Sicherheitsgründen'],
+    ['fr', 'Pour des raisons de sécurité'],
+  ])('translates the insecure-server warning in %s', async (language, expected) => {
+    await i18n.changeLanguage(language);
+    expect(i18n.t('server.errors.insecureUrl')).toContain(expected);
+  });
 });

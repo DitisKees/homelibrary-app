@@ -4,6 +4,7 @@ import de from './locales/de';
 import en from './locales/en';
 import fr from './locales/fr';
 import nl from './locales/nl';
+import serverTranslations from './serverTranslations';
 
 export type SupportedLocale = 'en' | 'nl' | 'de' | 'fr';
 
@@ -18,10 +19,10 @@ const supportedCodes = new Set<SupportedLocale>(supportedLanguages.map((language
 
 void i18n.use(initReactI18next).init({
   resources: {
-    en: { translation: en },
-    nl: { translation: nl },
-    de: { translation: de },
-    fr: { translation: fr },
+    en: { translation: { ...en, ...serverTranslations.en } },
+    nl: { translation: { ...nl, ...serverTranslations.nl } },
+    de: { translation: { ...de, ...serverTranslations.de } },
+    fr: { translation: { ...fr, ...serverTranslations.fr } },
   },
   lng: 'en',
   fallbackLng: 'en',

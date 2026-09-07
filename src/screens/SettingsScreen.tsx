@@ -108,20 +108,14 @@ export default function SettingsScreen() {
       await changeEndpoint(testedEndpoint);
     } catch (saveError) {
       if (saveError instanceof EndpointConfigurationError) {
-        setServerError(
-          saveError.code === 'invalidUrl'
-            ? 'Enter a valid http:// or https:// server URL.'
-            : saveError.code === 'unreachable'
-              ? 'This server could not be reached. Check the URL and connection.'
-              : 'The server responded unexpectedly. Check that it is a PocketBase server.'
-        );
+        setServerError(t(`server.errors.${saveError.code}`));
       } else {
-        setServerError('Unable to update the server. Try again.');
+        setServerError(t('server.settings.updateError'));
       }
     } finally {
       setIsSavingServer(false);
     }
-  }, [changeEndpoint, isSavingServer, serverEndpoint]);
+  }, [changeEndpoint, isSavingServer, serverEndpoint, t]);
 
   const resetServer = React.useCallback(async () => {
     if (isSavingServer) return;
@@ -130,20 +124,20 @@ export default function SettingsScreen() {
     setServerError(undefined);
     try {
       await resetEndpoint();
-      setServerMessage('Server reset to the deployment default. Please sign in again.');
+      setServerMessage(t('server.settings.resetSuccess'));
     } catch {
-      setServerError('Unable to reset the server. Try again.');
+      setServerError(t('server.settings.resetError'));
     } finally {
       setIsSavingServer(false);
     }
-  }, [isSavingServer, resetEndpoint]);
+  }, [isSavingServer, resetEndpoint, t]);
 
   return (
     <ScrollView contentContainerStyle={styles.content} keyboardShouldPersistTaps="handled">
       <View style={styles.section}>
-        <Text style={styles.heading}>Library server</Text>
-        <Text style={styles.help}>Change the PocketBase server used by this app. Changing servers signs you out and clears data from the previous server.</Text>
-        <Text style={styles.label}>PocketBase server URL</Text>
+        <Text style={styles.heading}>{t('server.settings.heading')}</Text>
+        <Text style={styles.help}>{t('server.settings.help')}</Text>
+        <Text style={styles.label}>{t('server.setup.urlLabel')}</Text>
         <TextInput
           value={serverEndpoint}
           onChangeText={(value) => {
@@ -156,15 +150,20 @@ export default function SettingsScreen() {
           autoCorrect={false}
           keyboardType="url"
           placeholder="https://books.example.com"
-          accessibilityLabel="PocketBase server URL"
+          accessibilityLabel={t('server.setup.urlLabel')}
           style={styles.input}
         />
         {!!serverMessage && <Text style={styles.message}>{serverMessage}</Text>}
         {!!serverError && <Text style={styles.error} accessibilityRole="alert">{serverError}</Text>}
         <View style={styles.actions}>
-          <AppButton label="Test and save server" loadingLabel="Testing server…" loading={isSavingServer} onPress={() => void saveServer()} />
           <AppButton
-            label="Reset to deployment default"
+            label={t('server.setup.save')}
+            loadingLabel={t('server.setup.testing')}
+            loading={isSavingServer}
+            onPress={() => void saveServer()}
+          />
+          <AppButton
+            label={t('server.settings.reset')}
             variant="secondary"
             disabled={isSavingServer || !getBuildTimePocketBaseEndpoint()}
             onPress={() => void resetServer()}

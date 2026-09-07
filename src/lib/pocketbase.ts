@@ -1,8 +1,12 @@
-import AsyncStorage from '@react-native-async-storage/async-storage';
 import PocketBase, { AsyncAuthStore } from 'pocketbase';
+import {
+  clearPersistedAuth,
+  getPersistedAuth,
+  prepareAuthStorage,
+  setPersistedAuth,
+} from '@/lib/authStorage';
 import { ensurePocketBaseEventSource } from '@/lib/eventSource';
 
-const AUTH_STORAGE_KEY = 'pb_auth';
 const UNCONFIGURED_URL = 'http://127.0.0.1';
 
 let authStore = createAuthStore();
@@ -13,9 +17,9 @@ let currentEndpoint: string | undefined;
 
 function createAuthStore() {
   return new AsyncAuthStore({
-    save: async (serialized) => AsyncStorage.setItem(AUTH_STORAGE_KEY, serialized),
+    save: setPersistedAuth,
     initial: undefined,
-    clear: async () => AsyncStorage.removeItem(AUTH_STORAGE_KEY),
+    clear: clearPersistedAuth,
   });
 }
 
@@ -33,18 +37,19 @@ export function getPocketBaseEndpoint(): string | undefined {
 
 export async function clearPocketBaseSession(): Promise<void> {
   authStore.clear();
-  await AsyncStorage.removeItem(AUTH_STORAGE_KEY);
+  await clearPersistedAuth();
   cachedFileToken = null;
 }
 
-export async function hydrateAuthStore() {
-  const stored = await AsyncStorage.getItem(AUTH_STORAGE_KEY);
+export async function hydrateAuthStore(): Promise<void> {
+  await prepareAuthStorage();
+  const stored = await getPersistedAuth();
   if (!stored) return;
   try {
     const { token, model } = JSON.parse(stored);
     authStore.save(token, model);
   } catch {
-    await AsyncStorage.removeItem(AUTH_STORAGE_KEY);
+    await clearPersistedAuth();
   }
 }
 
@@ -67,5 +72,6 @@ export async function fileUrl(
 ): Promise<string | undefined> {
   if (!filename) return undefined;
   const token = await getFileToken();
+  cachedFileToken = { token, fetchedAt: Date.now() };
   return pb.files.getUrl(record, filename, { thumb, token });
 }

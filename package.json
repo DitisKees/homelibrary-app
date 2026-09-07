@@ -38,6 +38,7 @@
     "expo-image-manipulator": "~57.0.16",
     "expo-image-picker": "~57.0.16",
     "expo-localization": "~57.0.1",
+    "expo-secure-store": "~57.0.3",
     "expo-status-bar": "~57.0.1",
     "i18next": "^26.4.2",
     "pocketbase": "^0.21.3",
