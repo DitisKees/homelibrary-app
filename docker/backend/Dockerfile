@@ -14,7 +14,7 @@ RUN apk add --no-cache ca-certificates curl unzip \
        "https://github.com/pocketbase/pocketbase/releases/download/v${PB_VERSION}/pocketbase_${PB_VERSION}_linux_${pb_arch}.zip" \
        -o /tmp/pocketbase.zip \
     && unzip -q /tmp/pocketbase.zip -d /tmp/pocketbase \
-    && /tmp/pocketbase/pocketbase version
+    && /tmp/pocketbase/pocketbase --version
 
 FROM alpine:3.22
 ARG PB_VERSION=0.40.1

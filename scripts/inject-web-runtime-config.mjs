@@ -1,5 +1,6 @@
 import { readFile, writeFile } from 'node:fs/promises';
 import { resolve } from 'node:path';
+import process from 'node:process';
 
 const distDir = resolve(process.cwd(), 'dist');
 const indexPath = resolve(distDir, 'index.html');
