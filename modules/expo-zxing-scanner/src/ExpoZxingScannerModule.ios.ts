@@ -1,5 +1,6 @@
 const ExpoZxingScannerModule = {
-  async scanImageAsync(_uri: string): Promise<string | null> {
+  async scanImageAsync(uri: string): Promise<string | null> {
+    void uri;
     return null;
   },
 };
