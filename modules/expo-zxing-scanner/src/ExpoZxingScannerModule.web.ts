@@ -1,7 +1,8 @@
 import { registerWebModule, NativeModule } from 'expo';
 
-class ExpoZxingScannerModule extends NativeModule<{}> {
-  async scanImageAsync(_uri: string): Promise<string | null> {
+class ExpoZxingScannerModule extends NativeModule<Record<string, never>> {
+  async scanImageAsync(uri: string): Promise<string | null> {
+    void uri;
     return null;
   }
 }
