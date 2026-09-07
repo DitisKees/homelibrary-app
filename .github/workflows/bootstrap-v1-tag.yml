@@ -1,0 +1,31 @@
+name: Bootstrap v1.0.0 tag
+
+on:
+  push:
+    branches:
+      - main
+    paths:
+      - '.github/workflows/bootstrap-v1-tag.yml'
+
+permissions:
+  contents: write
+
+jobs:
+  tag:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Create v1.0.0 tag
+        shell: bash
+        run: |
+          set -euo pipefail
+          if git ls-remote --exit-code --tags origin refs/tags/v1.0.0 >/dev/null 2>&1; then
+            echo 'v1.0.0 already exists.'
+            exit 0
+          fi
+          git tag v1.0.0 e755b5d0ff8df0efae7b9bcd361f91e82c8ca307
+          git push origin refs/tags/v1.0.0
