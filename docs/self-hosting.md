@@ -6,14 +6,18 @@ HomeLibrary does not provide a hosted service. You operate the PocketBase server
 
 ## Published images
 
-Tagged HomeLibrary releases publish multi-architecture images for `linux/amd64` and `linux/arm64`:
+HomeLibrary publishes multi-architecture images for `linux/amd64` and `linux/arm64`:
 
-- `ghcr.io/ditiskees/homelibrary-backend:<version>`
-- `ghcr.io/ditiskees/homelibrary-web:<version>`
+- `ghcr.io/ditiskees/homelibrary-backend:<tag>`
+- `ghcr.io/ditiskees/homelibrary-web:<tag>`
+
+Every successful push to `main` publishes a rolling `main` tag and an immutable `sha-<short-commit>` tag for both images. The `main` tag is convenient for testing the newest merged code; use the SHA tag when you need to pin that exact continuous build.
+
+Version tags such as `v1.0.0` publish semantic aliases (`1.0.0`, `1.0`, `1`) and stable releases also update `latest`. Prerelease version tags do not update `latest`.
 
 The backend image pins the supported PocketBase version and includes the committed HomeLibrary migrations. The web image contains a static Expo export served by unprivileged nginx; Node.js is not present in the runtime image.
 
-Use an exact HomeLibrary version in production. Stable semantic-version releases also update `latest`; prerelease tags do not. An exact version makes upgrades deliberate and keeps the PocketBase version traceable.
+Use an exact semantic version or immutable SHA tag in production. Avoid the rolling `main` tag for unattended production upgrades. Exact tags make upgrades deliberate and keep the HomeLibrary and PocketBase versions traceable.
 
 ## 1. Prepare the Compose configuration
 
@@ -25,6 +29,8 @@ Create a `.env` file next to it:
 HOMELIBRARY_VERSION=1.0.0
 POCKETBASE_URL=https://books-api.example.com
 ```
+
+`HOMELIBRARY_VERSION` is the image tag used by the Compose example, so it may also be set to an immutable `sha-...` tag when testing an exact continuous build.
 
 `POCKETBASE_URL` is public browser/client configuration, not a credential. It must be the externally reachable **HTTPS** URL of the PocketBase backend. Do not put passwords, tokens, certificates, or backup credentials in the Compose file or Git.
 
