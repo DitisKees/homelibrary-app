@@ -1,4 +1,4 @@
-name: Bootstrap v1.0.0 tag
+name: Publish v1.0.0 images
 
 on:
   push:
@@ -8,24 +8,68 @@ on:
       - '.github/workflows/bootstrap-v1-tag.yml'
 
 permissions:
-  contents: write
+  contents: read
+  packages: write
+
+env:
+  PB_VERSION: '0.40.1'
 
 jobs:
-  tag:
+  publish:
     runs-on: ubuntu-latest
     steps:
-      - name: Check out repository
+      - name: Check out v1.0.0
         uses: actions/checkout@v4
         with:
-          fetch-depth: 0
+          ref: v1.0.0
 
-      - name: Create v1.0.0 tag
+      - name: Verify application version
         shell: bash
         run: |
           set -euo pipefail
-          if git ls-remote --exit-code --tags origin refs/tags/v1.0.0 >/dev/null 2>&1; then
-            echo 'v1.0.0 already exists.'
-            exit 0
-          fi
-          git tag v1.0.0 e755b5d0ff8df0efae7b9bcd361f91e82c8ca307
-          git push origin refs/tags/v1.0.0
+          test "$(node -p "require('./package.json').version")" = '1.0.0'
+
+      - name: Set up QEMU
+        uses: docker/setup-qemu-action@v3
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Sign in to GitHub Container Registry
+        uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Publish backend v1.0.0
+        uses: docker/build-push-action@v6
+        with:
+          context: .
+          file: docker/backend/Dockerfile
+          build-args: |
+            PB_VERSION=${{ env.PB_VERSION }}
+          platforms: linux/amd64,linux/arm64
+          push: true
+          tags: |
+            ghcr.io/ditiskees/homelibrary-backend:1.0.0
+            ghcr.io/ditiskees/homelibrary-backend:1.0
+            ghcr.io/ditiskees/homelibrary-backend:1
+            ghcr.io/ditiskees/homelibrary-backend:latest
+          cache-from: type=gha,scope=homelibrary-backend
+          cache-to: type=gha,mode=max,scope=homelibrary-backend
+
+      - name: Publish web v1.0.0
+        uses: docker/build-push-action@v6
+        with:
+          context: .
+          file: docker/web/Dockerfile
+          platforms: linux/amd64,linux/arm64
+          push: true
+          tags: |
+            ghcr.io/ditiskees/homelibrary-web:1.0.0
+            ghcr.io/ditiskees/homelibrary-web:1.0
+            ghcr.io/ditiskees/homelibrary-web:1
+            ghcr.io/ditiskees/homelibrary-web:latest
+          cache-from: type=gha,scope=homelibrary-web
+          cache-to: type=gha,mode=max,scope=homelibrary-web
