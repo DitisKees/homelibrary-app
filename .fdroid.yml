@@ -33,10 +33,10 @@ Builds:
       - npm run validate:fdroid-metadata
       - npx expo prebuild --clean --no-install --platform android
       - sed -i -e '/signingConfig /d' android/app/build.gradle
-      - bash scripts/check-fdroid-android-dependencies.sh
     scanignore:
       - node_modules
     build:
+      - bash scripts/check-fdroid-android-dependencies.sh
       - cd android/app
       - gradle assembleRelease
 
@@ -52,8 +52,8 @@ MaintainerNotes: |-
   node_modules is scanignored rather than scandeleted because the React Native /
   Expo source tree is required to compile the application. Upstream separately
   audits production npm licenses/provenance and removes the bundled Expo AARs
-  before Android generation. The generated release dependency graph is also
-  checked for Google Play Services, Firebase, ML Kit and Play SDK artifacts.
+  before Android generation. During build, the generated release dependency graph
+  is checked for Google Play Services, Firebase, ML Kit and Play SDK artifacts.
 
   Expo SDK 57 requires Node.js 22.13.x or newer. Debian trixie's Node.js is too
   old for this SDK, so the recipe installs the checksum-pinned official Node.js
@@ -61,6 +61,10 @@ MaintainerNotes: |-
 
   React Native 0.86 is built with the Expo SDK 57 NDK baseline, pinned here as
   Android NDK r27b instead of relying on the buildserver's ambient NDK.
+
+  This upstream development copy refers to the intended immutable v1.0.2 tag.
+  Before submission to fdroiddata, resolve that tag and use its full Git commit
+  hash in the submitted metadata, as required by current fdroiddata style.
 
 AutoUpdateMode: Version
 UpdateCheckMode: Tags ^v[0-9]+\.[0-9]+\.[0-9]+$
