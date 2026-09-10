@@ -66,7 +66,7 @@ if (fs.existsSync(endpointSettings)) {
 }
 
 const androidBuildFromSource = new Set(pkg.expo?.autolinking?.android?.buildFromSource ?? []);
-expect(androidBuildFromSource.has('expo-camera'), 'expo-camera must be listed in expo.autolinking.android.buildFromSource so barcodeScannerEnabled=false affects native dependencies');
+expect(androidBuildFromSource.has('.*'), 'Expo Android autolinking must build every native module from source for F-Droid compatibility');
 
 const zxingGradle = path.join(root, 'modules/expo-zxing-scanner/android/build.gradle');
 const zxingModule = path.join(root, 'modules/expo-zxing-scanner/android/src/main/java/expo/modules/zxingscanner/ExpoZxingScannerModule.kt');
@@ -120,4 +120,5 @@ if (errors.length > 0) {
 process.stdout.write(`Android config OK: ${expo.name}, ${android.package}, app ${expo.version}, versionCode ${android.versionCode}.\n`);
 process.stdout.write('Native PocketBase auth is configured for Expo SecureStore and production endpoint validation is HTTPS-only.\n');
 process.stdout.write('Android barcode scanning is configured for local Apache-2.0 ZXing Core with Expo Camera ML Kit support disabled.\n');
+process.stdout.write('Expo Android native modules are configured to build from source rather than bundled precompiled AARs.\n');
 process.stdout.write('This validates repository configuration only; F-Droid eligibility additionally requires a fully FLOSS dependency graph and a clean source build.\n');
