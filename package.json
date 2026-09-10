@@ -22,6 +22,7 @@
     "validate:android-release": "node scripts/validate-android-release.mjs",
     "audit:fdroid-npm": "node scripts/check-fdroid-npm-dependencies.mjs",
     "check:fdroid-icons": "node scripts/check-fdroid-icons.mjs",
+    "validate:fdroid-metadata": "node scripts/validate-fdroid-metadata.mjs",
     "build:fdroid-android": "bash scripts/build-fdroid-android.sh",
     "typecheck": "tsc --noEmit",
     "lint": "eslint .",
@@ -74,7 +75,7 @@
     "autolinking": {
       "android": {
         "buildFromSource": [
-          "expo-camera"
+          ".*"
         ]
       }
     }
