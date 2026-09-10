@@ -13,7 +13,7 @@ HomeLibrary publishes multi-architecture images for `linux/amd64` and `linux/arm
 
 Every successful push to `main` publishes a rolling `main` tag and an immutable `sha-<short-commit>` tag for both images. The `main` tag is convenient for testing the newest merged code; use the SHA tag when you need to pin that exact continuous build.
 
-Version tags such as `v1.0.0` publish semantic aliases (`1.0.0`, `1.0`, `1`) and stable releases also update `latest`. Prerelease version tags do not update `latest`.
+Version tags such as `v1.0.1` publish semantic aliases (`1.0.1`, `1.0`, `1`) and stable releases also update `latest`. Prerelease version tags do not update `latest`.
 
 The backend image pins the supported PocketBase version and includes the committed HomeLibrary migrations. The web image contains a static Expo export served by unprivileged nginx; Node.js is not present in the runtime image.
 
@@ -26,7 +26,7 @@ Copy [`../compose.example.yml`](../compose.example.yml) to the machine that will
 Create a `.env` file next to it:
 
 ```dotenv
-HOMELIBRARY_VERSION=1.0.0
+HOMELIBRARY_VERSION=1.0.1
 POCKETBASE_URL=https://books-api.example.com
 ```
 
