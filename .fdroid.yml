@@ -1,0 +1,65 @@
+Categories:
+  - Reading
+  - Inventory
+License: GPL-3.0-or-later
+SourceCode: https://github.com/DitisKees/homelibrary-app
+IssueTracker: https://github.com/DitisKees/homelibrary-app/issues
+Changelog: https://github.com/DitisKees/homelibrary-app/tags
+
+RepoType: git
+Repo: https://github.com/DitisKees/homelibrary-app.git
+
+Builds:
+  - versionName: 1.0.2
+    versionCode: 3
+    commit: v1.0.2
+    sudo:
+      - apt-get update
+      - apt-get install -y curl xz-utils
+      - curl -fsSL https://nodejs.org/dist/v22.13.1/node-v22.13.1-linux-x64.tar.xz -o /tmp/node-v22.13.1-linux-x64.tar.xz
+      - echo '0d2a5af33c7deab5555c8309cd3f373446fe1526c1b95833935ab3f019733b3b  /tmp/node-v22.13.1-linux-x64.tar.xz' | sha256sum -c -
+      - tar -xJf /tmp/node-v22.13.1-linux-x64.tar.xz -C /usr/local --strip-components=1
+    init:
+      - node --version
+      - npm --version
+      - npm ci
+      - npm run audit:fdroid-npm
+      - npm run check:fdroid-icons
+      - bash scripts/prepare-fdroid-source-tree.sh
+    output: android/app/build/outputs/apk/release/*.apk
+    prebuild:
+      - npm run validate:android-release
+      - npm run validate:fdroid-metadata
+      - npx expo prebuild --clean --no-install --platform android
+      - sed -i -e '/signingConfig /d' android/app/build.gradle
+      - bash scripts/check-fdroid-android-dependencies.sh
+    scanignore:
+      - node_modules
+    build:
+      - cd android/app
+      - gradle assembleRelease
+
+MaintainerNotes: |-
+  HomeLibrary uses Expo/React Native and does not commit android/; Expo prebuild
+  creates the Android project during the build, so this recipe intentionally has
+  no subdir entry.
+
+  Expo SDK 57 bundles precompiled AARs in local-maven-repo directories. Upstream
+  configures Expo autolinking buildFromSource [".*"] and the init step deletes
+  every bundled local-maven-repo so native Expo modules are compiled from source.
+
+  node_modules is scanignored rather than scandeleted because the React Native /
+  Expo source tree is required to compile the application. Upstream separately
+  audits production npm licenses/provenance and removes the bundled Expo AARs
+  before Android generation. The generated release dependency graph is also
+  checked for Google Play Services, Firebase, ML Kit and Play SDK artifacts.
+
+  Expo SDK 57 requires Node.js 22.13.x or newer. Debian trixie's Node.js is too
+  old for this SDK, so the recipe installs the checksum-pinned official Node.js
+  22.13.1 build tool before npm ci. Node.js itself is not bundled in the APK.
+
+AutoUpdateMode: Version
+UpdateCheckMode: Tags ^v[0-9]+\.[0-9]+\.[0-9]+$
+UpdateCheckData: 'app.json|"versionCode":\s*(\d+)|app.json|"version":\s*"([\d.]+)"'
+CurrentVersion: 1.0.2
+CurrentVersionCode: 3
