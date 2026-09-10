@@ -54,26 +54,43 @@ Development-only tooling is not part of the distributed Android application and 
 
 The Android project is generated from committed Expo configuration and local source. The repository does not commit a mutable `android/` tree.
 
-Material native/runtime components are:
+Material native/runtime components and families found in the current generated release graph include:
 
-| Component/family | Role | License status |
+| Component/family | Role | Reviewed license/source status |
 | --- | --- | --- |
 | Local `modules/expo-zxing-scanner` source | Android ISBN scanner bridge | Project source, GPL-3.0-or-later |
 | `com.google.zxing:core:3.5.4` | EAN-13 decoding | Apache-2.0 |
-| React Native / Expo native modules (`com.facebook.*` plus source-built Expo modules) | Core Android runtime and native APIs | FLOSS; primarily MIT |
+| React Native (`com.facebook.*`) | Core Android runtime | MIT/BSD-family FLOSS components |
+| Expo-generated modules (`expo.modules.*`, `host.exp.exponent`) | Native Expo APIs used by the app | Expo source, MIT |
 | AndroidX (`androidx.*`) | Android compatibility/runtime libraries | Apache-2.0 |
 | Material Components (`com.google.android.material`) | Android UI support used by the generated stack | Apache-2.0 |
-| Kotlin / kotlinx (`org.jetbrains.*`) | Kotlin runtime/coroutines used by native modules | Apache-2.0 |
-| Square libraries (`com.squareup.*`) | HTTP/I/O support such as OkHttp/Okio | Apache-2.0 |
+| Glide (`com.github.bumptech.glide`) | Image loading/decoding | Simplified BSD and Apache-2.0 |
+| APNG4Android (`com.github.penfeizhou.android.animation`) | Animated PNG/WebP/GIF support pulled by the image stack | Apache-2.0 |
+| AndroidSVG (`com.caverock`) | SVG rendering | Apache-2.0 |
+| Android Image Cropper (`com.vanniktech`) | Image cropping support | Apache-2.0 |
+| Glide Transformations (`jp.wasabeef`) | Image transformations | Apache-2.0 |
+| AOMedia AVIF (`org.aomedia.avif.android`) | AVIF decoding | BSD-2-Clause |
+| Brotli (`org.brotli`) | Brotli decoding | MIT |
+| Dagger (`com.google.dagger`) | Dependency injection support | Apache-2.0 |
+| AutoValue annotations (`com.google.auto.value`) | Java annotation support | Apache-2.0 |
+| Bolts Tasks (`com.parse.bolts`) | Task/future utility pulled transitively | BSD |
+| Pika (`io.github.lukmccall.pika`) | Kotlin type-information support | MIT |
+| Jakarta Inject (`jakarta.inject`) | Dependency-injection API | Apache-2.0 |
+| Checker Framework qualifiers (`org.checkerframework`) | Java type annotations | MIT |
+| JetBrains annotations/Kotlin (`org.jetbrains`, `org.jetbrains.kotlin*`) | Kotlin runtime and annotations | Apache-2.0 |
+| Apache Commons Codec/IO (`commons-codec`, `commons-io`) | Encoding and I/O utilities | Apache-2.0 |
+| Square (`com.squareup.*`) | HTTP/I/O support such as OkHttp/Okio | Apache-2.0 |
 | Google FOSS utility families (`com.google.code.*`, `com.google.guava`, `com.google.errorprone`, `com.google.j2objc`) | Open-source Java/Android support libraries | FLOSS; Apache/BSD-family depending on artifact |
-| `javax.*`, `org.apache.*`, `org.bouncycastle`, `org.jspecify`, `org.webkit` reviewed groups | Supporting Java/Android runtime artifacts when present | FLOSS; reviewed group boundary |
+| Other reviewed Java/Android groups (`javax.*`, `org.apache.*`, `org.bouncycastle`, `org.jspecify`, `org.webkit`) | Supporting runtime artifacts when present | FLOSS; reviewed group boundary |
+
+The first CI execution of the stricter native guard intentionally failed on the previously undocumented families above. Those coordinates were reviewed before their exact groups were added to the policy; the hard proprietary-family block was not relaxed.
 
 `scripts/check-fdroid-android-dependencies.sh` resolves **`releaseRuntimeClasspath`**, writes a normalized exact Maven-coordinate inventory to `android/build/fdroid-release-runtime-dependencies.txt`, and applies two independent gates:
 
 1. Google Play Services, Firebase, ML Kit, and Google Play SDK coordinate families are always forbidden.
-2. Every external Maven coordinate must belong to a group prefix listed in `scripts/fdroid-reviewed-native-groups.txt`. A new group fails CI until its upstream source and license are reviewed.
+2. Every external Maven coordinate must belong to an exact group or explicit `.*` namespace listed in `scripts/fdroid-reviewed-native-groups.txt`. A new group fails CI until its upstream source and license are reviewed.
 
-The group file is a review boundary rather than a blanket assertion that all future artifacts in those namespaces are acceptable. Dependency updates still require normal review of the generated coordinate inventory.
+The group file is a review boundary rather than a blanket assertion that all future artifacts in those namespaces are acceptable. Most entries are exact groups; broader namespaces are used only for established multi-module FOSS projects such as AndroidX, React Native, Square, Apache, Kotlin, and Expo. Dependency updates still require normal review of the generated coordinate inventory.
 
 Expo Camera is source-built and configured with `barcodeScannerEnabled: false`; this prevents its optional Android ML Kit barcode path from entering the generated runtime graph. Android barcode decoding instead uses the reviewed ZXing Core dependency.
 
