@@ -55,8 +55,14 @@ mapfile -t reviewed_groups < <(grep -Ev '^[[:space:]]*(#|$)' "$REVIEWED_GROUPS_F
 is_reviewed_group() {
   local group="$1"
   local reviewed
+  local prefix
   for reviewed in "${reviewed_groups[@]}"; do
-    if [[ "$group" == "$reviewed" || "$group" == "$reviewed"* ]]; then
+    if [[ "$reviewed" == *'.*' ]]; then
+      prefix="${reviewed%.*}"
+      if [[ "$group" == "$prefix" || "$group" == "$prefix."* ]]; then
+        return 0
+      fi
+    elif [[ "$group" == "$reviewed" ]]; then
       return 0
     fi
   done
@@ -72,17 +78,18 @@ while IFS= read -r coordinate; do
   fi
 done <"$TMP_MODULES"
 
+REPORT="$ANDROID_DIR/build/fdroid-release-runtime-dependencies.txt"
+mkdir -p "$(dirname "$REPORT")"
+cp "$TMP_MODULES" "$REPORT"
+
 if (( ${#unknown_modules[@]} > 0 )); then
   echo "[FAIL] Android runtime dependencies from unreviewed Maven groups were found:" >&2
   printf '  - %s\n' "${unknown_modules[@]}" >&2
   echo >&2
-  echo "Review the upstream source/license, then add the narrowest appropriate group prefix to scripts/fdroid-reviewed-native-groups.txt." >&2
+  echo "Review the upstream source/license, then add the exact group or an explicit .* namespace to scripts/fdroid-reviewed-native-groups.txt." >&2
+  echo "Normalized dependency inventory: $REPORT" >&2
   exit 1
 fi
-
-REPORT="$ANDROID_DIR/build/fdroid-release-runtime-dependencies.txt"
-mkdir -p "$(dirname "$REPORT")"
-cp "$TMP_MODULES" "$REPORT"
 
 module_count="$(wc -l <"$TMP_MODULES" | tr -d ' ')"
 echo "[PASS] Android release runtime graph contains ZXing Core 3.5.4 and no Google Play Services, Firebase, ML Kit, or Play SDK artifacts."
