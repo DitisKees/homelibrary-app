@@ -1,0 +1,90 @@
+name: Release v1.0.1
+
+on:
+  push:
+    branches:
+      - release-v1.0.1-publish
+    paths:
+      - '.github/workflows/release-v1.0.1.yml'
+
+permissions:
+  contents: write
+  packages: write
+
+env:
+  RELEASE_SHA: 8f4add3f60dce0cce8b899205725da027cb5aae3
+  RELEASE_TAG: v1.0.1
+  PB_VERSION: '0.40.1'
+
+jobs:
+  release:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out release commit
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ env.RELEASE_SHA }}
+          fetch-depth: 0
+
+      - name: Verify release version
+        shell: bash
+        run: |
+          set -euo pipefail
+          test "$(node -p "require('./package.json').version")" = "1.0.1"
+          test "$(node -p "require('./app.json').expo.version")" = "1.0.1"
+
+      - name: Create v1.0.1 tag
+        shell: bash
+        run: |
+          set -euo pipefail
+          if git ls-remote --exit-code --tags origin "refs/tags/${RELEASE_TAG}" >/dev/null 2>&1; then
+            echo "${RELEASE_TAG} already exists" >&2
+            exit 1
+          fi
+          git tag "${RELEASE_TAG}" "${RELEASE_SHA}"
+          git push origin "refs/tags/${RELEASE_TAG}"
+
+      - name: Set up QEMU
+        uses: docker/setup-qemu-action@v3
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Sign in to GitHub Container Registry
+        uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Publish backend release image
+        uses: docker/build-push-action@v6
+        with:
+          context: .
+          file: docker/backend/Dockerfile
+          build-args: |
+            PB_VERSION=${{ env.PB_VERSION }}
+          platforms: linux/amd64,linux/arm64
+          push: true
+          tags: |
+            ghcr.io/ditiskees/homelibrary-backend:1.0.1
+            ghcr.io/ditiskees/homelibrary-backend:1.0
+            ghcr.io/ditiskees/homelibrary-backend:1
+            ghcr.io/ditiskees/homelibrary-backend:latest
+          cache-from: type=gha,scope=homelibrary-backend
+          cache-to: type=gha,mode=max,scope=homelibrary-backend
+
+      - name: Publish web release image
+        uses: docker/build-push-action@v6
+        with:
+          context: .
+          file: docker/web/Dockerfile
+          platforms: linux/amd64,linux/arm64
+          push: true
+          tags: |
+            ghcr.io/ditiskees/homelibrary-web:1.0.1
+            ghcr.io/ditiskees/homelibrary-web:1.0
+            ghcr.io/ditiskees/homelibrary-web:1
+            ghcr.io/ditiskees/homelibrary-web:latest
+          cache-from: type=gha,scope=homelibrary-web
+          cache-to: type=gha,mode=max,scope=homelibrary-web
