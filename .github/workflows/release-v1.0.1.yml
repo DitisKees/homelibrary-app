@@ -1,9 +1,11 @@
 name: Release v1.0.1
 
 on:
-  push:
+  pull_request:
     branches:
-      - release-v1.0.1-publish
+      - main
+    types:
+      - opened
     paths:
       - '.github/workflows/release-v1.0.1.yml'
 
@@ -88,3 +90,18 @@ jobs:
             ghcr.io/ditiskees/homelibrary-web:latest
           cache-from: type=gha,scope=homelibrary-web
           cache-to: type=gha,mode=max,scope=homelibrary-web
+
+      - name: Remove temporary helper branches
+        if: always()
+        shell: bash
+        run: |
+          git push origin --delete \
+            release-v1.0.1-helper \
+            release-v1.0.1-helper-2 \
+            release-v1.0.1-helper-work \
+            release-v1.0.1-helper-final \
+            release-v1.0.1-temp \
+            release-v1.0.1-exec \
+            release-v1.0.1-run \
+            release-v1.0.1-action \
+            release-v1.0.1-publish || true
