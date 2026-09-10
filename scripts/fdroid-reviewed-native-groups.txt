@@ -1,0 +1,27 @@
+# Reviewed external Maven group prefixes for the Android runtime graph.
+#
+# This is deliberately a review boundary, not a claim that every artifact ever
+# published under a prefix is acceptable. Adding a dependency from a new group
+# makes CI fail so its source/license can be reviewed before this file changes.
+# Known proprietary Google runtime families are rejected separately even when
+# they share a broader vendor namespace with FOSS Google libraries.
+
+androidx.
+com.facebook.
+com.google.android.material
+com.google.code.findbugs
+com.google.code.gson
+com.google.errorprone
+com.google.guava
+com.google.j2objc
+com.google.zxing
+com.squareup.
+javax.annotation
+javax.inject
+org.apache.
+org.bouncycastle
+org.jetbrains.
+org.jetbrains.kotlin
+org.jetbrains.kotlinx
+org.jspecify
+org.webkit
