@@ -4,6 +4,7 @@ on:
   pull_request:
     paths:
       - '.github/workflows/docker-images.yml'
+      - 'app.json'
       - 'compose.example.yml'
       - 'docker/**'
       - 'docs/self-hosting.md'
@@ -85,10 +86,10 @@ jobs:
         shell: bash
         run: |
           set -euo pipefail
-          app_version="$(node -p "require('./package.json').version")"
+          app_version="$(node -p "require('./app.json').expo.version")"
           tag_version="${GITHUB_REF_NAME#v}"
           if [ "${tag_version}" != "${app_version}" ]; then
-            echo "Tag ${GITHUB_REF_NAME} does not match package.json version ${app_version}." >&2
+            echo "Tag ${GITHUB_REF_NAME} does not match app.json Expo version ${app_version}." >&2
             exit 1
           fi
 
