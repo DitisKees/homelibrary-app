@@ -26,22 +26,31 @@ jobs:
       - name: Install dependencies
         run: npm ci
 
+      - name: Audit F-Droid npm dependencies
+        run: npm run audit:fdroid-npm
+
+      - name: Check deterministic app icons
+        run: npm run check:fdroid-icons
+
       - name: Expo Doctor
         run: npx expo-doctor@latest
 
       - name: Validate Android release configuration
         run: npm run validate:android-release
 
-      - name: Prebuild Android native project
-        run: npx expo prebuild --no-install --platform android
+      - name: Prebuild clean Android native project
+        run: npx expo prebuild --clean --no-install --platform android
 
       - name: Check F-Droid Android dependency graph
         run: bash scripts/check-fdroid-android-dependencies.sh
 
-      - name: Compile Android native project
+      - name: Build F-Droid-style release APK
         run: |
           cd android
-          ./gradlew :app:assembleDebug --no-daemon
+          ./gradlew :app:assembleRelease --no-daemon
+
+      - name: Verify F-Droid-style release APK
+        run: bash scripts/verify-fdroid-apk.sh
 
       - name: Typecheck
         run: npm run typecheck
