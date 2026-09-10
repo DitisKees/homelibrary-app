@@ -70,8 +70,5 @@ jobs:
           unzip -q /tmp/pocketbase.zip -d /tmp/pocketbase
           chmod +x /tmp/pocketbase/pocketbase
 
-      - name: Apply PocketBase migrations to a fresh database
-        run: |
-          /tmp/pocketbase/pocketbase migrate up \
-            --dir "${RUNNER_TEMP}/homelibrary-pb-data" \
-            --migrationsDir "${GITHUB_WORKSPACE}/pocketbase/pb_migrations"
+      - name: Validate PocketBase schema and book sorting
+        run: bash scripts/test-pocketbase-schema.sh
