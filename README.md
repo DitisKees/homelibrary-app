@@ -2,7 +2,7 @@
 
 HomeLibrary is a cross-platform client for managing a shared, self-hosted household book collection backed by PocketBase.
 
-> **F-Droid status:** HomeLibrary is being prepared for submission to the official F-Droid repository. Android barcode scanning now uses the FLOSS ZXing Core implementation and CI guards against reintroducing Google Play Services, Firebase, ML Kit, or Play SDK artifacts. A broader dependency/license audit and clean source-build verification remain before submission.
+> **F-Droid status:** HomeLibrary is being prepared for submission to the official F-Droid repository. Android barcode scanning uses the FLOSS ZXing Core implementation; runtime dependencies and licenses are audited; Expo native Android modules build from source rather than bundled AARs; and CI verifies a clean public release build. Upstream Fastlane text metadata and an initial F-Droid recipe are included. Real-device screenshots, the `v1.0.2` release tag, and final `fdroiddata` validation/submission remain.
 
 ## Features
 
@@ -86,10 +86,17 @@ Useful checks before opening a pull request:
 ```bash
 npx expo-doctor@latest
 npm run validate:android-release
+npm run validate:fdroid-metadata
 npm run typecheck
 npm run lint
 npm test
 npm run build:web
+```
+
+For the complete source-only Android release path used to approximate the F-Droid build environment:
+
+```bash
+npm run build:fdroid-android
 ```
 
 CI runs these checks, verifies all committed PocketBase migrations against PocketBase 0.40.1, and validates the Docker self-hosting path when deployment-related files change.
@@ -124,15 +131,16 @@ A Google Books API key stored in a client application is not a secret. Apply app
 
 ## F-Droid roadmap
 
-Before submitting HomeLibrary to the official F-Droid repository we intend to:
+Before submitting HomeLibrary to the official F-Droid repository:
 
 1. ~~replace the ML Kit barcode scanner with a fully FLOSS implementation~~ — completed with ZXing Core;
-2. audit the generated Android and npm dependency graph for non-free libraries;
-3. ensure the Android app builds from a clean checkout without relying on EAS or private services;
-4. add F-Droid/fastlane metadata, screenshots, and changelogs;
-5. create tagged source releases suitable for F-Droid's build recipe.
+2. ~~audit the generated Android and npm dependency graph for non-free libraries~~ — completed;
+3. ~~ensure the Android app builds from a clean checkout without relying on EAS or private services~~ — completed;
+4. add upstream F-Droid/Fastlane metadata, screenshots, and changelogs — text metadata and changelog prepared; real-device screenshots remain;
+5. create a tagged source release suitable for F-Droid's build recipe — `1.0.2` / versionCode `3` is prepared, but the immutable `v1.0.2` tag must be created after the release commit is merged and verified;
+6. test the initial `.fdroid.yml` recipe with current `fdroidserver` and submit the resulting metadata to `fdroiddata`.
 
-See [`docs/fdroid.md`](docs/fdroid.md) for details.
+See [`docs/fdroid.md`](docs/fdroid.md) and [`docs/fdroid-release.md`](docs/fdroid-release.md) for details.
 
 ## License
 

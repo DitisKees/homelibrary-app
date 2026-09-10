@@ -38,6 +38,12 @@ jobs:
       - name: Validate Android release configuration
         run: npm run validate:android-release
 
+      - name: Validate F-Droid metadata and recipe
+        run: npm run validate:fdroid-metadata
+
+      - name: Remove bundled Expo Android binaries
+        run: bash scripts/prepare-fdroid-source-tree.sh
+
       - name: Prebuild clean Android native project
         run: npx expo prebuild --clean --no-install --platform android
 

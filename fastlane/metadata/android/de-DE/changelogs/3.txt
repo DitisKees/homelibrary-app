@@ -1,0 +1,1 @@
+HomeLibrary für F-Droid vorbereitet: Laufzeitabhängigkeiten und Lizenzen geprüft, den proprietären Android-Barcodepfad durch ZXing ersetzt, den Quellcode-Build aller nativen Expo-Module erzwungen und einen sauberen öffentlichen Android-Build samt F-Droid-Metadaten- und Rezeptprüfung hinzugefügt.

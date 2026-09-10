@@ -1,0 +1,7 @@
+HomeLibrary is een app voor het beheren van een gezamenlijke boekencollectie thuis, met een PocketBase-server die je zelf beheert.
+
+Zoek en blader door je bibliotheek, voeg boeken handmatig of via ISBN toe en bewerk ze, scan op Android EAN-13/ISBN-barcodes met de vrije ZXing-bibliotheek, voeg omslagafbeeldingen toe en houd lees- en uitleengegevens bij.
+
+HomeLibrary bevat persoonlijke leesstatussen, uitleen- en teruggavegeschiedenis, statistieken over bibliotheek, lezen en uitlenen en realtime verversing wanneer andere huisgenoten gedeelde gegevens wijzigen. Boekgegevens kunnen via Open Library worden opgezocht, met optionele ondersteuning voor Google Books.
+
+HomeLibrary levert geen gehoste backend en vereist geen account bij het project. Verbind de app met je eigen HomeLibrary PocketBase-server. Externe productieservers moeten HTTPS gebruiken.

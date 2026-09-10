@@ -1,0 +1,1 @@
+Prepared HomeLibrary for F-Droid distribution: audited runtime dependencies and licenses, removed the proprietary Android barcode path in favor of ZXing, required Expo native modules to build from source, and added a clean public Android build plus F-Droid metadata and recipe validation.
