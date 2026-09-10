@@ -1,6 +1,6 @@
 services:
   backend:
-    image: ghcr.io/ditiskees/homelibrary-backend:${HOMELIBRARY_VERSION:?Set HOMELIBRARY_VERSION to a released version such as 1.0.0}
+    image: ghcr.io/ditiskees/homelibrary-backend:${HOMELIBRARY_VERSION:?Set HOMELIBRARY_VERSION to a released version such as 1.0.1}
     restart: unless-stopped
     volumes:
       - pb_data:/pb_data
@@ -10,7 +10,7 @@ services:
       - homelibrary
 
   web:
-    image: ghcr.io/ditiskees/homelibrary-web:${HOMELIBRARY_VERSION:?Set HOMELIBRARY_VERSION to a released version such as 1.0.0}
+    image: ghcr.io/ditiskees/homelibrary-web:${HOMELIBRARY_VERSION:?Set HOMELIBRARY_VERSION to a released version such as 1.0.1}
     restart: unless-stopped
     environment:
       POCKETBASE_URL: ${POCKETBASE_URL:-}
