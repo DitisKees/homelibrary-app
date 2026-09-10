@@ -1,0 +1,7 @@
+HomeLibrary est une application permettant de gérer une collection de livres partagée au sein du foyer sur un serveur PocketBase que vous contrôlez.
+
+Recherchez et parcourez votre bibliothèque, ajoutez ou modifiez des livres manuellement ou par ISBN, scannez sous Android les codes-barres EAN-13/ISBN avec la bibliothèque libre ZXing, ajoutez des couvertures et centralisez les informations de lecture et de prêt.
+
+HomeLibrary propose un statut de lecture personnel, un historique des prêts et retours, des statistiques sur la bibliothèque, la lecture et les prêts, ainsi qu'une actualisation en temps réel lorsque d'autres membres du foyer modifient les données partagées. Les métadonnées des livres peuvent être recherchées via Open Library, avec Google Books en option.
+
+HomeLibrary ne fournit pas de backend hébergé et n'exige aucun compte auprès du projet. Connectez l'application à votre propre serveur HomeLibrary PocketBase. Les serveurs de production distants doivent utiliser HTTPS.

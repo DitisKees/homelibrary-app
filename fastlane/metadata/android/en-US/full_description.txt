@@ -1,0 +1,7 @@
+HomeLibrary is a client for managing a shared household book collection on a PocketBase server you control.
+
+Search and browse your library, add or edit books manually or by ISBN, scan EAN-13/ISBN barcodes on Android with the free-software ZXing library, attach cover images, and keep reading and lending information together.
+
+HomeLibrary includes personal reading status, lending and return history, library, reading and lending statistics, and realtime refresh when other household members change shared data. Book metadata can be looked up through Open Library, with optional Google Books support.
+
+HomeLibrary does not provide a hosted backend or require an account with the project. Connect the app to your own HomeLibrary PocketBase server. Remote production servers must use HTTPS.

@@ -1,0 +1,1 @@
+HomeLibrary voorbereid op F-Droid: runtimeafhankelijkheden en licenties gecontroleerd, de propriëtaire Android-barcoderoute vervangen door ZXing, alle Expo-native modules verplicht uit broncode laten bouwen en een schone publieke Android-build met F-Droid-metadata- en receptvalidatie toegevoegd.

@@ -1,0 +1,1 @@
+Préparation de HomeLibrary pour F-Droid : audit des dépendances et licences d'exécution, remplacement du chemin de lecture de codes-barres Android propriétaire par ZXing, compilation obligatoire des modules natifs Expo depuis les sources et ajout d'un build Android public propre avec validation des métadonnées et de la recette F-Droid.
