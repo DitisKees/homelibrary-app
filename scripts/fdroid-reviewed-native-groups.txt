@@ -1,27 +1,46 @@
-# Reviewed external Maven group prefixes for the Android runtime graph.
+# Reviewed external Maven groups for the Android release runtime graph.
 #
-# This is deliberately a review boundary, not a claim that every artifact ever
-# published under a prefix is acceptable. Adding a dependency from a new group
+# Exact group names are listed directly. A trailing .* means that group and
+# descendant groups are reviewed. Adding a dependency from any other group
 # makes CI fail so its source/license can be reviewed before this file changes.
 # Known proprietary Google runtime families are rejected separately even when
-# they share a broader vendor namespace with FOSS Google libraries.
+# they share a broader vendor namespace with reviewed FOSS Google libraries.
 
-androidx.
-com.facebook.
+androidx.*
+com.caverock
+com.facebook.*
+com.github.bumptech.glide
+com.github.penfeizhou.android.animation
 com.google.android.material
+com.google.auto.value
 com.google.code.findbugs
 com.google.code.gson
+com.google.dagger
 com.google.errorprone
 com.google.guava
 com.google.j2objc
 com.google.zxing
-com.squareup.
+com.parse.bolts
+com.squareup.*
+com.vanniktech
+commons-codec
+commons-io
+expo.modules.*
+host.exp.exponent
+io.github.lukmccall.pika
+jakarta.inject
 javax.annotation
 javax.inject
-org.apache.
+jp.wasabeef
+org.aomedia.avif.android
+org.apache.*
 org.bouncycastle
-org.jetbrains.
+org.brotli
+org.checkerframework
+org.jetbrains
 org.jetbrains.kotlin
+org.jetbrains.kotlin.*
 org.jetbrains.kotlinx
+org.jetbrains.kotlinx.*
 org.jspecify
 org.webkit
