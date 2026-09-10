@@ -65,6 +65,7 @@ if (fs.existsSync(fdroidPath)) {
   expect(fdroid.includes(`versionName: ${versionName}`) || fdroid.includes(`versionName: '${versionName}'`), `.fdroid.yml must use versionName ${versionName}`);
   expect(fdroid.includes(`versionCode: ${versionCode}`), `.fdroid.yml must use versionCode ${versionCode}`);
   expect(fdroid.includes(`commit: v${versionName}`), `.fdroid.yml must build tag v${versionName}`);
+  expect(fdroid.includes('ndk: r27b'), '.fdroid.yml must pin Android NDK r27b for Expo SDK 57 / React Native 0.86');
   expect(fdroid.includes('RepoType: git'), '.fdroid.yml must declare RepoType: git');
   expect(fdroid.includes('https://github.com/DitisKees/homelibrary-app'), '.fdroid.yml must reference the public upstream repository');
   expect(!/^\s*subdir:/m.test(fdroid), '.fdroid.yml must not use subdir because android/ is generated during the build');
@@ -86,4 +87,4 @@ if (errors.length > 0) {
 
 process.stdout.write(`F-Droid metadata OK for HomeLibrary ${versionName} (${versionCode}).\n`);
 process.stdout.write('Fastlane text metadata exists for en-US, nl-NL, de-DE, and fr-FR.\n');
-process.stdout.write('Expo native modules are configured for source builds and the upstream F-Droid recipe matches the release version.\n');
+process.stdout.write('Expo native modules are configured for source builds and the upstream F-Droid recipe matches the release version/NDK baseline.\n');
