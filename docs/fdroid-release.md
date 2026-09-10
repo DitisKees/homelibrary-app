@@ -104,7 +104,7 @@ The repository's Docker publication workflow also listens for `vX.Y.Z` tags and 
 
 ## Test the upstream F-Droid recipe
 
-The root `.fdroid.yml` is the development copy of the initial recipe. It intentionally has no `subdir` because Expo generates `android/` during the build.
+The root `.fdroid.yml` is the development copy of the initial recipe. It intentionally has no `subdir` because Expo generates `android/` during the build. Because a source file cannot contain the hash of the commit that contains itself, this upstream development copy names the intended immutable `v1.0.2` tag. The official `fdroiddata` metadata must resolve that tag to its full Git commit hash before submission.
 
 Before submitting to the official repository, test with a current checkout of `fdroidserver`. The exact installation method may vary by development environment, but the relevant validation flow is:
 
@@ -120,6 +120,14 @@ For a realistic official-repository test, fork and clone `fdroiddata`, copy `.fd
 metadata/io.github.ditiskees.homelibrary.yml
 ```
 
+From the HomeLibrary source checkout, resolve the immutable tag to the exact commit:
+
+```bash
+git rev-list -n 1 v1.0.2
+```
+
+Replace `commit: v1.0.2` in the copied `fdroiddata` metadata with that full 40-character SHA. Current F-Droid metadata style requires build entries to pin a full commit hash rather than a branch or tag name.
+
 Then run from the `fdroiddata` checkout:
 
 ```bash
@@ -130,7 +138,7 @@ fdroid lint io.github.ditiskees.homelibrary
 fdroid build -v -l io.github.ditiskees.homelibrary:3
 ```
 
-Do not blindly commit changes made by `rewritemeta`; review them and keep the upstream `.fdroid.yml` and submitted metadata semantically aligned.
+Do not blindly commit changes made by `rewritemeta`; review them and keep the upstream `.fdroid.yml` and submitted metadata semantically aligned. In particular, the upstream tag reference and the submitted full commit SHA must continue to identify the same immutable release source.
 
 ## What to verify in the F-Droid build
 
@@ -154,14 +162,15 @@ Once `v1.0.2` exists and the build succeeds with current `fdroidserver`:
 
 1. create a branch in your `fdroiddata` fork;
 2. add `metadata/io.github.ditiskees.homelibrary.yml` based on the tested `.fdroid.yml`;
-3. make sure the upstream Fastlane metadata and screenshots are present in the tagged source;
-4. run `fdroid readmeta`, `checkupdates`, `lint`, and the local build again;
-5. open the merge request against `F-Droid/Data`;
-6. reference the HomeLibrary source repository and issue tracker;
-7. explain the Expo SDK 57 source-build choices from `MaintainerNotes`;
-8. address reviewer and automated scanner feedback with upstream fixes where appropriate.
+3. replace the development-copy tag reference with the full SHA resolved from `v1.0.2`;
+4. make sure the upstream Fastlane metadata and screenshots are present in the tagged source;
+5. run `fdroid readmeta`, `checkupdates`, `lint`, and the local build again;
+6. open the merge request against `F-Droid/Data`;
+7. reference the HomeLibrary source repository and issue tracker;
+8. explain the Expo SDK 57 source-build choices from `MaintainerNotes`;
+9. address reviewer and automated scanner feedback with upstream fixes where appropriate.
 
-Do not create the official submission merge request until the recipe has actually built versionCode `3` from tag `v1.0.2`.
+Do not create the official submission merge request until the recipe has actually built versionCode `3` from the exact commit referenced by immutable tag `v1.0.2`.
 
 ## After acceptance
 
