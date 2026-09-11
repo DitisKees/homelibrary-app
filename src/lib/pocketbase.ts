@@ -28,6 +28,8 @@ export function initializePocketBase(endpoint: string): PocketBase {
   authStore = createAuthStore();
   pb = new PocketBase(endpoint, authStore);
   currentEndpoint = endpoint;
+  cachedFileToken = null;
+  fileTokenRequest = null;
   return pb;
 }
 
@@ -39,6 +41,7 @@ export async function clearPocketBaseSession(): Promise<void> {
   authStore.clear();
   await clearPersistedAuth();
   cachedFileToken = null;
+  fileTokenRequest = null;
 }
 
 export async function hydrateAuthStore(): Promise<void> {
@@ -54,15 +57,27 @@ export async function hydrateAuthStore(): Promise<void> {
 }
 
 let cachedFileToken: { token: string; fetchedAt: number } | null = null;
+let fileTokenRequest: Promise<string> | null = null;
 const FILE_TOKEN_TTL_MS = 5 * 60 * 1000;
 
 async function getFileToken(): Promise<string> {
   if (cachedFileToken && Date.now() - cachedFileToken.fetchedAt < FILE_TOKEN_TTL_MS) {
     return cachedFileToken.token;
   }
-  const token = await pb.files.getToken();
-  cachedFileToken = { token, fetchedAt: Date.now() };
-  return token;
+
+  if (!fileTokenRequest) {
+    fileTokenRequest = pb.files
+      .getToken()
+      .then((token) => {
+        cachedFileToken = { token, fetchedAt: Date.now() };
+        return token;
+      })
+      .finally(() => {
+        fileTokenRequest = null;
+      });
+  }
+
+  return fileTokenRequest;
 }
 
 export async function fileUrl(
@@ -72,6 +87,5 @@ export async function fileUrl(
 ): Promise<string | undefined> {
   if (!filename) return undefined;
   const token = await getFileToken();
-  cachedFileToken = { token, fetchedAt: Date.now() };
   return pb.files.getUrl(record, filename, { thumb, token });
 }
