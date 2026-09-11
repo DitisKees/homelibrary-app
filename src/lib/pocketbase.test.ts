@@ -1,3 +1,23 @@
+jest.mock('pocketbase', () => {
+  class MockAsyncAuthStore {
+    clear = jest.fn();
+    save = jest.fn();
+  }
+
+  class MockPocketBase {
+    files = {
+      getToken: jest.fn(),
+      getUrl: jest.fn(),
+    };
+  }
+
+  return {
+    __esModule: true,
+    AsyncAuthStore: MockAsyncAuthStore,
+    default: MockPocketBase,
+  };
+});
+
 jest.mock('@/lib/authStorage', () => ({
   clearPersistedAuth: jest.fn(),
   getPersistedAuth: jest.fn(),
@@ -13,18 +33,21 @@ import { fileUrl, pb } from '@/lib/pocketbase';
 
 describe('fileUrl', () => {
   afterEach(() => {
-    jest.restoreAllMocks();
+    jest.clearAllMocks();
   });
 
   it('shares one in-flight file token request across concurrent thumbnail URLs', async () => {
+    const getToken = pb.files.getToken as jest.MockedFunction<typeof pb.files.getToken>;
+    const getUrl = pb.files.getUrl as jest.MockedFunction<typeof pb.files.getUrl>;
+
     let resolveToken: ((token: string) => void) | undefined;
-    const getToken = jest.spyOn(pb.files, 'getToken').mockImplementationOnce(
+    getToken.mockImplementationOnce(
       () =>
         new Promise<string>((resolve) => {
           resolveToken = resolve;
         })
     );
-    const getUrl = jest.spyOn(pb.files, 'getUrl').mockImplementation(
+    getUrl.mockImplementation(
       (record, filename, options) =>
         `${record.id}/${filename}?thumb=${options?.thumb ?? ''}&token=${options?.token ?? ''}`
     );
