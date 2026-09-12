@@ -1,0 +1,50 @@
+name: Update Expo patch dependencies
+
+on:
+  push:
+    branches:
+      - Screenshots
+
+permissions:
+  contents: write
+
+jobs:
+  update:
+    if: github.actor != 'github-actions[bot]'
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Check out Screenshots branch
+        uses: actions/checkout@v4
+        with:
+          ref: Screenshots
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '22.13.1'
+          cache: npm
+
+      - name: Update Expo SDK 57 patch dependencies and lockfile
+        run: |
+          npm install --package-lock-only --ignore-scripts \
+            expo@~57.0.22 \
+            expo-camera@~57.0.5 \
+            expo-file-system@~57.0.7 \
+            expo-image@~57.0.5 \
+            expo-image-manipulator@~57.0.17 \
+            expo-image-picker@~57.0.17 \
+            expo-localization@~57.0.2 \
+            expo-secure-store@~57.0.4
+
+      - name: Commit dependency update
+        run: |
+          if git diff --quiet -- package.json package-lock.json; then
+            echo "No dependency changes needed."
+            exit 0
+          fi
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add package.json package-lock.json
+          git commit -m "Update Expo SDK 57 patch dependencies"
+          git push origin HEAD:Screenshots
