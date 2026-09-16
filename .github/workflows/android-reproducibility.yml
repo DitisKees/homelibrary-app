@@ -1,0 +1,96 @@
+name: Android reproducibility
+
+on:
+  workflow_dispatch:
+  pull_request:
+    paths:
+      - '.github/workflows/android-reproducibility.yml'
+      - 'app.json'
+      - 'package.json'
+      - 'package-lock.json'
+      - 'scripts/**'
+      - 'src/**'
+
+permissions:
+  contents: read
+
+jobs:
+  reproducible-apk:
+    runs-on: ubuntu-latest
+    timeout-minutes: 60
+    steps:
+      - name: Check out repository twice
+        uses: actions/checkout@v4
+        with:
+          path: source-a
+
+      - name: Check out identical commit again
+        uses: actions/checkout@v4
+        with:
+          path: source-b
+
+      - name: Set up Java
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '17'
+
+      - name: Install Debian Node.js and npm
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y nodejs npm
+          node --version
+          npm --version
+
+      - name: Build first unsigned APK
+        working-directory: source-a
+        run: |
+          set -euo pipefail
+          npm ci
+          npm run validate:android-release
+          npm run validate:fdroid-metadata
+          bash scripts/prepare-fdroid-source-tree.sh
+          npx expo prebuild --clean --no-install --platform android
+          sed -i -e '/signingConfig /d' android/app/build.gradle
+          bash scripts/check-fdroid-android-dependencies.sh
+          cd android
+          ./gradlew :app:assembleRelease --no-daemon
+
+      - name: Build second unsigned APK
+        working-directory: source-b
+        run: |
+          set -euo pipefail
+          npm ci
+          npm run validate:android-release
+          npm run validate:fdroid-metadata
+          bash scripts/prepare-fdroid-source-tree.sh
+          npx expo prebuild --clean --no-install --platform android
+          sed -i -e '/signingConfig /d' android/app/build.gradle
+          bash scripts/check-fdroid-android-dependencies.sh
+          cd android
+          ./gradlew :app:assembleRelease --no-daemon
+
+      - name: Compare APKs byte for byte
+        run: |
+          set -euo pipefail
+          APK_A="source-a/android/app/build/outputs/apk/release/app-release-unsigned.apk"
+          APK_B="source-b/android/app/build/outputs/apk/release/app-release-unsigned.apk"
+          test -f "$APK_A"
+          test -f "$APK_B"
+          sha256sum "$APK_A" "$APK_B"
+          cmp --silent "$APK_A" "$APK_B" || {
+            echo 'Unsigned APKs differ. Reproducibility has not yet been achieved.' >&2
+            exit 1
+          }
+          echo 'Unsigned APKs are byte-for-byte identical.'
+
+      - name: Upload comparison APKs
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: reproducibility-apks-${{ github.sha }}
+          path: |
+            source-a/android/app/build/outputs/apk/release/*.apk
+            source-b/android/app/build/outputs/apk/release/*.apk
+          if-no-files-found: warn
+          retention-days: 7
