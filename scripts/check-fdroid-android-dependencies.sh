@@ -15,13 +15,26 @@ if [[ ! -f "$REVIEWED_GROUPS_FILE" ]]; then
   exit 2
 fi
 
+# F-Droid's source scanner deliberately removes Gradle wrapper JARs before the
+# build step. Prefer the wrapper in normal/upstream builds, but fall back to the
+# system Gradle supplied by the F-Droid buildserver when the wrapper is no
+# longer usable.
+if [[ -x "$ANDROID_DIR/gradlew" && -f "$ANDROID_DIR/gradle/wrapper/gradle-wrapper.jar" ]]; then
+  GRADLE_CMD=("./gradlew")
+elif command -v gradle >/dev/null 2>&1; then
+  GRADLE_CMD=("gradle")
+else
+  echo "[FAIL] No usable Gradle executable found. The wrapper is incomplete and system Gradle is unavailable." >&2
+  exit 2
+fi
+
 TMP_OUTPUT="$(mktemp)"
 TMP_MODULES="$(mktemp)"
 trap 'rm -f "$TMP_OUTPUT" "$TMP_MODULES"' EXIT
 
 (
   cd "$ANDROID_DIR"
-  ./gradlew :app:dependencies \
+  "${GRADLE_CMD[@]}" :app:dependencies \
     --configuration releaseRuntimeClasspath \
     --console=plain \
     --no-daemon
