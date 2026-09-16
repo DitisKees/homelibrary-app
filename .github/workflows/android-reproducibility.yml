@@ -35,12 +35,13 @@ jobs:
           distribution: temurin
           java-version: '17'
 
-      - name: Install Debian Node.js and npm
+      - name: Install Debian Node.js, npm and ELF diagnostics
         run: |
           sudo apt-get update
-          sudo apt-get install -y nodejs npm
+          sudo apt-get install -y nodejs npm binutils
           node --version
           npm --version
+          readelf --version | head -n 1
 
       - name: Build first unsigned APK
         working-directory: source-a
@@ -87,8 +88,8 @@ jobs:
           fi
 
           echo 'Unsigned APKs differ. Generating per-entry diagnostics.' >&2
-          rm -rf apk-a apk-b
-          mkdir apk-a apk-b
+          rm -rf apk-a apk-b elf-diagnostics
+          mkdir apk-a apk-b elf-diagnostics
           unzip -qq "$APK_A" -d apk-a
           unzip -qq "$APK_B" -d apk-b
 
@@ -114,6 +115,45 @@ jobs:
           unzip -Z -v "$APK_B" > apk-b.zipinfo.txt
           diff -u apk-a.zipinfo.txt apk-b.zipinfo.txt || true
 
+          # Native libraries are currently the only differing APK entries. Inspect
+          # representative ELF pairs for embedded checkout/build paths, build IDs,
+          # section differences and other compiler/linker metadata.
+          for rel in \
+            lib/arm64-v8a/libappmodules.so \
+            lib/arm64-v8a/libexpo-modules-core.so \
+            lib/arm64-v8a/libgesturehandler.so \
+            lib/arm64-v8a/libreact_codegen_rnscreens.so \
+            lib/arm64-v8a/librnscreens.so
+          do
+            a="apk-a/$rel"
+            b="apk-b/$rel"
+            [[ -f "$a" && -f "$b" ]] || continue
+            base="$(basename "$rel" .so)"
+
+            echo "===== ELF diagnostic: $rel ====="
+            sha256sum "$a" "$b"
+
+            readelf -W -S "$a" > "elf-diagnostics/${base}-a.sections.txt"
+            readelf -W -S "$b" > "elf-diagnostics/${base}-b.sections.txt"
+            readelf -W -n "$a" > "elf-diagnostics/${base}-a.notes.txt" || true
+            readelf -W -n "$b" > "elf-diagnostics/${base}-b.notes.txt" || true
+            readelf -W -p .comment "$a" > "elf-diagnostics/${base}-a.comment.txt" 2>&1 || true
+            readelf -W -p .comment "$b" > "elf-diagnostics/${base}-b.comment.txt" 2>&1 || true
+            strings -a "$a" > "elf-diagnostics/${base}-a.strings.txt"
+            strings -a "$b" > "elf-diagnostics/${base}-b.strings.txt"
+
+            echo '-- section table diff --'
+            diff -u "elf-diagnostics/${base}-a.sections.txt" "elf-diagnostics/${base}-b.sections.txt" || true
+            echo '-- ELF notes/build-id diff --'
+            diff -u "elf-diagnostics/${base}-a.notes.txt" "elf-diagnostics/${base}-b.notes.txt" || true
+            echo '-- compiler comment diff --'
+            diff -u "elf-diagnostics/${base}-a.comment.txt" "elf-diagnostics/${base}-b.comment.txt" || true
+            echo '-- strings containing checkout/build paths --'
+            grep -E 'source-[ab]|/home/runner|/_work/|node_modules|CMakeFiles|\.cxx/' "elf-diagnostics/${base}-a.strings.txt" | sort -u > "elf-diagnostics/${base}-a.paths.txt" || true
+            grep -E 'source-[ab]|/home/runner|/_work/|node_modules|CMakeFiles|\.cxx/' "elf-diagnostics/${base}-b.strings.txt" | sort -u > "elf-diagnostics/${base}-b.paths.txt" || true
+            diff -u "elf-diagnostics/${base}-a.paths.txt" "elf-diagnostics/${base}-b.paths.txt" || true
+          done
+
           echo 'Diagnostic files have been written for the artifact upload.' >&2
           exit 1
 
@@ -129,5 +169,6 @@ jobs:
             apk-b.sha256
             apk-a.zipinfo.txt
             apk-b.zipinfo.txt
+            elf-diagnostics/**
           if-no-files-found: warn
           retention-days: 7
