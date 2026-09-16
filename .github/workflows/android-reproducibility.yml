@@ -70,21 +70,54 @@ jobs:
           cd android
           ./gradlew :app:assembleRelease --no-daemon
 
-      - name: Compare APKs byte for byte
+      - name: Compare APKs and diagnose differences
         run: |
           set -euo pipefail
           APK_A="source-a/android/app/build/outputs/apk/release/app-release-unsigned.apk"
           APK_B="source-b/android/app/build/outputs/apk/release/app-release-unsigned.apk"
           test -f "$APK_A"
           test -f "$APK_B"
-          sha256sum "$APK_A" "$APK_B"
-          cmp --silent "$APK_A" "$APK_B" || {
-            echo 'Unsigned APKs differ. Reproducibility has not yet been achieved.' >&2
-            exit 1
-          }
-          echo 'Unsigned APKs are byte-for-byte identical.'
 
-      - name: Upload comparison APKs
+          echo 'APK SHA-256:'
+          sha256sum "$APK_A" "$APK_B"
+
+          if cmp --silent "$APK_A" "$APK_B"; then
+            echo 'Unsigned APKs are byte-for-byte identical.'
+            exit 0
+          fi
+
+          echo 'Unsigned APKs differ. Generating per-entry diagnostics.' >&2
+          rm -rf apk-a apk-b
+          mkdir apk-a apk-b
+          unzip -qq "$APK_A" -d apk-a
+          unzip -qq "$APK_B" -d apk-b
+
+          (
+            cd apk-a
+            find . -type f -print0 | sort -z | xargs -0 sha256sum
+          ) > apk-a.sha256
+          (
+            cd apk-b
+            find . -type f -print0 | sort -z | xargs -0 sha256sum
+          ) > apk-b.sha256
+
+          echo 'Files present in only one APK:'
+          comm -3 \
+            <(cd apk-a && find . -type f | sort) \
+            <(cd apk-b && find . -type f | sort) || true
+
+          echo 'Entries with different uncompressed contents:'
+          diff -u apk-a.sha256 apk-b.sha256 || true
+
+          echo 'ZIP entry metadata differences:'
+          unzip -Z -v "$APK_A" > apk-a.zipinfo.txt
+          unzip -Z -v "$APK_B" > apk-b.zipinfo.txt
+          diff -u apk-a.zipinfo.txt apk-b.zipinfo.txt || true
+
+          echo 'Diagnostic files have been written for the artifact upload.' >&2
+          exit 1
+
+      - name: Upload comparison APKs and diagnostics
         if: always()
         uses: actions/upload-artifact@v4
         with:
@@ -92,5 +125,9 @@ jobs:
           path: |
             source-a/android/app/build/outputs/apk/release/*.apk
             source-b/android/app/build/outputs/apk/release/*.apk
+            apk-a.sha256
+            apk-b.sha256
+            apk-a.zipinfo.txt
+            apk-b.zipinfo.txt
           if-no-files-found: warn
           retention-days: 7
