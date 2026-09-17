@@ -6,6 +6,7 @@ const root = process.cwd();
 const app = JSON.parse(fs.readFileSync(path.join(root, 'app.json'), 'utf8'));
 const pkg = JSON.parse(fs.readFileSync(path.join(root, 'package.json'), 'utf8'));
 const fdroidPath = path.join(root, '.fdroid.yml');
+const buildScriptPath = path.join(root, 'scripts', 'build-fdroid-android.sh');
 const errors = [];
 const expect = (condition, message) => {
   if (!condition) errors.push(message);
@@ -60,6 +61,8 @@ for (const [locale, label] of localeSpecs) {
 }
 
 expect(fs.existsSync(fdroidPath), '.fdroid.yml is missing');
+expect(fs.existsSync(buildScriptPath), 'scripts/build-fdroid-android.sh is missing');
+
 if (fs.existsSync(fdroidPath)) {
   const fdroid = fs.readFileSync(fdroidPath, 'utf8');
   expect(fdroid.includes(`versionName: ${versionName}`) || fdroid.includes(`versionName: '${versionName}'`), `.fdroid.yml must use versionName ${versionName}`);
@@ -69,14 +72,22 @@ if (fs.existsSync(fdroidPath)) {
   expect(fdroid.includes('RepoType: git'), '.fdroid.yml must declare RepoType: git');
   expect(fdroid.includes('https://github.com/DitisKees/homelibrary-app'), '.fdroid.yml must reference the public upstream repository');
   expect(!/^\s*subdir:/m.test(fdroid), '.fdroid.yml must not use subdir because android/ is generated during the build');
-  expect(fdroid.includes('scripts/prepare-fdroid-source-tree.sh'), '.fdroid.yml must remove bundled Expo local Maven repositories');
-  expect(fdroid.includes('scripts/check-fdroid-android-dependencies.sh'), '.fdroid.yml must run the Android non-free dependency guard');
   expect(fdroid.includes('scanignore:\n      - node_modules'), '.fdroid.yml must explicitly document the node_modules scanner exception');
-  expect(fdroid.includes('output: android/app/build/outputs/apk/release/*.apk'), '.fdroid.yml must point to the generated release APK');
+  expect(fdroid.includes('build:\n      - bash scripts/build-fdroid-android.sh'), '.fdroid.yml must delegate the build to scripts/build-fdroid-android.sh');
+  expect(fdroid.includes('output: android/app/build/outputs/apk/release/app-release-unsigned.apk'), '.fdroid.yml must point to the exact unsigned release APK produced by the shared build script');
   expect(fdroid.includes('UpdateCheckMode: Tags'), '.fdroid.yml must check tagged releases');
   expect(fdroid.includes('AutoUpdateMode: Version'), '.fdroid.yml must enable version autoupdates');
   expect(fdroid.includes(`CurrentVersion: ${versionName}`), `.fdroid.yml CurrentVersion must be ${versionName}`);
   expect(fdroid.includes(`CurrentVersionCode: ${versionCode}`), `.fdroid.yml CurrentVersionCode must be ${versionCode}`);
+}
+
+if (fs.existsSync(buildScriptPath)) {
+  const buildScript = fs.readFileSync(buildScriptPath, 'utf8');
+  expect(buildScript.includes('scripts/prepare-fdroid-source-tree.sh'), 'shared F-Droid build script must remove bundled Expo local Maven repositories');
+  expect(buildScript.includes('scripts/check-fdroid-android-dependencies.sh'), 'shared F-Droid build script must run the Android non-free dependency guard');
+  expect(buildScript.includes('./gradlew :app:assembleRelease --no-daemon'), 'shared F-Droid build script must assemble the release APK');
+  expect(buildScript.includes('android/app/build/outputs/apk/release/app-release-unsigned.apk'), 'shared F-Droid build script must use the exact unsigned release APK path');
+  expect(buildScript.includes('scripts/verify-fdroid-apk.sh'), 'shared F-Droid build script must verify the generated APK');
 }
 
 if (errors.length > 0) {
@@ -87,4 +98,4 @@ if (errors.length > 0) {
 
 process.stdout.write(`F-Droid metadata OK for HomeLibrary ${versionName} (${versionCode}).\n`);
 process.stdout.write('Fastlane text metadata exists for en-US, nl-NL, de-DE, and fr-FR.\n');
-process.stdout.write('Expo native modules are configured for source builds and the upstream F-Droid recipe matches the release version/NDK baseline.\n');
+process.stdout.write('Expo native modules are configured for source builds and the F-Droid recipe delegates to the validated shared reproducible build script.\n');
