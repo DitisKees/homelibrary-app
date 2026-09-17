@@ -35,44 +35,22 @@ jobs:
           distribution: temurin
           java-version: '17'
 
-      - name: Install Debian Node.js, npm and ELF diagnostics
+      - name: Install Debian Node.js and npm
         run: |
           sudo apt-get update
-          sudo apt-get install -y nodejs npm binutils
+          sudo apt-get install -y nodejs npm
           node --version
           npm --version
-          readelf --version | head -n 1
-          objcopy --version | head -n 1
 
       - name: Build first unsigned APK
         working-directory: source-a
-        run: |
-          set -euo pipefail
-          npm ci
-          npm run validate:android-release
-          npm run validate:fdroid-metadata
-          bash scripts/prepare-fdroid-source-tree.sh
-          npx expo prebuild --clean --no-install --platform android
-          sed -i -e '/signingConfig /d' android/app/build.gradle
-          bash scripts/check-fdroid-android-dependencies.sh
-          cd android
-          ./gradlew :app:assembleRelease --no-daemon
+        run: bash scripts/build-fdroid-android.sh
 
       - name: Build second unsigned APK
         working-directory: source-b
-        run: |
-          set -euo pipefail
-          npm ci
-          npm run validate:android-release
-          npm run validate:fdroid-metadata
-          bash scripts/prepare-fdroid-source-tree.sh
-          npx expo prebuild --clean --no-install --platform android
-          sed -i -e '/signingConfig /d' android/app/build.gradle
-          bash scripts/check-fdroid-android-dependencies.sh
-          cd android
-          ./gradlew :app:assembleRelease --no-daemon
+        run: bash scripts/build-fdroid-android.sh
 
-      - name: Compare APKs and diagnose differences
+      - name: Compare unsigned APKs
         run: |
           set -euo pipefail
           APK_A="source-a/android/app/build/outputs/apk/release/app-release-unsigned.apk"
@@ -88,12 +66,11 @@ jobs:
             exit 0
           fi
 
-          echo 'Unsigned APKs differ. Generating per-entry diagnostics.' >&2
-          rm -rf apk-a apk-b elf-diagnostics
-          mkdir apk-a apk-b elf-diagnostics
+          echo 'Unsigned APKs still differ.' >&2
+          rm -rf apk-a apk-b
+          mkdir apk-a apk-b
           unzip -qq "$APK_A" -d apk-a
           unzip -qq "$APK_B" -d apk-b
-
           (
             cd apk-a
             find . -type f -print0 | sort -z | xargs -0 sha256sum
@@ -102,102 +79,19 @@ jobs:
             cd apk-b
             find . -type f -print0 | sort -z | xargs -0 sha256sum
           ) > apk-b.sha256
-
-          echo 'Files present in only one APK:'
-          comm -3 \
-            <(cd apk-a && find . -type f | sort) \
-            <(cd apk-b && find . -type f | sort) || true
-
-          echo 'Entries with different uncompressed contents:'
           diff -u apk-a.sha256 apk-b.sha256 || true
 
-          echo 'ZIP entry metadata differences:'
-          unzip -Z -v "$APK_A" > apk-a.zipinfo.txt
-          unzip -Z -v "$APK_B" > apk-b.zipinfo.txt
-          diff -u apk-a.zipinfo.txt apk-b.zipinfo.txt || true
-
-          # Inspect representative locally compiled native libraries. In addition
-          # to paths/build IDs, compare binaries with the GNU build-id note removed
-          # and hash every dumpable ELF section. This distinguishes a build-id-only
-          # difference from actual code/data differences and identifies the section
-          # that still carries nondeterministic input.
-          for rel in \
-            lib/arm64-v8a/libappmodules.so \
-            lib/arm64-v8a/libexpo-modules-core.so \
-            lib/arm64-v8a/libgesturehandler.so \
-            lib/arm64-v8a/libreact_codegen_rnscreens.so \
-            lib/arm64-v8a/librnscreens.so
-          do
-            a="apk-a/$rel"
-            b="apk-b/$rel"
-            [[ -f "$a" && -f "$b" ]] || continue
-            base="$(basename "$rel" .so)"
-            out="elf-diagnostics/$base"
-            mkdir -p "$out/sections-a" "$out/sections-b"
-
-            echo "===== ELF diagnostic: $rel ====="
-            sha256sum "$a" "$b"
-
-            readelf -W -S "$a" > "$out/a.sections.txt"
-            readelf -W -S "$b" > "$out/b.sections.txt"
-            readelf -W -n "$a" > "$out/a.notes.txt" || true
-            readelf -W -n "$b" > "$out/b.notes.txt" || true
-            readelf -W -p .comment "$a" > "$out/a.comment.txt" 2>&1 || true
-            readelf -W -p .comment "$b" > "$out/b.comment.txt" 2>&1 || true
-            strings -a "$a" > "$out/a.strings.txt"
-            strings -a "$b" > "$out/b.strings.txt"
-
-            echo '-- section table diff --'
-            diff -u "$out/a.sections.txt" "$out/b.sections.txt" || true
-            echo '-- ELF notes/build-id diff --'
-            diff -u "$out/a.notes.txt" "$out/b.notes.txt" || true
-            echo '-- compiler comment diff --'
-            diff -u "$out/a.comment.txt" "$out/b.comment.txt" || true
-            echo '-- strings containing checkout/build paths --'
-            grep -E 'source-[ab]|/home/runner|/_work/|node_modules|CMakeFiles|\.cxx/' "$out/a.strings.txt" | sort -u > "$out/a.paths.txt" || true
-            grep -E 'source-[ab]|/home/runner|/_work/|node_modules|CMakeFiles|\.cxx/' "$out/b.strings.txt" | sort -u > "$out/b.paths.txt" || true
-            diff -u "$out/a.paths.txt" "$out/b.paths.txt" || true
-
-            cp "$a" "$out/a-no-build-id.so"
-            cp "$b" "$out/b-no-build-id.so"
-            objcopy --remove-section=.note.gnu.build-id "$out/a-no-build-id.so" || true
-            objcopy --remove-section=.note.gnu.build-id "$out/b-no-build-id.so" || true
-            echo '-- hashes after removing .note.gnu.build-id --'
-            sha256sum "$out/a-no-build-id.so" "$out/b-no-build-id.so" | tee "$out/no-build-id.sha256.txt"
-            if cmp --silent "$out/a-no-build-id.so" "$out/b-no-build-id.so"; then
-              echo 'Binaries are identical after removing .note.gnu.build-id.' | tee "$out/no-build-id-result.txt"
-            else
-              echo 'Binaries still differ after removing .note.gnu.build-id.' | tee "$out/no-build-id-result.txt"
-              cmp -l "$out/a-no-build-id.so" "$out/b-no-build-id.so" | head -n 100 > "$out/first-byte-differences.txt" || true
-            fi
-
-            # readelf output is stable enough to discover section names. Dump each
-            # section independently and compare hashes so the next run tells us
-            # exactly where the remaining nondeterministic bytes live.
-            readelf -W -S "$a" | awk '/\[[[:space:]]*[0-9]+\]/ {print $2}' | sed 's/^\.//' | while read -r section; do
-              [[ -n "$section" ]] || continue
-              name=".${section}"
-              safe="$(printf '%s' "$section" | tr '/ ' '__')"
-              objcopy --dump-section "$name=$out/sections-a/$safe.bin" "$a" 2>/dev/null || true
-              objcopy --dump-section "$name=$out/sections-b/$safe.bin" "$b" 2>/dev/null || true
-            done
-
-            (
-              cd "$out/sections-a"
-              find . -type f -print0 | sort -z | xargs -0 -r sha256sum
-            ) > "$out/sections-a.sha256"
-            (
-              cd "$out/sections-b"
-              find . -type f -print0 | sort -z | xargs -0 -r sha256sum
-            ) > "$out/sections-b.sha256"
-            echo '-- differing ELF section hashes --'
-            diff -u "$out/sections-a.sha256" "$out/sections-b.sha256" | tee "$out/section-hash-diff.txt" || true
-          done
-
-          echo 'Diagnostic files have been written for the artifact upload.' >&2
+          echo 'Checkout-specific paths remaining in differing native libraries:' >&2
+          while read -r hash rel; do
+            other_hash="$(grep -F "  $rel" apk-b.sha256 | cut -d' ' -f1 || true)"
+            [[ -n "$other_hash" && "$hash" != "$other_hash" && "$rel" == ./lib/*.so ]] || continue
+            echo "===== $rel ====="
+            strings "apk-a/${rel#./}" | grep -E 'source-a|/home/runner/work/.*/source-a' | head -n 20 || true
+            strings "apk-b/${rel#./}" | grep -E 'source-b|/home/runner/work/.*/source-b' | head -n 20 || true
+          done < apk-a.sha256
           exit 1
 
-      - name: Upload comparison APKs and diagnostics
+      - name: Upload comparison APKs and hashes
         if: always()
         uses: actions/upload-artifact@v4
         with:
@@ -207,8 +101,5 @@ jobs:
             source-b/android/app/build/outputs/apk/release/*.apk
             apk-a.sha256
             apk-b.sha256
-            apk-a.zipinfo.txt
-            apk-b.zipinfo.txt
-            elf-diagnostics/**
           if-no-files-found: warn
           retention-days: 7
