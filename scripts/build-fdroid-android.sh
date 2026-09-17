@@ -2,27 +2,43 @@
 set -euo pipefail
 
 ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
+
+# Native React Native/Expo builds embed absolute source paths in ELF objects.
+# Compiler-prefix-map injection is not reliable across all of the independently
+# configured CMake projects in the React Native dependency graph. Build from one
+# fixed absolute path instead. This removes the checkout directory itself as an
+# input to the native binaries, both in CI and on the F-Droid builder.
+CANONICAL_ROOT="/tmp/homelibrary-fdroid-source"
+
+if [[ "${HOMELIBRARY_CANONICAL_BUILD:-0}" != "1" ]]; then
+  echo "Staging source at canonical build root: ${CANONICAL_ROOT}"
+  rm -rf "$CANONICAL_ROOT"
+  mkdir -p "$CANONICAL_ROOT"
+
+  # Copy only source-controlled/build-input content. In particular, never carry
+  # node_modules, generated android output, Gradle state, or Git metadata from
+  # the caller into the canonical build.
+  tar \
+    --exclude='./.git' \
+    --exclude='./node_modules' \
+    --exclude='./android' \
+    --exclude='./.gradle' \
+    -C "$ROOT" -cf - . | tar -C "$CANONICAL_ROOT" -xf -
+
+  HOMELIBRARY_CANONICAL_BUILD=1 bash "$CANONICAL_ROOT/scripts/build-fdroid-android.sh"
+
+  BUILT_APK="$CANONICAL_ROOT/android/app/build/outputs/apk/release/app-release-unsigned.apk"
+  test -f "$BUILT_APK"
+  mkdir -p "$ROOT/android/app/build/outputs/apk/release"
+  cp "$BUILT_APK" "$ROOT/android/app/build/outputs/apk/release/app-release-unsigned.apk"
+  echo "[PASS] Canonical-path APK copied back to caller checkout."
+  exit 0
+fi
+
 cd "$ROOT"
-
-# Native React Native/Expo modules can embed their absolute source checkout path
-# in ELF objects (for example through __FILE__ and debug metadata). That makes
-# otherwise identical builds differ when the repository is checked out in a
-# different directory, which is exactly what happens between upstream and
-# F-Droid builders.
-#
-# Map the checkout-specific prefix to one stable virtual source root. Clang
-# consumes CFLAGS/CXXFLAGS when CMake initializes its compiler flags, including
-# for the native dependency projects built by Gradle.
-REPRO_SOURCE_ROOT="/build/homelibrary-app"
-REPRO_PREFIX_FLAGS="-ffile-prefix-map=${ROOT}=${REPRO_SOURCE_ROOT} -fdebug-prefix-map=${ROOT}=${REPRO_SOURCE_ROOT} -fmacro-prefix-map=${ROOT}=${REPRO_SOURCE_ROOT}"
-export CFLAGS="${CFLAGS:-} ${REPRO_PREFIX_FLAGS}"
-export CXXFLAGS="${CXXFLAGS:-} ${REPRO_PREFIX_FLAGS}"
-
-echo "Normalizing native source paths: ${ROOT} -> ${REPRO_SOURCE_ROOT}"
-
-if [[ -d android ]]; then
-  echo "Removing existing generated android/ tree to enforce a clean source build."
-  rm -rf android
+if [[ "$ROOT" != "$CANONICAL_ROOT" ]]; then
+  echo "Canonical build guard failed: expected $CANONICAL_ROOT, got $ROOT" >&2
+  exit 1
 fi
 
 npm ci
@@ -45,4 +61,4 @@ bash scripts/check-fdroid-android-dependencies.sh
 APK="$ROOT/android/app/build/outputs/apk/release/app-release-unsigned.apk"
 bash scripts/verify-fdroid-apk.sh "$APK"
 
-echo "[PASS] Clean reproducible Android source build completed without bundled Expo AARs, EAS, private registries, private files, or signing secrets."
+echo "[PASS] Clean reproducible Android source build completed from canonical source root without bundled Expo AARs, EAS, private registries, private files, or signing secrets."
