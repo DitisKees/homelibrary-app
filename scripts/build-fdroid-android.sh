@@ -33,6 +33,8 @@ npm run validate:fdroid-metadata
 bash scripts/prepare-fdroid-source-tree.sh
 
 npx expo prebuild --clean --no-install --platform android
+# F-Droid/upstream reproducibility compares the unsigned release artifact.
+sed -i -e '/signingConfig /d' android/app/build.gradle
 bash scripts/check-fdroid-android-dependencies.sh
 
 (
@@ -42,4 +44,4 @@ bash scripts/check-fdroid-android-dependencies.sh
 
 bash scripts/verify-fdroid-apk.sh
 
-echo "[PASS] Clean Android source build completed without bundled Expo AARs, EAS, private registries, private files, or signing secrets."
+echo "[PASS] Clean reproducible Android source build completed without bundled Expo AARs, EAS, private registries, private files, or signing secrets."
