@@ -42,6 +42,7 @@ bash scripts/check-fdroid-android-dependencies.sh
   ./gradlew :app:assembleRelease --no-daemon
 )
 
-bash scripts/verify-fdroid-apk.sh
+APK="$ROOT/android/app/build/outputs/apk/release/app-release-unsigned.apk"
+bash scripts/verify-fdroid-apk.sh "$APK"
 
 echo "[PASS] Clean reproducible Android source build completed without bundled Expo AARs, EAS, private registries, private files, or signing secrets."
