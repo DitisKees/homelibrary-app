@@ -16,31 +16,30 @@ module.exports = function withReproducibleNativeBuilds(config) {
 
 ${MARKER}
 // Native modules are compiled from source for F-Droid. Clang otherwise embeds
-// absolute checkout paths in some native objects. Apply prefix-map flags to every
-// Android subproject that exposes externalNativeBuild so autolinked Expo/React
-// Native modules receive the same deterministic mapping as the app itself.
+// absolute checkout paths in native/codegen objects. Android's NDK guidance
+// recommends configuring compiler behavior in CMake rather than relying on
+// Gradle cFlags/cppFlags, whose precedence can be surprising.
+//
+// CMAKE_PROJECT_INCLUDE is processed by every CMake project() call, including
+// React Native autolinking/codegen subprojects. The included file applies the
+// prefix maps at directory scope so every target created below it inherits them.
+def reproducibleCheckoutRoot = rootProject.projectDir.parentFile.absolutePath
+def reproducibleCmakeInit = new File(rootProject.projectDir, "reproducible-build.cmake")
+reproducibleCmakeInit.text = """
+set(HOMELIBRARY_CHECKOUT_ROOT \"${'$'}{reproducibleCheckoutRoot}\")
+add_compile_options(
+  \"-ffile-prefix-map=${'$'}{HOMELIBRARY_CHECKOUT_ROOT}=/src\"
+  \"-fdebug-prefix-map=${'$'}{HOMELIBRARY_CHECKOUT_ROOT}=/src\"
+)
+"""
+
 subprojects { subproject ->
-    subproject.plugins.withId("com.android.application") {
-        configureReproducibleNativeBuild(subproject)
-    }
-    subproject.plugins.withId("com.android.library") {
-        configureReproducibleNativeBuild(subproject)
-    }
-}
-
-def configureReproducibleNativeBuild(Project targetProject) {
-    def checkoutRoot = rootProject.projectDir.parentFile.absolutePath
-    def nodeModulesRoot = new File(checkoutRoot, "node_modules").absolutePath
-    def reproducibleFlags = [
-        "-ffile-prefix-map=\${checkoutRoot}=/src",
-        "-fdebug-prefix-map=\${checkoutRoot}=/src",
-        "-ffile-prefix-map=\${nodeModulesRoot}=/src/node_modules",
-        "-fdebug-prefix-map=\${nodeModulesRoot}=/src/node_modules"
-    ]
-
-    targetProject.android.defaultConfig.externalNativeBuild.cmake {
-        cFlags(*reproducibleFlags)
-        cppFlags(*reproducibleFlags)
+    ["com.android.application", "com.android.library"].each { pluginId ->
+        subproject.plugins.withId(pluginId) {
+            subproject.android.defaultConfig.externalNativeBuild.cmake {
+                arguments "-DCMAKE_PROJECT_INCLUDE=${'$'}{reproducibleCmakeInit.absolutePath}"
+            }
+        }
     }
 }
 `;
