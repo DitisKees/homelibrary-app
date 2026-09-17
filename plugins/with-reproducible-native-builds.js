@@ -28,8 +28,8 @@ def reproducibleCmakeInit = new File(rootProject.projectDir, "reproducible-build
 reproducibleCmakeInit.text = """
 set(HOMELIBRARY_CHECKOUT_ROOT \"${'$'}{reproducibleCheckoutRoot}\")
 add_compile_options(
-  \"-ffile-prefix-map=${'$'}{HOMELIBRARY_CHECKOUT_ROOT}=/src\"
-  \"-fdebug-prefix-map=${'$'}{HOMELIBRARY_CHECKOUT_ROOT}=/src\"
+  \"-ffile-prefix-map=\\${HOMELIBRARY_CHECKOUT_ROOT}=/src\"
+  \"-fdebug-prefix-map=\\${HOMELIBRARY_CHECKOUT_ROOT}=/src\"
 )
 """
 
