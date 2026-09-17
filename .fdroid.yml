@@ -23,30 +23,31 @@ Builds:
     init:
       - node --version
       - npm --version
-      - npm ci
-      - npm run audit:fdroid-npm
-      - npm run check:fdroid-icons
-      - bash scripts/prepare-fdroid-source-tree.sh
-    output: android/app/build/outputs/apk/release/*.apk
-    prebuild:
-      - npm run validate:android-release
-      - npm run validate:fdroid-metadata
-      - npx expo prebuild --clean --no-install --platform android
-      - sed -i -e '/signingConfig /d' android/app/build.gradle
+    output: android/app/build/outputs/apk/release/app-release-unsigned.apk
     scanignore:
       - node_modules
     build:
-      - bash scripts/check-fdroid-android-dependencies.sh
-      - cd android/app
-      - gradle assembleRelease
+      - bash scripts/build-fdroid-android.sh
 
 MaintainerNotes: |-
   HomeLibrary uses Expo/React Native and does not commit android/; Expo prebuild
   creates the Android project during the build, so this recipe intentionally has
   no subdir entry.
 
+  Native React Native/Expo builds can embed their absolute source checkout path
+  in ELF objects. The build therefore stages all source/build inputs into the
+  fixed /tmp/homelibrary-fdroid-source path and performs npm install, validation,
+  Expo prebuild and the Gradle release build there. The unsigned APK is copied
+  back to the checkout at the output path above. The same build script is used by
+  upstream's two-clean-checkout reproducibility workflow, which compares the
+  resulting unsigned APKs byte-for-byte.
+
+  The canonical staging step deliberately excludes .git, node_modules, android
+  output and Gradle state, so no generated or checkout-specific state is carried
+  into the reproducible build root.
+
   Expo SDK 57 bundles precompiled AARs in local-maven-repo directories. Upstream
-  configures Expo autolinking buildFromSource [".*"] and the init step deletes
+  configures Expo autolinking buildFromSource [".*"] and the build script deletes
   every bundled local-maven-repo so native Expo modules are compiled from source.
 
   node_modules is scanignored rather than scandeleted because the React Native /
@@ -57,7 +58,8 @@ MaintainerNotes: |-
 
   Expo SDK 57 requires Node.js 22.13.x or newer. Debian trixie's Node.js is too
   old for this SDK, so the recipe installs the checksum-pinned official Node.js
-  22.13.1 build tool before npm ci. Node.js itself is not bundled in the APK.
+  22.13.1 build tool before running the shared build script. Node.js itself is not
+  bundled in the APK.
 
   React Native 0.86 is built with the Expo SDK 57 NDK baseline, pinned here as
   Android NDK r27b instead of relying on the buildserver's ambient NDK.
