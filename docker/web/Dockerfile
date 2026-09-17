@@ -5,6 +5,7 @@ WORKDIR /app
 
 COPY package.json package-lock.json ./
 COPY scripts/generate-app-icons.mjs scripts/generate-app-icons.mjs
+COPY scripts/prepare-fastlane-icon.mjs scripts/prepare-fastlane-icon.mjs
 RUN npm ci
 
 COPY . .

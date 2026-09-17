@@ -52,7 +52,8 @@
         {
           "configureAndroidBackup": true
         }
-      ]
+      ],
+      "./plugins/with-reproducible-native-builds"
     ]
   }
 }

@@ -1,0 +1,105 @@
+name: Android reproducibility
+
+on:
+  workflow_dispatch:
+  pull_request:
+    paths:
+      - '.github/workflows/android-reproducibility.yml'
+      - 'app.json'
+      - 'package.json'
+      - 'package-lock.json'
+      - 'scripts/**'
+      - 'src/**'
+
+permissions:
+  contents: read
+
+jobs:
+  reproducible-apk:
+    runs-on: ubuntu-latest
+    timeout-minutes: 60
+    steps:
+      - name: Check out repository twice
+        uses: actions/checkout@v4
+        with:
+          path: source-a
+
+      - name: Check out identical commit again
+        uses: actions/checkout@v4
+        with:
+          path: source-b
+
+      - name: Set up Java
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '17'
+
+      - name: Install Debian Node.js and npm
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y nodejs npm
+          node --version
+          npm --version
+
+      - name: Build first unsigned APK
+        working-directory: source-a
+        run: bash scripts/build-fdroid-android.sh
+
+      - name: Build second unsigned APK
+        working-directory: source-b
+        run: bash scripts/build-fdroid-android.sh
+
+      - name: Compare unsigned APKs
+        run: |
+          set -euo pipefail
+          APK_A="source-a/android/app/build/outputs/apk/release/app-release-unsigned.apk"
+          APK_B="source-b/android/app/build/outputs/apk/release/app-release-unsigned.apk"
+          test -f "$APK_A"
+          test -f "$APK_B"
+
+          echo 'APK SHA-256:'
+          sha256sum "$APK_A" "$APK_B"
+
+          if cmp --silent "$APK_A" "$APK_B"; then
+            echo 'Unsigned APKs are byte-for-byte identical.'
+            exit 0
+          fi
+
+          echo 'Unsigned APKs still differ.' >&2
+          rm -rf apk-a apk-b
+          mkdir apk-a apk-b
+          unzip -qq "$APK_A" -d apk-a
+          unzip -qq "$APK_B" -d apk-b
+          (
+            cd apk-a
+            find . -type f -print0 | sort -z | xargs -0 sha256sum
+          ) > apk-a.sha256
+          (
+            cd apk-b
+            find . -type f -print0 | sort -z | xargs -0 sha256sum
+          ) > apk-b.sha256
+          diff -u apk-a.sha256 apk-b.sha256 || true
+
+          echo 'Checkout-specific paths remaining in differing native libraries:' >&2
+          while read -r hash rel; do
+            other_hash="$(grep -F "  $rel" apk-b.sha256 | cut -d' ' -f1 || true)"
+            [[ -n "$other_hash" && "$hash" != "$other_hash" && "$rel" == ./lib/*.so ]] || continue
+            echo "===== $rel ====="
+            strings "apk-a/${rel#./}" | grep -E 'source-a|/home/runner/work/.*/source-a' | head -n 20 || true
+            strings "apk-b/${rel#./}" | grep -E 'source-b|/home/runner/work/.*/source-b' | head -n 20 || true
+          done < apk-a.sha256
+          exit 1
+
+      - name: Upload comparison APKs and hashes
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: reproducibility-apks-${{ github.sha }}
+          path: |
+            source-a/android/app/build/outputs/apk/release/*.apk
+            source-b/android/app/build/outputs/apk/release/*.apk
+            apk-a.sha256
+            apk-b.sha256
+          if-no-files-found: warn
+          retention-days: 7

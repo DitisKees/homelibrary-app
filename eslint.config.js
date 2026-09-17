@@ -8,7 +8,7 @@ module.exports = tseslint.config(
   js.configs.recommended,
   tseslint.configs.recommended,
   {
-    files: ['*.config.js'],
+    files: ['*.config.js', 'plugins/**/*.js'],
     rules: { '@typescript-eslint/no-require-imports': 'off' },
   },
   {
