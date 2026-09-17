@@ -42,6 +42,7 @@ jobs:
           node --version
           npm --version
           readelf --version | head -n 1
+          objcopy --version | head -n 1
 
       - name: Build first unsigned APK
         working-directory: source-a
@@ -115,9 +116,11 @@ jobs:
           unzip -Z -v "$APK_B" > apk-b.zipinfo.txt
           diff -u apk-a.zipinfo.txt apk-b.zipinfo.txt || true
 
-          # Native libraries are currently the only differing APK entries. Inspect
-          # representative ELF pairs for embedded checkout/build paths, build IDs,
-          # section differences and other compiler/linker metadata.
+          # Inspect representative locally compiled native libraries. In addition
+          # to paths/build IDs, compare binaries with the GNU build-id note removed
+          # and hash every dumpable ELF section. This distinguishes a build-id-only
+          # difference from actual code/data differences and identifies the section
+          # that still carries nondeterministic input.
           for rel in \
             lib/arm64-v8a/libappmodules.so \
             lib/arm64-v8a/libexpo-modules-core.so \
@@ -129,29 +132,66 @@ jobs:
             b="apk-b/$rel"
             [[ -f "$a" && -f "$b" ]] || continue
             base="$(basename "$rel" .so)"
+            out="elf-diagnostics/$base"
+            mkdir -p "$out/sections-a" "$out/sections-b"
 
             echo "===== ELF diagnostic: $rel ====="
             sha256sum "$a" "$b"
 
-            readelf -W -S "$a" > "elf-diagnostics/${base}-a.sections.txt"
-            readelf -W -S "$b" > "elf-diagnostics/${base}-b.sections.txt"
-            readelf -W -n "$a" > "elf-diagnostics/${base}-a.notes.txt" || true
-            readelf -W -n "$b" > "elf-diagnostics/${base}-b.notes.txt" || true
-            readelf -W -p .comment "$a" > "elf-diagnostics/${base}-a.comment.txt" 2>&1 || true
-            readelf -W -p .comment "$b" > "elf-diagnostics/${base}-b.comment.txt" 2>&1 || true
-            strings -a "$a" > "elf-diagnostics/${base}-a.strings.txt"
-            strings -a "$b" > "elf-diagnostics/${base}-b.strings.txt"
+            readelf -W -S "$a" > "$out/a.sections.txt"
+            readelf -W -S "$b" > "$out/b.sections.txt"
+            readelf -W -n "$a" > "$out/a.notes.txt" || true
+            readelf -W -n "$b" > "$out/b.notes.txt" || true
+            readelf -W -p .comment "$a" > "$out/a.comment.txt" 2>&1 || true
+            readelf -W -p .comment "$b" > "$out/b.comment.txt" 2>&1 || true
+            strings -a "$a" > "$out/a.strings.txt"
+            strings -a "$b" > "$out/b.strings.txt"
 
             echo '-- section table diff --'
-            diff -u "elf-diagnostics/${base}-a.sections.txt" "elf-diagnostics/${base}-b.sections.txt" || true
+            diff -u "$out/a.sections.txt" "$out/b.sections.txt" || true
             echo '-- ELF notes/build-id diff --'
-            diff -u "elf-diagnostics/${base}-a.notes.txt" "elf-diagnostics/${base}-b.notes.txt" || true
+            diff -u "$out/a.notes.txt" "$out/b.notes.txt" || true
             echo '-- compiler comment diff --'
-            diff -u "elf-diagnostics/${base}-a.comment.txt" "elf-diagnostics/${base}-b.comment.txt" || true
+            diff -u "$out/a.comment.txt" "$out/b.comment.txt" || true
             echo '-- strings containing checkout/build paths --'
-            grep -E 'source-[ab]|/home/runner|/_work/|node_modules|CMakeFiles|\.cxx/' "elf-diagnostics/${base}-a.strings.txt" | sort -u > "elf-diagnostics/${base}-a.paths.txt" || true
-            grep -E 'source-[ab]|/home/runner|/_work/|node_modules|CMakeFiles|\.cxx/' "elf-diagnostics/${base}-b.strings.txt" | sort -u > "elf-diagnostics/${base}-b.paths.txt" || true
-            diff -u "elf-diagnostics/${base}-a.paths.txt" "elf-diagnostics/${base}-b.paths.txt" || true
+            grep -E 'source-[ab]|/home/runner|/_work/|node_modules|CMakeFiles|\.cxx/' "$out/a.strings.txt" | sort -u > "$out/a.paths.txt" || true
+            grep -E 'source-[ab]|/home/runner|/_work/|node_modules|CMakeFiles|\.cxx/' "$out/b.strings.txt" | sort -u > "$out/b.paths.txt" || true
+            diff -u "$out/a.paths.txt" "$out/b.paths.txt" || true
+
+            cp "$a" "$out/a-no-build-id.so"
+            cp "$b" "$out/b-no-build-id.so"
+            objcopy --remove-section=.note.gnu.build-id "$out/a-no-build-id.so" || true
+            objcopy --remove-section=.note.gnu.build-id "$out/b-no-build-id.so" || true
+            echo '-- hashes after removing .note.gnu.build-id --'
+            sha256sum "$out/a-no-build-id.so" "$out/b-no-build-id.so" | tee "$out/no-build-id.sha256.txt"
+            if cmp --silent "$out/a-no-build-id.so" "$out/b-no-build-id.so"; then
+              echo 'Binaries are identical after removing .note.gnu.build-id.' | tee "$out/no-build-id-result.txt"
+            else
+              echo 'Binaries still differ after removing .note.gnu.build-id.' | tee "$out/no-build-id-result.txt"
+              cmp -l "$out/a-no-build-id.so" "$out/b-no-build-id.so" | head -n 100 > "$out/first-byte-differences.txt" || true
+            fi
+
+            # readelf output is stable enough to discover section names. Dump each
+            # section independently and compare hashes so the next run tells us
+            # exactly where the remaining nondeterministic bytes live.
+            readelf -W -S "$a" | awk '/\[[[:space:]]*[0-9]+\]/ {print $2}' | sed 's/^\.//' | while read -r section; do
+              [[ -n "$section" ]] || continue
+              name=".${section}"
+              safe="$(printf '%s' "$section" | tr '/ ' '__')"
+              objcopy --dump-section "$name=$out/sections-a/$safe.bin" "$a" 2>/dev/null || true
+              objcopy --dump-section "$name=$out/sections-b/$safe.bin" "$b" 2>/dev/null || true
+            done
+
+            (
+              cd "$out/sections-a"
+              find . -type f -print0 | sort -z | xargs -0 -r sha256sum
+            ) > "$out/sections-a.sha256"
+            (
+              cd "$out/sections-b"
+              find . -type f -print0 | sort -z | xargs -0 -r sha256sum
+            ) > "$out/sections-b.sha256"
+            echo '-- differing ELF section hashes --'
+            diff -u "$out/sections-a.sha256" "$out/sections-b.sha256" | tee "$out/section-hash-diff.txt" || true
           done
 
           echo 'Diagnostic files have been written for the artifact upload.' >&2
