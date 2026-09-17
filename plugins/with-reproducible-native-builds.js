@@ -25,13 +25,12 @@ ${MARKER}
 // prefix maps at directory scope so every target created below it inherits them.
 def reproducibleCheckoutRoot = rootProject.projectDir.parentFile.absolutePath
 def reproducibleCmakeInit = new File(rootProject.projectDir, "reproducible-build.cmake")
-reproducibleCmakeInit.text = """
-set(HOMELIBRARY_CHECKOUT_ROOT \"${'$'}{reproducibleCheckoutRoot}\")
+reproducibleCmakeInit.text = '''
 add_compile_options(
-  \"-ffile-prefix-map=${'$'}{HOMELIBRARY_CHECKOUT_ROOT}=/src\"
-  \"-fdebug-prefix-map=${'$'}{HOMELIBRARY_CHECKOUT_ROOT}=/src\"
+  "-ffile-prefix-map=__HOMELIBRARY_CHECKOUT_ROOT__=/src"
+  "-fdebug-prefix-map=__HOMELIBRARY_CHECKOUT_ROOT__=/src"
 )
-"""
+'''.replace('__HOMELIBRARY_CHECKOUT_ROOT__', reproducibleCheckoutRoot.replace('\\\\', '/'))
 
 subprojects { subproject ->
     ["com.android.application", "com.android.library"].each { pluginId ->
