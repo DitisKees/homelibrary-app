@@ -2,9 +2,12 @@ name: Android release
 
 on:
   workflow_dispatch:
+  push:
+    tags:
+      - 'v*.*.*'
 
 permissions:
-  contents: read
+  contents: write
 
 jobs:
   build-and-sign:
@@ -26,11 +29,37 @@ jobs:
           node-version: '22.13.1'
           cache: npm
 
+      - name: Resolve release metadata
+        run: |
+          set -euo pipefail
+          VERSION="$(node -p "require('./app.json').expo.version")"
+          VERSION_CODE="$(node -p "require('./app.json').expo.android.versionCode")"
+          test -n "${VERSION}"
+          test -n "${VERSION_CODE}"
+          if [ "${GITHUB_REF_TYPE}" = "tag" ]; then
+            EXPECTED_TAG="v${VERSION}"
+            if [ "${GITHUB_REF_NAME}" != "${EXPECTED_TAG}" ]; then
+              echo "Release tag ${GITHUB_REF_NAME} does not match app.json version ${EXPECTED_TAG}." >&2
+              exit 1
+            fi
+          fi
+          echo "HOMELIBRARY_RELEASE_VERSION=${VERSION}" >> "${GITHUB_ENV}"
+          echo "HOMELIBRARY_RELEASE_VERSION_CODE=${VERSION_CODE}" >> "${GITHUB_ENV}"
+
       - name: Set up Java
         uses: actions/setup-java@v4
         with:
           distribution: temurin
           java-version: '17'
+
+      - name: Install F-Droid-compatible APK signing tools
+        run: |
+          set -euo pipefail
+          sdkmanager "build-tools;34.0.0" >/dev/null
+          SDK_ROOT="${ANDROID_SDK_ROOT:-${ANDROID_HOME:-}}"
+          APKSIGNER="${SDK_ROOT}/build-tools/34.0.0/apksigner"
+          test -x "${APKSIGNER}"
+          echo "HOMELIBRARY_APKSIGNER=${APKSIGNER}" >> "${GITHUB_ENV}"
 
       - name: Validate release signing configuration
         env:
@@ -71,15 +100,11 @@ jobs:
           set -euo pipefail
           UNSIGNED="${GITHUB_WORKSPACE}/android/app/build/outputs/apk/release/app-release-unsigned.apk"
           OUT_DIR="${GITHUB_WORKSPACE}/release"
-          SIGNED="${OUT_DIR}/HomeLibrary-release.apk"
+          SIGNED="${OUT_DIR}/HomeLibrary-${HOMELIBRARY_RELEASE_VERSION}.apk"
           mkdir -p "${OUT_DIR}"
           test -f "${UNSIGNED}"
 
-          SDK_ROOT="${ANDROID_HOME:-${ANDROID_SDK_ROOT:-}}"
-          APKSIGNER="$(find "${SDK_ROOT}/build-tools" -maxdepth 2 -type f -name apksigner | sort -V | tail -n 1)"
-          test -n "${APKSIGNER}"
-
-          "${APKSIGNER}" sign \
+          "${HOMELIBRARY_APKSIGNER}" sign \
             --ks "${HOMELIBRARY_RELEASE_KEYSTORE_PATH}" \
             --ks-key-alias "${HOMELIBRARY_RELEASE_KEY_ALIAS}" \
             --ks-pass env:HOMELIBRARY_RELEASE_KEYSTORE_PASSWORD \
@@ -87,7 +112,7 @@ jobs:
             --out "${SIGNED}" \
             "${UNSIGNED}"
 
-          "${APKSIGNER}" verify --verbose --print-certs "${SIGNED}" | tee "${OUT_DIR}/apksigner.txt"
+          "${HOMELIBRARY_APKSIGNER}" verify --verbose --print-certs "${SIGNED}" | tee "${OUT_DIR}/apksigner.txt"
           ACTUAL="$(sed -n 's/^.*certificate SHA-256 digest: //p' "${OUT_DIR}/apksigner.txt" | head -n 1 | tr -d ':[:space:]' | tr '[:lower:]' '[:upper:]')"
           EXPECTED="$(printf '%s' "${HOMELIBRARY_RELEASE_CERT_SHA256}" | tr -d ':[:space:]' | tr '[:lower:]' '[:upper:]')"
           test -n "${ACTUAL}"
@@ -102,8 +127,30 @@ jobs:
         with:
           name: homelibrary-production-release-${{ github.sha }}
           path: |
-            release/HomeLibrary-release.apk
-            release/HomeLibrary-release.apk.sha256
+            release/HomeLibrary-*.apk
+            release/HomeLibrary-*.apk.sha256
             release/apksigner.txt
           if-no-files-found: error
           retention-days: 30
+
+      - name: Publish immutable GitHub Release APK
+        if: github.ref_type == 'tag'
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set -euo pipefail
+          TAG="${GITHUB_REF_NAME}"
+          APK="release/HomeLibrary-${HOMELIBRARY_RELEASE_VERSION}.apk"
+          CHECKSUM="${APK}.sha256"
+
+          if ! gh release view "${TAG}" >/dev/null 2>&1; then
+            gh release create "${TAG}" \
+              --verify-tag \
+              --title "HomeLibrary ${HOMELIBRARY_RELEASE_VERSION}" \
+              --generate-notes
+          fi
+
+          gh release upload "${TAG}" \
+            "${APK}" \
+            "${CHECKSUM}" \
+            "release/apksigner.txt"

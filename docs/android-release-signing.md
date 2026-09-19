@@ -1,10 +1,10 @@
 # Permanent Android release signing
 
-HomeLibrary's F-Droid/upstream release process deliberately separates the reproducible **unsigned** build from upstream signing. `scripts/build-fdroid-android.sh` remains the canonical source build. The production workflow signs that exact unsigned APK afterwards; production credentials are never injected into Gradle, Expo prebuild, npm, or the F-Droid source-build path.
+HomeLibrary deliberately separates the reproducible **unsigned** Android source build from upstream signing. `scripts/build-fdroid-android.sh` remains the canonical public build; production credentials are never injected into Gradle, Expo prebuild, npm, or the F-Droid source-build path.
 
 ## One-time signing-key creation
 
-Create the permanent key on a trusted local machine. Do not generate it in GitHub Actions and do not commit the keystore or passwords.
+Create the permanent key on a trusted local machine. Never generate it in GitHub Actions and never commit the keystore or passwords.
 
 ```bash
 umask 077
@@ -20,7 +20,7 @@ keytool -genkeypair \
   -validity 10000
 ```
 
-Use strong unique passwords and store the keystore plus credentials in at least two secure backups. Losing this key prevents future upstream APKs from being signed with the same identity.
+Keep the keystore and credentials in at least two secure backups. Losing this key prevents future upstream APKs from using the same signing identity.
 
 Record the certificate SHA-256 fingerprint:
 
@@ -31,59 +31,80 @@ keytool -list -v \
   | grep 'SHA256:'
 ```
 
-Create a single-line base64 representation for the GitHub secret:
+Create a single-line base64 representation for GitHub:
 
 ```bash
 base64 -w 0 homelibrary-release.jks
 printf '\n'
 ```
 
-On macOS/BSD, use `base64 < homelibrary-release.jks | tr -d '\n'` instead.
+On macOS/BSD:
+
+```bash
+base64 < homelibrary-release.jks | tr -d '\n'
+```
 
 ## GitHub configuration
 
-In repository **Settings → Secrets and variables → Actions**, create these repository secrets:
+Repository Actions secrets:
 
-- `ANDROID_RELEASE_KEYSTORE_BASE64`: single-line base64 content of `homelibrary-release.jks`.
-- `ANDROID_RELEASE_KEYSTORE_PASSWORD`: keystore password.
-- `ANDROID_RELEASE_KEY_ALIAS`: `homelibrary` (or the alias chosen during creation).
-- `ANDROID_RELEASE_KEY_PASSWORD`: private-key password.
+- `ANDROID_RELEASE_KEYSTORE_BASE64`
+- `ANDROID_RELEASE_KEYSTORE_PASSWORD`
+- `ANDROID_RELEASE_KEY_ALIAS`
+- `ANDROID_RELEASE_KEY_PASSWORD`
 
-Create this repository **variable** (not a secret):
+Repository Actions variable:
 
-- `ANDROID_RELEASE_CERT_SHA256`: SHA-256 certificate fingerprint printed by `keytool`. Colons are optional.
+- `ANDROID_RELEASE_CERT_SHA256`
 
-The fingerprint is intentionally non-secret: F-Droid ultimately needs the public signing-certificate identity too.
+The certificate fingerprint is public information and is intentionally a variable rather than a secret.
 
 ## Production workflow
 
-`.github/workflows/android-release.yml` is manual-only. It:
+`.github/workflows/android-release.yml` supports two modes:
 
-1. refuses to proceed unless all four signing secrets and the pinned certificate fingerprint exist;
-2. restores the keystore only under the runner temporary directory with restrictive permissions;
-3. verifies the keystore certificate against `ANDROID_RELEASE_CERT_SHA256` before building;
-4. runs `scripts/build-fdroid-android.sh`, producing the canonical reproducible unsigned APK;
-5. signs that APK with Android SDK `apksigner` outside Gradle;
-6. verifies the signed APK and checks its certificate fingerprint again;
-7. uploads the signed APK, its SHA-256 checksum, and `apksigner` verification output as workflow artifacts.
+- **manual workflow_dispatch**: build/sign/verify and retain a 30-day Actions artifact for testing;
+- **immutable semantic-version tag**: perform the same build/sign/verify path and additionally attach permanent assets to that tag's GitHub Release.
 
-This design keeps the existing F-Droid reproducibility boundary intact: signing does not alter the source build and the unsigned APK remains independently reproducible.
+The workflow:
 
-## First production run
+1. validates that a tag such as `v1.0.3` exactly matches the version in `app.json`;
+2. restores the production keystore only in the runner temporary directory;
+3. verifies its certificate against `ANDROID_RELEASE_CERT_SHA256`;
+4. runs the canonical reproducible unsigned build;
+5. installs and uses Android build-tools 34.0.0 `apksigner`;
+6. signs outside Gradle;
+7. verifies the signed APK and certificate again;
+8. produces `HomeLibrary-<version>.apk`, its SHA-256 file, and `apksigner.txt`;
+9. on tag runs, publishes those files to the immutable GitHub Release.
 
-After the workflow change is merged and the repository secrets/variable are configured, run **Android release** manually from GitHub Actions. Download the artifact and independently verify it locally:
+Build-tools 34.0.0 is intentionally used for signing because F-Droid's reproducible-build tooling supports signature copying from that `apksigner` format reliably.
+
+## First reproducible production release
+
+After the 1.0.3 preparation PR is merged and all required checks are green, create and push the immutable `v1.0.3` tag. Do not run the permanent release from an unverified or moving branch reference.
+
+When the tag workflow finishes, download the permanent release asset and independently verify:
 
 ```bash
-apksigner verify --verbose --print-certs HomeLibrary-release.apk
-sha256sum HomeLibrary-release.apk
+apksigner verify --verbose --print-certs HomeLibrary-1.0.3.apk
+sha256sum HomeLibrary-1.0.3.apk
 ```
 
 The signer certificate SHA-256 must equal `ANDROID_RELEASE_CERT_SHA256`.
 
-Do not publish the first production APK until that independent check succeeds.
+The release APK URL is intentionally predictable:
+
+```text
+https://github.com/DitisKees/homelibrary-app/releases/download/v1.0.3/HomeLibrary-1.0.3.apk
+```
+
+This makes it suitable for F-Droid's `Binaries` reproducible-build verification.
 
 ## F-Droid AllowedAPKSigningKeys
 
-Only after the first production APK has been signed and independently verified should the same certificate SHA-256 be added to the F-Droid metadata as `AllowedAPKSigningKeys`. Do not use the existing release-smoke/test certificate; it is intentionally a different, disposable CI identity.
+Only after independently verifying the first permanent production APK should the same certificate SHA-256 be added to fdroiddata as `AllowedAPKSigningKeys`, in lower-case hex form.
 
-The production keystore must never be committed to this repository, attached to a GitHub issue/PR, or included in release artifacts.
+Never use the release-smoke/test certificate; it is intentionally a different disposable CI identity.
+
+The production keystore must never be committed, attached to an issue/PR, uploaded as a release asset, or otherwise leave secret storage.
