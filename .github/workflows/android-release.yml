@@ -88,8 +88,9 @@ jobs:
             "${UNSIGNED}"
 
           "${APKSIGNER}" verify --verbose --print-certs "${SIGNED}" | tee "${OUT_DIR}/apksigner.txt"
-          ACTUAL="$("${APKSIGNER}" verify --print-certs "${SIGNED}" | sed -n 's/^Signer #1 certificate SHA-256 digest: //p' | head -n 1 | tr -d ':[:space:]' | tr '[:lower:]' '[:upper:]')"
+          ACTUAL="$(sed -n 's/^.*certificate SHA-256 digest: //p' "${OUT_DIR}/apksigner.txt" | head -n 1 | tr -d ':[:space:]' | tr '[:lower:]' '[:upper:]')"
           EXPECTED="$(printf '%s' "${HOMELIBRARY_RELEASE_CERT_SHA256}" | tr -d ':[:space:]' | tr '[:lower:]' '[:upper:]')"
+          test -n "${ACTUAL}"
           if [ "${ACTUAL}" != "${EXPECTED}" ]; then
             echo "Signed APK certificate fingerprint does not match the pinned production certificate." >&2
             exit 1
