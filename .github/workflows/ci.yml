@@ -33,12 +33,7 @@ jobs:
         run: npm run check:fdroid-icons
 
       - name: Expo Doctor
-        # Keep this check deterministic. Expo's remote recommended patch set can
-        # change after a commit has already passed CI; dependency versions are
-        # locked by package-lock.json and exercised by the full Android build.
-        env:
-          EXPO_DOCTOR_SKIP_DEPENDENCY_VERSION_CHECK: '1'
-        run: npx --yes expo-doctor@1.20.4
+        run: npx expo-doctor
 
       - name: Validate Android release configuration
         run: npm run validate:android-release
