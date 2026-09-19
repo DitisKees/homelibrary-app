@@ -1,6 +1,8 @@
-# First F-Droid release procedure
+# F-Droid release procedure
 
-This document describes the remaining steps for HomeLibrary's first official F-Droid submission. The prepared release candidate is Android `1.0.2` / versionCode `3`, with source tag `v1.0.2`.
+This document describes the release path for HomeLibrary's first upstream-signed reproducible F-Droid publication. The current candidate is Android `1.0.3` / versionCode `4`, with intended immutable tag `v1.0.3`.
+
+The earlier `v1.0.2` / versionCode 3 candidate must remain untouched. Reproducibility and permanent signing were completed after that source point.
 
 ## Version source of truth
 
@@ -9,9 +11,9 @@ Android release versions are defined in `app.json`:
 ```json
 {
   "expo": {
-    "version": "1.0.2",
+    "version": "1.0.3",
     "android": {
-      "versionCode": 3
+      "versionCode": 4
     }
   }
 }
@@ -19,23 +21,22 @@ Android release versions are defined in `app.json`:
 
 For every later Android release:
 
-1. increment `expo.version` according to the intended release;
-2. increment `android.versionCode` monotonically, never reusing an old value;
-3. add locale changelogs named `<versionCode>.txt` under `fastlane/metadata/android/<locale>/changelogs/`;
-4. update the corresponding `.fdroid.yml` build entry and current-version fields;
-5. run the release validations before creating the immutable source tag.
+1. increment `expo.version`;
+2. increment `android.versionCode` monotonically;
+3. add `<versionCode>.txt` changelogs under all supported Fastlane locales;
+4. update the upstream `.fdroid.yml` build/current-version fields;
+5. run the complete release validations;
+6. create the immutable source tag only from the exact green `main` commit.
 
-`package.json` is a private JavaScript package manifest and is not the Android release-version source of truth.
+`package.json` is not the Android version source of truth.
 
 ## Pre-release validation
 
-After the release-preparation changes are merged to `main`, verify the exact candidate commit rather than tagging an earlier commit.
-
-Run from a clean checkout:
+From a clean checkout of the exact release candidate:
 
 ```bash
 npm ci
-npx expo-doctor@latest
+npx expo-doctor
 npm run audit:fdroid-npm
 npm run validate:android-release
 npm run validate:fdroid-metadata
@@ -47,39 +48,27 @@ npm run build:web
 npm run build:fdroid-android
 ```
 
-The GitHub CI job runs the corresponding source-only Android path automatically. Do not create the release tag while required checks are failing.
+The pinned repository `expo-doctor` version must be used; do not use `@latest` in release validation. GitHub CI and the two-clean-checkout reproducibility workflow must be green before tagging.
 
-## Capture real release screenshots
+## Store metadata
 
-F-Droid can consume screenshots from upstream Fastlane metadata. Use the real Android release build rather than mockups so screenshots represent the application users will install.
-
-Capture screenshots on a phone or representative Android emulator after connecting to a disposable/demo HomeLibrary backend. Do not expose a private household server URL, email address, authentication token, real person's reading history, loan data, or other household data.
-
-For the first English listing, aim for four or five useful screenshots:
-
-1. library/search view with representative demo books;
-2. book detail view with cover and metadata;
-3. add-book / ISBN workflow;
-4. reading or lending view;
-5. statistics or settings/self-hosting view where useful.
-
-Store them in display order as, for example:
+The real English phone screenshots are already committed under:
 
 ```text
-fastlane/metadata/android/en-US/images/phoneScreenshots/01-library.png
-fastlane/metadata/android/en-US/images/phoneScreenshots/02-book.png
-fastlane/metadata/android/en-US/images/phoneScreenshots/03-add-book.png
-fastlane/metadata/android/en-US/images/phoneScreenshots/04-reading-lending.png
-fastlane/metadata/android/en-US/images/phoneScreenshots/05-statistics.png
+fastlane/metadata/android/en-US/images/phoneScreenshots/
 ```
 
-English screenshots are sufficient for the initial submission if localized captures are not yet available. If localized screenshots are added later, use the equivalent `images/phoneScreenshots/` directory under `nl-NL`, `de-DE`, or `fr-FR`.
+The deterministic application icon is also committed as:
 
-Review every image before committing it. The screenshots are public repository/store assets.
+```text
+fastlane/metadata/android/en-US/images/icon.png
+```
+
+Do not replace these with mock UI or screenshots containing private server URLs, household data, email addresses, tokens, or other private information.
 
 ## Create the immutable source tag
 
-Only after the release commit is merged, CI is green, and the desired screenshots are committed:
+After the release-preparation PR is merged and the exact `main` commit is green:
 
 ```bash
 git switch main
@@ -87,98 +76,115 @@ git pull --ff-only
 git status --short
 node -p "require('./app.json').expo.version"
 node -p "require('./app.json').expo.android.versionCode"
-git tag -a v1.0.2 -m "HomeLibrary 1.0.2"
-git push origin v1.0.2
+git tag -a v1.0.3 -m "HomeLibrary 1.0.3"
+git push origin v1.0.3
 ```
 
-Expected output before tagging:
+Expected version output:
 
 ```text
-1.0.2
-3
+1.0.3
+4
 ```
 
-Never move, delete and recreate, or otherwise reuse a published release tag to point at different source. If a release candidate needs correction after tagging, prepare a new version and versionCode instead.
+Never move, delete/recreate, or reuse a published tag. If correction is needed after tagging, create a new version/versionCode.
 
-The repository's Docker publication workflow also listens for `vX.Y.Z` tags and checks the tag against `app.json` before publishing versioned self-hosting images.
+The tag push triggers both the existing versioned self-hosting image flow and the Android production release workflow.
 
-## Test the upstream F-Droid recipe
+## Production APK publication
 
-The root `.fdroid.yml` is the development copy of the initial recipe. It intentionally has no `subdir` because Expo generates `android/` during the build. Because a source file cannot contain the hash of the commit that contains itself, this upstream development copy names the intended immutable `v1.0.2` tag. The official `fdroiddata` metadata must resolve that tag to its full Git commit hash before submission.
+For a `vX.Y.Z` tag, `.github/workflows/android-release.yml`:
 
-Before submitting to the official repository, test with a current checkout of `fdroidserver`. The exact installation method may vary by development environment, but the relevant validation flow is:
+1. checks that the tag exactly matches `app.json`;
+2. builds the canonical reproducible unsigned APK;
+3. signs it outside Gradle with the permanent upstream key;
+4. uses Android build-tools 34.0.0 `apksigner` for F-Droid signature-copy compatibility;
+5. verifies the signing certificate against `ANDROID_RELEASE_CERT_SHA256`;
+6. publishes `HomeLibrary-X.Y.Z.apk`, its SHA-256 file, and `apksigner.txt` to the GitHub Release for that immutable tag.
+
+Manual workflow runs remain useful for signing tests but only tag runs create permanent release assets.
+
+After `v1.0.3` finishes, independently download and verify:
 
 ```bash
-fdroid readmeta
-fdroid lint io.github.ditiskees.homelibrary
-fdroid build -v -l io.github.ditiskees.homelibrary:3
+apksigner verify --verbose --print-certs HomeLibrary-1.0.3.apk
+sha256sum HomeLibrary-1.0.3.apk
 ```
 
-For a realistic official-repository test, fork and clone `fdroiddata`, copy `.fdroid.yml` to:
+The signer certificate SHA-256 must equal the configured production certificate. Keep that fingerprint: fdroiddata needs its lower-case hex form in `AllowedAPKSigningKeys`.
+
+## Upstream F-Droid recipe
+
+The root `.fdroid.yml` is the upstream development copy. It references the intended immutable tag because a source file cannot contain the SHA of the commit containing itself.
+
+It also defines the reproducible binary location:
 
 ```text
-metadata/io.github.ditiskees.homelibrary.yml
+Binaries: https://github.com/DitisKees/homelibrary-app/releases/download/v%v/HomeLibrary-%v.apk
 ```
 
-From the HomeLibrary source checkout, resolve the immutable tag to the exact commit:
+The submitted fdroiddata metadata must replace `commit: v1.0.3` with the full 40-character SHA resolved from the immutable tag.
+
+The official metadata must additionally contain:
+
+```text
+AllowedAPKSigningKeys: <lower-case production certificate SHA-256>
+```
+
+Do not add or guess this value before independently verifying the first production APK.
+
+## Test with fdroidserver
+
+Resolve the source commit:
 
 ```bash
-git rev-list -n 1 v1.0.2
+git rev-list -n 1 v1.0.3
 ```
 
-Replace `commit: v1.0.2` in the copied `fdroiddata` metadata with that full 40-character SHA. Current F-Droid metadata style requires build entries to pin a full commit hash rather than a branch or tag name.
-
-Then run from the `fdroiddata` checkout:
+In the fdroiddata fork, update `metadata/io.github.ditiskees.homelibrary.yml` to versionName 1.0.3/versionCode 4 and the full SHA, then run:
 
 ```bash
 fdroid readmeta
 fdroid rewritemeta io.github.ditiskees.homelibrary
 fdroid checkupdates --allow-dirty io.github.ditiskees.homelibrary
 fdroid lint io.github.ditiskees.homelibrary
-fdroid build -v -l io.github.ditiskees.homelibrary:3
+fdroid build -v -l io.github.ditiskees.homelibrary:4
 ```
 
-Do not blindly commit changes made by `rewritemeta`; review them and keep the upstream `.fdroid.yml` and submitted metadata semantically aligned. In particular, the upstream tag reference and the submitted full commit SHA must continue to identify the same immutable release source.
+Review `rewritemeta` output rather than blindly committing it.
+
+The current fdroiddata MR previously failed at the HomeLibrary build command because the old recipe invoked `scripts/check-fdroid-android-dependencies.sh` from the repository root, where `./gradlew` did not exist. The current upstream recipe delegates to `scripts/build-fdroid-android.sh`; that script performs Expo prebuild and runs Gradle from `android/`, eliminating that path mismatch.
+
+The F-Droid parent build environment observed during review supplied Node 20.19.2, while the current React Native/Expo toolchain requires a newer supported Node baseline. The fdroiddata recipe should keep the reviewer-approved Debian packaging approach where possible, but the final build-tool solution must satisfy the actual React Native/Expo engine requirement and should be discussed transparently in the MR rather than hidden with disabled checks.
 
 ## What to verify in the F-Droid build
 
-A successful Gradle task alone is not enough. Confirm that:
+Confirm that:
 
-- the produced package is `io.github.ditiskees.homelibrary`;
-- versionName is `1.0.2` and versionCode is `3`;
+- package is `io.github.ditiskees.homelibrary`;
+- versionName is 1.0.3 and versionCode is 4;
 - target SDK remains 36;
-- no Google Play Services, Firebase, ML Kit, or Google Play SDK dependency appears;
-- Expo's bundled `local-maven-repo` directories were deleted before Android generation;
-- Expo native modules are compiled from source;
-- the F-Droid scanner reports no unexplained binary/proprietary artifacts;
-- the APK installs and can connect to a self-hosted HomeLibrary backend;
-- ISBN barcode scanning, manual ISBN entry, cover handling, authentication, reading status, and lending basics work in the built APK.
+- no Google Play Services, Firebase, ML Kit, or Play SDK dependency appears;
+- bundled Expo `local-maven-repo` directories are absent before Android generation;
+- Expo native modules compile from source;
+- the F-Droid scanner has no unexplained proprietary/binary finding;
+- F-Droid's rebuilt unsigned APK reproduces the upstream-signed APK sufficiently for signature copying/verification;
+- installation, authentication, library loading, ISBN scanning/manual entry, cover handling, reading status, and lending basics work.
 
-If the official buildserver exposes an additional dependency or scanner finding, fix or document that finding in the upstream source/recipe rather than weakening the scanner globally.
+## Update existing fdroiddata MR !48673
 
-## Prepare the fdroiddata merge request
+Do not open a second app-submission MR. Update the existing `fdroid/fdroiddata!48673` branch after `v1.0.3` and its GitHub Release APK exist:
 
-Once `v1.0.2` exists and the build succeeds with current `fdroidserver`:
-
-1. create a branch in your `fdroiddata` fork;
-2. add `metadata/io.github.ditiskees.homelibrary.yml` based on the tested `.fdroid.yml`;
-3. replace the development-copy tag reference with the full SHA resolved from `v1.0.2`;
-4. make sure the upstream Fastlane metadata and screenshots are present in the tagged source;
-5. run `fdroid readmeta`, `checkupdates`, `lint`, and the local build again;
-6. open the merge request against `F-Droid/Data`;
-7. reference the HomeLibrary source repository and issue tracker;
-8. explain the Expo SDK 57 source-build choices from `MaintainerNotes`;
-9. address reviewer and automated scanner feedback with upstream fixes where appropriate.
-
-Do not create the official submission merge request until the recipe has actually built versionCode `3` from the exact commit referenced by immutable tag `v1.0.2`.
+1. set `CurrentVersion: 1.0.3` and `CurrentVersionCode: 4`;
+2. add/update the build entry for versionCode 4 with the full `v1.0.3` commit SHA;
+3. use the shared canonical build path;
+4. add `Binaries: https://github.com/DitisKees/homelibrary-app/releases/download/v%v/HomeLibrary-%v.apk`;
+5. add the independently verified lower-case certificate fingerprint as `AllowedAPKSigningKeys`;
+6. retain `AuthorName`;
+7. run `rewritemeta`, `lint`, `checkupdates`, and the versionCode 4 build;
+8. update the MR description to state that upstream reproducible signing is complete;
+9. ask for the parent pipeline/buildserver to be rerun.
 
 ## After acceptance
 
-Keep the release process predictable:
-
-- bump `app.json` version/versionCode;
-- add versionCode-named Fastlane changelogs;
-- keep `.fdroid.yml`/fdroiddata metadata current until auto-update is proven reliable;
-- run the source-only F-Droid build path before tagging;
-- tag every release as immutable `v<versionName>`;
-- monitor the first F-Droid build after each dependency/Expo SDK change, because native source-build requirements can change.
+For each later release, repeat the version bump/changelog/green-CI/tag/signed-GitHub-Release sequence and monitor the first F-Droid build after native dependency or Expo SDK changes.

@@ -1,0 +1,1 @@
+Reproduceerbare upstream Android-releases toegevoegd: onafhankelijke schone bronbuilds moeten byte-voor-byte gelijk zijn, productieondertekening staat los van de bronbuild en onveranderlijke tags publiceren een stabiele ondertekende APK voor F-Droid-verificatie. Ook Expo-afhankelijkheidscontroles en handtekeningvalidatie gestabiliseerd.

@@ -2,17 +2,19 @@ Categories:
   - Reading
   - Inventory
 License: GPL-3.0-or-later
+AuthorName: Kees van 't Slot
 SourceCode: https://github.com/DitisKees/homelibrary-app
 IssueTracker: https://github.com/DitisKees/homelibrary-app/issues
 Changelog: https://github.com/DitisKees/homelibrary-app/tags
 
 RepoType: git
 Repo: https://github.com/DitisKees/homelibrary-app.git
+Binaries: https://github.com/DitisKees/homelibrary-app/releases/download/v%v/HomeLibrary-%v.apk
 
 Builds:
-  - versionName: 1.0.2
-    versionCode: 3
-    commit: v1.0.2
+  - versionName: 1.0.3
+    versionCode: 4
+    commit: v1.0.3
     ndk: r27b
     sudo:
       - apt-get update
@@ -64,12 +66,12 @@ MaintainerNotes: |-
   React Native 0.86 is built with the Expo SDK 57 NDK baseline, pinned here as
   Android NDK r27b instead of relying on the buildserver's ambient NDK.
 
-  This upstream development copy refers to the intended immutable v1.0.2 tag.
+  This upstream development copy refers to the intended immutable v1.0.3 tag.
   Before submission to fdroiddata, resolve that tag and use its full Git commit
   hash in the submitted metadata, as required by current fdroiddata style.
 
 AutoUpdateMode: Version
 UpdateCheckMode: Tags ^v[0-9]+\.[0-9]+\.[0-9]+$
 UpdateCheckData: 'app.json|"versionCode":\s*(\d+)|app.json|"version":\s*"([\d.]+)"'
-CurrentVersion: 1.0.2
-CurrentVersionCode: 3
+CurrentVersion: 1.0.3
+CurrentVersionCode: 4
