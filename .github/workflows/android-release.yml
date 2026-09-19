@@ -1,0 +1,108 @@
+name: Android release
+
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  build-and-sign:
+    runs-on: ubuntu-latest
+    timeout-minutes: 60
+    env:
+      HOMELIBRARY_RELEASE_KEY_ALIAS: ${{ secrets.ANDROID_RELEASE_KEY_ALIAS }}
+      HOMELIBRARY_RELEASE_KEYSTORE_PASSWORD: ${{ secrets.ANDROID_RELEASE_KEYSTORE_PASSWORD }}
+      HOMELIBRARY_RELEASE_KEY_PASSWORD: ${{ secrets.ANDROID_RELEASE_KEY_PASSWORD }}
+      HOMELIBRARY_RELEASE_CERT_SHA256: ${{ vars.ANDROID_RELEASE_CERT_SHA256 }}
+
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '22.13.1'
+          cache: npm
+
+      - name: Set up Java
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '17'
+
+      - name: Validate release signing configuration
+        env:
+          ANDROID_RELEASE_KEYSTORE_BASE64: ${{ secrets.ANDROID_RELEASE_KEYSTORE_BASE64 }}
+        run: |
+          set -euo pipefail
+          for name in ANDROID_RELEASE_KEYSTORE_BASE64 HOMELIBRARY_RELEASE_KEYSTORE_PASSWORD HOMELIBRARY_RELEASE_KEY_ALIAS HOMELIBRARY_RELEASE_KEY_PASSWORD HOMELIBRARY_RELEASE_CERT_SHA256; do
+            if [ -z "${!name:-}" ]; then
+              echo "Missing required production release signing secret/variable: ${name}" >&2
+              exit 1
+            fi
+          done
+
+      - name: Restore production signing keystore
+        env:
+          ANDROID_RELEASE_KEYSTORE_BASE64: ${{ secrets.ANDROID_RELEASE_KEYSTORE_BASE64 }}
+        run: |
+          set -euo pipefail
+          install -d -m 700 "${RUNNER_TEMP}/homelibrary-release-signing"
+          KEYSTORE="${RUNNER_TEMP}/homelibrary-release-signing/homelibrary-release.jks"
+          printf '%s' "${ANDROID_RELEASE_KEYSTORE_BASE64}" | base64 --decode > "${KEYSTORE}"
+          chmod 600 "${KEYSTORE}"
+          echo "HOMELIBRARY_RELEASE_KEYSTORE_PATH=${KEYSTORE}" >> "${GITHUB_ENV}"
+
+          ACTUAL="$(keytool -list -v -keystore "${KEYSTORE}" -storepass "${HOMELIBRARY_RELEASE_KEYSTORE_PASSWORD}" -alias "${HOMELIBRARY_RELEASE_KEY_ALIAS}" | sed -n 's/.*SHA256: //p' | head -n 1 | tr -d ':[:space:]' | tr '[:lower:]' '[:upper:]')"
+          EXPECTED="$(printf '%s' "${HOMELIBRARY_RELEASE_CERT_SHA256}" | tr -d ':[:space:]' | tr '[:lower:]' '[:upper:]')"
+          test -n "${ACTUAL}"
+          if [ "${ACTUAL}" != "${EXPECTED}" ]; then
+            echo "Production keystore certificate fingerprint does not match ANDROID_RELEASE_CERT_SHA256." >&2
+            exit 1
+          fi
+
+      - name: Build canonical unsigned F-Droid APK
+        run: bash scripts/build-fdroid-android.sh
+
+      - name: Sign reproducible APK
+        run: |
+          set -euo pipefail
+          UNSIGNED="${GITHUB_WORKSPACE}/android/app/build/outputs/apk/release/app-release-unsigned.apk"
+          OUT_DIR="${GITHUB_WORKSPACE}/release"
+          SIGNED="${OUT_DIR}/HomeLibrary-release.apk"
+          mkdir -p "${OUT_DIR}"
+          test -f "${UNSIGNED}"
+
+          SDK_ROOT="${ANDROID_HOME:-${ANDROID_SDK_ROOT:-}}"
+          APKSIGNER="$(find "${SDK_ROOT}/build-tools" -maxdepth 2 -type f -name apksigner | sort -V | tail -n 1)"
+          test -n "${APKSIGNER}"
+
+          "${APKSIGNER}" sign \
+            --ks "${HOMELIBRARY_RELEASE_KEYSTORE_PATH}" \
+            --ks-key-alias "${HOMELIBRARY_RELEASE_KEY_ALIAS}" \
+            --ks-pass env:HOMELIBRARY_RELEASE_KEYSTORE_PASSWORD \
+            --key-pass env:HOMELIBRARY_RELEASE_KEY_PASSWORD \
+            --out "${SIGNED}" \
+            "${UNSIGNED}"
+
+          "${APKSIGNER}" verify --verbose --print-certs "${SIGNED}" | tee "${OUT_DIR}/apksigner.txt"
+          ACTUAL="$("${APKSIGNER}" verify --print-certs "${SIGNED}" | sed -n 's/^Signer #1 certificate SHA-256 digest: //p' | head -n 1 | tr -d ':[:space:]' | tr '[:lower:]' '[:upper:]')"
+          EXPECTED="$(printf '%s' "${HOMELIBRARY_RELEASE_CERT_SHA256}" | tr -d ':[:space:]' | tr '[:lower:]' '[:upper:]')"
+          if [ "${ACTUAL}" != "${EXPECTED}" ]; then
+            echo "Signed APK certificate fingerprint does not match the pinned production certificate." >&2
+            exit 1
+          fi
+          sha256sum "${SIGNED}" | tee "${SIGNED}.sha256"
+
+      - name: Upload signed release APK
+        uses: actions/upload-artifact@v4
+        with:
+          name: homelibrary-production-release-${{ github.sha }}
+          path: |
+            release/HomeLibrary-release.apk
+            release/HomeLibrary-release.apk.sha256
+            release/apksigner.txt
+          if-no-files-found: error
+          retention-days: 30
