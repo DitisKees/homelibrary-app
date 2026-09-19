@@ -33,7 +33,7 @@ jobs:
         run: npm run check:fdroid-icons
 
       - name: Expo Doctor
-        run: npx expo-doctor@latest
+        run: npx expo-doctor
 
       - name: Validate Android release configuration
         run: npm run validate:android-release
