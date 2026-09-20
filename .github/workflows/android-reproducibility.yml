@@ -35,7 +35,7 @@ jobs:
         run: |
           set -euo pipefail
           apt-get update
-          apt-get install -y --no-install-recommends ca-certificates git openjdk-17-jdk-headless nodejs npm unzip binutils
+          apt-get install -y --no-install-recommends ca-certificates git default-jdk-headless nodejs npm unzip binutils
           java -version
           node --version
           npm --version
