@@ -2,6 +2,11 @@ name: Android release
 
 on:
   workflow_dispatch:
+    inputs:
+      release_tag:
+        description: 'Existing immutable vX.Y.Z tag to build and publish; leave blank for a verification-only manual build'
+        required: false
+        type: string
   push:
     tags:
       - 'v*.*.*'
@@ -22,6 +27,8 @@ jobs:
     steps:
       - name: Check out repository
         uses: actions/checkout@v4
+        with:
+          ref: ${{ inputs.release_tag || github.ref }}
 
       - name: Set up Node.js
         uses: actions/setup-node@v4
@@ -30,21 +37,40 @@ jobs:
           cache: npm
 
       - name: Resolve release metadata
+        env:
+          REQUESTED_RELEASE_TAG: ${{ inputs.release_tag }}
         run: |
           set -euo pipefail
           VERSION="$(node -p "require('./app.json').expo.version")"
           VERSION_CODE="$(node -p "require('./app.json').expo.android.versionCode")"
           test -n "${VERSION}"
           test -n "${VERSION_CODE}"
+
+          RELEASE_TAG=""
           if [ "${GITHUB_REF_TYPE}" = "tag" ]; then
+            RELEASE_TAG="${GITHUB_REF_NAME}"
+          elif [ -n "${REQUESTED_RELEASE_TAG:-}" ]; then
+            RELEASE_TAG="${REQUESTED_RELEASE_TAG}"
+          fi
+
+          if [ -n "${RELEASE_TAG}" ]; then
             EXPECTED_TAG="v${VERSION}"
-            if [ "${GITHUB_REF_NAME}" != "${EXPECTED_TAG}" ]; then
-              echo "Release tag ${GITHUB_REF_NAME} does not match app.json version ${EXPECTED_TAG}." >&2
+            if [ "${RELEASE_TAG}" != "${EXPECTED_TAG}" ]; then
+              echo "Release tag ${RELEASE_TAG} does not match app.json version ${EXPECTED_TAG}." >&2
+              exit 1
+            fi
+
+            TAG_SHA="$(git rev-list -n 1 "${RELEASE_TAG}")"
+            HEAD_SHA="$(git rev-parse HEAD)"
+            if [ "${TAG_SHA}" != "${HEAD_SHA}" ]; then
+              echo "Checked-out source ${HEAD_SHA} does not match immutable tag ${RELEASE_TAG} (${TAG_SHA})." >&2
               exit 1
             fi
           fi
+
           echo "HOMELIBRARY_RELEASE_VERSION=${VERSION}" >> "${GITHUB_ENV}"
           echo "HOMELIBRARY_RELEASE_VERSION_CODE=${VERSION_CODE}" >> "${GITHUB_ENV}"
+          echo "HOMELIBRARY_RELEASE_TAG=${RELEASE_TAG}" >> "${GITHUB_ENV}"
 
       - name: Set up Java
         uses: actions/setup-java@v4
@@ -55,8 +81,19 @@ jobs:
       - name: Install F-Droid-compatible APK signing tools
         run: |
           set -euo pipefail
-          sdkmanager "build-tools;34.0.0" >/dev/null
           SDK_ROOT="${ANDROID_SDK_ROOT:-${ANDROID_HOME:-}}"
+          test -n "${SDK_ROOT}"
+
+          SDKMANAGER="${SDK_ROOT}/cmdline-tools/latest/bin/sdkmanager"
+          if [ ! -x "${SDKMANAGER}" ]; then
+            SDKMANAGER="$(find "${SDK_ROOT}/cmdline-tools" -type f -path '*/bin/sdkmanager' -perm -111 2>/dev/null | sort -V | tail -n 1)"
+          fi
+          if [ -z "${SDKMANAGER}" ] || [ ! -x "${SDKMANAGER}" ]; then
+            echo "Could not locate sdkmanager under ${SDK_ROOT}/cmdline-tools." >&2
+            exit 1
+          fi
+
+          "${SDKMANAGER}" "build-tools;34.0.0" >/dev/null
           APKSIGNER="${SDK_ROOT}/build-tools/34.0.0/apksigner"
           test -x "${APKSIGNER}"
           echo "HOMELIBRARY_APKSIGNER=${APKSIGNER}" >> "${GITHUB_ENV}"
@@ -134,12 +171,12 @@ jobs:
           retention-days: 30
 
       - name: Publish immutable GitHub Release APK
-        if: github.ref_type == 'tag'
+        if: env.HOMELIBRARY_RELEASE_TAG != ''
         env:
           GH_TOKEN: ${{ github.token }}
         run: |
           set -euo pipefail
-          TAG="${GITHUB_REF_NAME}"
+          TAG="${HOMELIBRARY_RELEASE_TAG}"
           APK="release/HomeLibrary-${HOMELIBRARY_RELEASE_VERSION}.apk"
           CHECKSUM="${APK}.sha256"
 

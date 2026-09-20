@@ -102,7 +102,7 @@ For a `vX.Y.Z` tag, `.github/workflows/android-release.yml`:
 5. verifies the signing certificate against `ANDROID_RELEASE_CERT_SHA256`;
 6. publishes `HomeLibrary-X.Y.Z.apk`, its SHA-256 file, and `apksigner.txt` to the GitHub Release for that immutable tag.
 
-Manual workflow runs remain useful for signing tests but only tag runs create permanent release assets.
+Manual workflow runs remain useful for signing tests. If an immutable tag-triggered release fails because of release infrastructure, the corrected workflow may be run manually with `release_tag` set to that existing tag; it checks out and verifies the exact immutable tag source and may publish the permanent assets without moving the tag.
 
 After `v1.0.3` finishes, independently download and verify:
 

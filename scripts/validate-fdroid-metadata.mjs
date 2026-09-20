@@ -88,6 +88,9 @@ if (fs.existsSync(fdroidPath)) {
 if (fs.existsSync(releaseWorkflowPath)) {
   const releaseWorkflow = fs.readFileSync(releaseWorkflowPath, 'utf8');
   expect(releaseWorkflow.includes("tags:\n      - 'v*.*.*'"), 'Android release workflow must run for immutable semantic-version tags');
+  expect(releaseWorkflow.includes('release_tag:'), 'Android release workflow must support recovery from an existing immutable release tag');
+  expect(releaseWorkflow.includes("ref: ${{ inputs.release_tag || github.ref }}"), 'Android release workflow must check out the explicitly requested immutable tag during recovery');
+  expect(releaseWorkflow.includes("SDKMANAGER=\"${SDK_ROOT}/cmdline-tools/latest/bin/sdkmanager\""), 'Android release workflow must resolve sdkmanager from the Android SDK instead of assuming it is on PATH');
   expect(releaseWorkflow.includes('build-tools;34.0.0'), 'Android release workflow must use apksigner from Android build-tools 34.0.0 for F-Droid signature-copy compatibility');
   expect(releaseWorkflow.includes('HomeLibrary-${HOMELIBRARY_RELEASE_VERSION}.apk'), 'Android release workflow must produce a versioned stable APK filename');
   expect(releaseWorkflow.includes('gh release upload'), 'Android release workflow must publish the signed APK to the GitHub Release for the immutable tag');
