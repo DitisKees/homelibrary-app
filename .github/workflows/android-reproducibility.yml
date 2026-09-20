@@ -35,20 +35,22 @@ jobs:
           distribution: temurin
           java-version: '17'
 
-      - name: Install Debian Node.js and npm
+      - name: Install Node.js and npm from Debian forky
         run: |
+          set -euo pipefail
+          echo "deb https://deb.debian.org/debian forky main" | sudo tee /etc/apt/sources.list.d/forky.list
           sudo apt-get update
-          sudo apt-get install -y nodejs npm
+          sudo apt-get install -y -t forky nodejs npm
           node --version
           npm --version
 
-      - name: Build first unsigned APK
+      - name: Build first unsigned APK with F-Droid recipe
         working-directory: source-a
-        run: bash scripts/build-fdroid-android.sh
+        run: bash scripts/build-fdroid-recipe-android.sh
 
-      - name: Build second unsigned APK
+      - name: Build second unsigned APK with F-Droid recipe
         working-directory: source-b
-        run: bash scripts/build-fdroid-android.sh
+        run: bash scripts/build-fdroid-recipe-android.sh
 
       - name: Compare unsigned APKs
         run: |
