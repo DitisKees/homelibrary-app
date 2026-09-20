@@ -20,6 +20,9 @@ jobs:
     container:
       image: debian:forky
     timeout-minutes: 60
+    env:
+      ANDROID_HOME: /opt/android-sdk
+      ANDROID_SDK_ROOT: /opt/android-sdk
     steps:
       - name: Check out repository twice
         uses: actions/checkout@v4
@@ -35,7 +38,13 @@ jobs:
         run: |
           set -euo pipefail
           apt-get update
-          apt-get install -y --no-install-recommends ca-certificates git default-jdk-headless nodejs npm unzip binutils
+          apt-get install -y --no-install-recommends ca-certificates curl git default-jdk-headless nodejs npm unzip binutils
+          mkdir -p "$ANDROID_HOME/cmdline-tools"
+          curl -fsSL https://dl.google.com/android/repository/commandlinetools-linux-13114758_latest.zip -o /tmp/cmdline-tools.zip
+          unzip -q /tmp/cmdline-tools.zip -d /tmp/android-cli
+          mv /tmp/android-cli/cmdline-tools "$ANDROID_HOME/cmdline-tools/latest"
+          yes | "$ANDROID_HOME/cmdline-tools/latest/bin/sdkmanager" --licenses >/dev/null || true
+          "$ANDROID_HOME/cmdline-tools/latest/bin/sdkmanager" "platform-tools" "platforms;android-36" "build-tools;36.0.0" "ndk;27.1.12297006"
           java -version
           node --version
           npm --version
