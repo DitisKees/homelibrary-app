@@ -1,0 +1,42 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
+cd "$ROOT"
+
+# Mirror the fdroiddata React Native recipe. Keep this deliberately simple:
+# dependency install, Expo source build/prebuild, signing cleanup, then Gradle.
+# Debian forky supplies Node.js/npm in CI and on the F-Droid builder.
+
+# Forky's Node may be newer than the conservative upper bound on the release tag.
+# Match the fdroiddata recipe by removing only that upper bound.
+sed -i -e 's/"node": ">=22.13.0 <23"/"node": ">=22.13.0"/' package.json
+
+npm ci
+
+# F-Droid's React Native template builds Expo native modules from source.
+# package.json already contains this setting, but enforce it for parity.
+node - <<'NODE'
+const fs = require('fs');
+const p = JSON.parse(fs.readFileSync('package.json', 'utf8'));
+p.expo ??= {};
+p.expo.autolinking ??= {};
+p.expo.autolinking.android ??= {};
+p.expo.autolinking.android.buildFromSource = ['.*'];
+fs.writeFileSync('package.json', JSON.stringify(p, null, 2) + '\n');
+NODE
+
+# Do not use bundled Expo Maven AARs.
+find node_modules -type d -name local-maven-repo -prune -exec rm -rf {} +
+
+npx expo prebuild -p android --clean
+sed -i -e '/signingConfig /d' android/app/build.gradle
+
+(
+  cd android
+  ./gradlew :app:assembleRelease --no-daemon
+)
+
+APK="$ROOT/android/app/build/outputs/apk/release/app-release-unsigned.apk"
+test -f "$APK"
+echo "[PASS] F-Droid recipe-compatible unsigned Android build completed."
