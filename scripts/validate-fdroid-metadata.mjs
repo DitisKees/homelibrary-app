@@ -7,6 +7,7 @@ const app = JSON.parse(fs.readFileSync(path.join(root, 'app.json'), 'utf8'));
 const pkg = JSON.parse(fs.readFileSync(path.join(root, 'package.json'), 'utf8'));
 const fdroidPath = path.join(root, '.fdroid.yml');
 const buildScriptPath = path.join(root, 'scripts', 'build-fdroid-android.sh');
+const releaseWorkflowPath = path.join(root, '.github', 'workflows', 'android-release.yml');
 const errors = [];
 const expect = (condition, message) => {
   if (!condition) errors.push(message);
@@ -62,6 +63,7 @@ for (const [locale, label] of localeSpecs) {
 
 expect(fs.existsSync(fdroidPath), '.fdroid.yml is missing');
 expect(fs.existsSync(buildScriptPath), 'scripts/build-fdroid-android.sh is missing');
+expect(fs.existsSync(releaseWorkflowPath), '.github/workflows/android-release.yml is missing');
 
 if (fs.existsSync(fdroidPath)) {
   const fdroid = fs.readFileSync(fdroidPath, 'utf8');
@@ -69,8 +71,10 @@ if (fs.existsSync(fdroidPath)) {
   expect(fdroid.includes(`versionCode: ${versionCode}`), `.fdroid.yml must use versionCode ${versionCode}`);
   expect(fdroid.includes(`commit: v${versionName}`), `.fdroid.yml must build tag v${versionName}`);
   expect(fdroid.includes('ndk: r27b'), '.fdroid.yml must pin Android NDK r27b for Expo SDK 57 / React Native 0.86');
+  expect(fdroid.includes('AuthorName: Kees van \'t Slot'), '.fdroid.yml must declare the upstream author');
   expect(fdroid.includes('RepoType: git'), '.fdroid.yml must declare RepoType: git');
   expect(fdroid.includes('https://github.com/DitisKees/homelibrary-app'), '.fdroid.yml must reference the public upstream repository');
+  expect(fdroid.includes('Binaries: https://github.com/DitisKees/homelibrary-app/releases/download/v%v/HomeLibrary-%v.apk'), '.fdroid.yml must point reproducible verification at the immutable versioned GitHub Release APK');
   expect(!/^\s*subdir:/m.test(fdroid), '.fdroid.yml must not use subdir because android/ is generated during the build');
   expect(fdroid.includes('scanignore:\n      - node_modules'), '.fdroid.yml must explicitly document the node_modules scanner exception');
   expect(fdroid.includes('build:\n      - bash scripts/build-fdroid-android.sh'), '.fdroid.yml must delegate the build to scripts/build-fdroid-android.sh');
@@ -79,6 +83,14 @@ if (fs.existsSync(fdroidPath)) {
   expect(fdroid.includes('AutoUpdateMode: Version'), '.fdroid.yml must enable version autoupdates');
   expect(fdroid.includes(`CurrentVersion: ${versionName}`), `.fdroid.yml CurrentVersion must be ${versionName}`);
   expect(fdroid.includes(`CurrentVersionCode: ${versionCode}`), `.fdroid.yml CurrentVersionCode must be ${versionCode}`);
+}
+
+if (fs.existsSync(releaseWorkflowPath)) {
+  const releaseWorkflow = fs.readFileSync(releaseWorkflowPath, 'utf8');
+  expect(releaseWorkflow.includes("tags:\n      - 'v*.*.*'"), 'Android release workflow must run for immutable semantic-version tags');
+  expect(releaseWorkflow.includes('build-tools;34.0.0'), 'Android release workflow must use apksigner from Android build-tools 34.0.0 for F-Droid signature-copy compatibility');
+  expect(releaseWorkflow.includes('HomeLibrary-${HOMELIBRARY_RELEASE_VERSION}.apk'), 'Android release workflow must produce a versioned stable APK filename');
+  expect(releaseWorkflow.includes('gh release upload'), 'Android release workflow must publish the signed APK to the GitHub Release for the immutable tag');
 }
 
 if (fs.existsSync(buildScriptPath)) {

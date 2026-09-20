@@ -1,0 +1,1 @@
+Reproduzierbare Upstream-Android-Releases hinzugefügt: unabhängige saubere Quell-Builds müssen bytegenau übereinstimmen, die Produktionssignierung ist vom Quell-Build getrennt und unveränderliche Tags veröffentlichen eine stabile signierte APK für die F-Droid-Prüfung. Außerdem wurden Expo-Abhängigkeitsprüfungen und Signaturvalidierung stabilisiert.

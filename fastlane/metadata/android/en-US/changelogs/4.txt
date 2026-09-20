@@ -1,0 +1,1 @@
+Added reproducible upstream Android releases: independent clean source builds must match byte-for-byte, production signing is separated from the source build, and immutable tagged releases publish a stable signed APK for F-Droid verification. Also stabilized Expo dependency checks and release-signature validation.

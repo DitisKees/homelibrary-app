@@ -1,0 +1,1 @@
+Ajout de versions Android amont reproductibles : deux builds propres et indépendants doivent être identiques octet par octet, la signature de production est séparée du build source et les tags immuables publient un APK signé stable pour la vérification F-Droid. Les contrôles Expo et la validation de signature ont aussi été stabilisés.
