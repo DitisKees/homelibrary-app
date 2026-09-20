@@ -63,7 +63,7 @@ The certificate fingerprint is public information and is intentionally a variabl
 
 `.github/workflows/android-release.yml` supports two modes:
 
-- **manual workflow_dispatch**: build/sign/verify and retain a 30-day Actions artifact for testing;
+- **manual workflow_dispatch**: build/sign/verify and retain a 30-day Actions artifact for testing; optionally provide an existing immutable `release_tag` to recover a failed release publication while checking out that exact tag;
 - **immutable semantic-version tag**: perform the same build/sign/verify path and additionally attach permanent assets to that tag's GitHub Release.
 
 The workflow:
@@ -72,7 +72,7 @@ The workflow:
 2. restores the production keystore only in the runner temporary directory;
 3. verifies its certificate against `ANDROID_RELEASE_CERT_SHA256`;
 4. runs the canonical reproducible unsigned build;
-5. installs and uses Android build-tools 34.0.0 `apksigner`;
+5. locates `sdkmanager` under the configured Android SDK (rather than assuming it is on `PATH`), installs build-tools 34.0.0, and uses that `apksigner`;
 6. signs outside Gradle;
 7. verifies the signed APK and certificate again;
 8. produces `HomeLibrary-<version>.apk`, its SHA-256 file, and `apksigner.txt`;
@@ -108,3 +108,7 @@ Only after independently verifying the first permanent production APK should the
 Never use the release-smoke/test certificate; it is intentionally a different disposable CI identity.
 
 The production keystore must never be committed, attached to an issue/PR, uploaded as a release asset, or otherwise leave secret storage.
+
+## Recovering a failed tag-triggered release
+
+If release automation fails after an immutable tag has already been pushed, never move or recreate the tag. Fix the workflow on `main`, then manually run **Android release** from the corrected `main` workflow and set `release_tag` to the existing tag (for example `v1.0.3`). The workflow checks out that exact tag, verifies that its version matches `app.json`, confirms the checked-out commit equals the tag target, and publishes assets to that tag's GitHub Release.
