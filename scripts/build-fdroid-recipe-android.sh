@@ -12,7 +12,7 @@ PREFIX_MAP_FLAGS="-ffile-prefix-map=$ROOT=$MAP_ROOT -fdebug-prefix-map=$ROOT=$MA
 export CFLAGS="${CFLAGS:-} $PREFIX_MAP_FLAGS"
 export CXXFLAGS="${CXXFLAGS:-} $PREFIX_MAP_FLAGS"
 export CPPFLAGS="${CPPFLAGS:-} $PREFIX_MAP_FLAGS"
-
+# LLD build IDs incorporate non-semantic input metadata such as checkout paths even\n# after the linked ELF payload is identical. Disable them for reproducible native libs.\nexport LDFLAGS="${LDFLAGS:-} -Wl,--build-id=none"\n
 # Mirror the fdroiddata React Native recipe. Keep this deliberately simple:
 # dependency install, Expo source build/prebuild, signing cleanup, then Gradle.
 # Debian forky supplies Node.js/npm in CI and on the F-Droid builder.
