@@ -38,7 +38,7 @@ jobs:
         run: |
           set -euo pipefail
           apt-get update
-          apt-get install -y --no-install-recommends ca-certificates curl git default-jdk-headless nodejs npm unzip binutils
+          apt-get install -y --no-install-recommends ca-certificates curl git openjdk-21-jdk-headless nodejs npm unzip binutils
           mkdir -p "$ANDROID_HOME/cmdline-tools"
           curl -fsSL https://dl.google.com/android/repository/commandlinetools-linux-13114758_latest.zip -o /tmp/cmdline-tools.zip
           unzip -q /tmp/cmdline-tools.zip -d /tmp/android-cli
