@@ -4,6 +4,14 @@ set -euo pipefail
 ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 cd "$ROOT"
 
+# Normalize absolute checkout paths embedded by native C/C++ compilation. CMake
+# reads these flags when each Android native project is configured, so builds
+# from different checkout directories produce the same object code/build IDs.
+MAP_ROOT="/homelibrary-src"
+PREFIX_MAP_FLAGS="-ffile-prefix-map=$ROOT=$MAP_ROOT -fdebug-prefix-map=$ROOT=$MAP_ROOT -fmacro-prefix-map=$ROOT=$MAP_ROOT"
+export CFLAGS="${CFLAGS:-} $PREFIX_MAP_FLAGS"
+export CXXFLAGS="${CXXFLAGS:-} $PREFIX_MAP_FLAGS"
+
 # Mirror the fdroiddata React Native recipe. Keep this deliberately simple:
 # dependency install, Expo source build/prebuild, signing cleanup, then Gradle.
 # Debian forky supplies Node.js/npm in CI and on the F-Droid builder.
