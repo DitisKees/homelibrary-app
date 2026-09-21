@@ -12,7 +12,7 @@ PREFIX_MAP_FLAGS="-ffile-prefix-map=$ROOT=$MAP_ROOT -fdebug-prefix-map=$ROOT=$MA
 export CFLAGS="${CFLAGS:-} $PREFIX_MAP_FLAGS"
 export CXXFLAGS="${CXXFLAGS:-} $PREFIX_MAP_FLAGS"
 export CPPFLAGS="${CPPFLAGS:-} $PREFIX_MAP_FLAGS"
-# LLD build IDs incorporate non-semantic input metadata such as checkout paths even\n# after the linked ELF payload is identical. Disable them for reproducible native libs.\n
+
 # Mirror the fdroiddata React Native recipe. Keep this deliberately simple:
 # dependency install, Expo source build/prebuild, signing cleanup, then Gradle.
 # Debian forky supplies Node.js/npm in CI and on the F-Droid builder.
@@ -39,6 +39,19 @@ NODE
 find node_modules -type d -name local-maven-repo -prune -exec rm -rf {} +
 
 npx expo prebuild -p android --clean
+
+# NDK r27b's CMake toolchain requests SHA-1 ELF build IDs. Those IDs are the
+# only bytes that still differ between otherwise identical native libraries.
+# Pin the note payload at the common NDK toolchain so it applies to every
+# independently configured React Native and Expo CMake project.
+NDK_TOOLCHAIN="$ANDROID_HOME/ndk/27.1.12297006/build/cmake/android.toolchain.cmake"
+test -f "$NDK_TOOLCHAIN"
+if ! grep -q -- '--build-id=sha1' "$NDK_TOOLCHAIN"; then
+  echo "Expected NDK --build-id=sha1 linker flag not found" >&2
+  exit 1
+fi
+sed -i 's/--build-id=sha1/--build-id=0x0000000000000000000000000000000000000000/g' "$NDK_TOOLCHAIN"
+grep -q -- '--build-id=0x0000000000000000000000000000000000000000' "$NDK_TOOLCHAIN"
 
 # Android/React Native CMake projects do not consistently inherit environment
 # compiler flags. Inject prefix maps through Gradle's externalNativeBuild too.
