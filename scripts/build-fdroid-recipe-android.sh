@@ -42,17 +42,19 @@ npx expo prebuild -p android --clean
 
 # Android/React Native CMake projects do not consistently inherit environment
 # compiler flags. Inject prefix maps through Gradle's externalNativeBuild too.
-python3 - <<'PY'
+python3 - "$ROOT" <<'PY'
 from pathlib import Path
+import sys
+root = sys.argv[1]
 p = Path("android/app/build.gradle")
 s = p.read_text()
 needle = "defaultConfig {"
-flags = """        externalNativeBuild {
-            cmake {
-                cppFlags "-ffile-prefix-map=$ROOT=/homelibrary-src", "-fdebug-prefix-map=$ROOT=/homelibrary-src", "-fmacro-prefix-map=$ROOT=/homelibrary-src"
-                cFlags "-ffile-prefix-map=$ROOT=/homelibrary-src", "-fdebug-prefix-map=$ROOT=/homelibrary-src", "-fmacro-prefix-map=$ROOT=/homelibrary-src"
-            }
-        }
+flags = f"""        externalNativeBuild {{
+            cmake {{
+                cppFlags "-ffile-prefix-map={root}=/homelibrary-src", "-fdebug-prefix-map={root}=/homelibrary-src", "-fmacro-prefix-map={root}=/homelibrary-src"
+                cFlags "-ffile-prefix-map={root}=/homelibrary-src", "-fdebug-prefix-map={root}=/homelibrary-src", "-fmacro-prefix-map={root}=/homelibrary-src"
+            }}
+        }}
 """
 if needle not in s:
     raise SystemExit("defaultConfig not found")
