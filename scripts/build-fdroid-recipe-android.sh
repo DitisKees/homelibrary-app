@@ -8,7 +8,7 @@ cd "$ROOT"
 # reads these flags when each Android native project is configured, so builds
 # from different checkout directories produce the same object code/build IDs.
 MAP_ROOT="/homelibrary-src"
-PREFIX_MAP_FLAGS="-ffile-prefix-map=$ROOT=$MAP_ROOT -fdebug-prefix-map=$ROOT=$MAP_ROOT -fmacro-prefix-map=$ROOT=$MAP_ROOT"
+PREFIX_MAP_FLAGS="-ffile-prefix-map=$ROOT=$MAP_ROOT -fdebug-prefix-map=$ROOT=$MAP_ROOT"
 export CFLAGS="${CFLAGS:-} $PREFIX_MAP_FLAGS"
 export CXXFLAGS="${CXXFLAGS:-} $PREFIX_MAP_FLAGS"
 export CPPFLAGS="${CPPFLAGS:-} $PREFIX_MAP_FLAGS"
@@ -51,8 +51,8 @@ s = p.read_text()
 needle = "defaultConfig {"
 flags = f"""        externalNativeBuild {{
             cmake {{
-                cppFlags "-ffile-prefix-map={root}=/homelibrary-src", "-fdebug-prefix-map={root}=/homelibrary-src", "-fmacro-prefix-map={root}=/homelibrary-src"
-                cFlags "-ffile-prefix-map={root}=/homelibrary-src", "-fdebug-prefix-map={root}=/homelibrary-src", "-fmacro-prefix-map={root}=/homelibrary-src"
+                cppFlags "-ffile-prefix-map={root}=/homelibrary-src", "-fdebug-prefix-map={root}=/homelibrary-src"
+                cFlags "-ffile-prefix-map={root}=/homelibrary-src", "-fdebug-prefix-map={root}=/homelibrary-src"
             }}
         }}
 """
