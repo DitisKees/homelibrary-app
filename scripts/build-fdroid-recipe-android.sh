@@ -40,9 +40,6 @@ find node_modules -type d -name local-maven-repo -prune -exec rm -rf {} +
 
 npx expo prebuild -p android --clean
 
-# Force deterministic ELF build IDs at the Gradle/CMake boundary. This is
-# injected into every externalNativeBuild configuration and overrides the
-# linker's default content-derived note without patching the installed NDK.
 # Android/React Native CMake projects do not consistently inherit environment
 # compiler flags. Inject prefix maps through Gradle's externalNativeBuild too.
 python3 - "$ROOT" <<'PY'
@@ -72,4 +69,56 @@ sed -i -e '/signingConfig /d' android/app/build.gradle
 
 APK="$ROOT/android/app/build/outputs/apk/release/app-release-unsigned.apk"
 test -f "$APK"
+
+# The source-built native libraries are byte-identical except for their GNU
+# SHA-1 build-id note. Normalize that note in-place inside the stored APK
+# entries. In-place editing deliberately preserves every ZIP header, offset,
+# timestamp, alignment and compression choice produced by AGP.
+python3 - "$APK" <<'PY'
+import struct
+import sys
+
+apk = sys.argv[1]
+data = bytearray(open(apk, 'rb').read())
+EOCD = b'PK\x05\x06'
+CD = b'PK\x01\x02'
+LOCAL = b'PK\x03\x04'
+NOTE = b'\x04\x00\x00\x00\x14\x00\x00\x00\x03\x00\x00\x00GNU\x00'
+
+eocd = data.rfind(EOCD)
+if eocd < 0:
+    raise SystemExit('APK EOCD not found')
+entries = struct.unpack_from('<H', data, eocd + 10)[0]
+cd_pos = struct.unpack_from('<I', data, eocd + 16)[0]
+changed = 0
+
+for _ in range(entries):
+    if data[cd_pos:cd_pos+4] != CD:
+        raise SystemExit('Invalid APK central directory')
+    method = struct.unpack_from('<H', data, cd_pos + 10)[0]
+    csize = struct.unpack_from('<I', data, cd_pos + 20)[0]
+    nlen, xlen, clen = struct.unpack_from('<HHH', data, cd_pos + 28)
+    name = bytes(data[cd_pos + 46:cd_pos + 46 + nlen]).decode('utf-8')
+    local = struct.unpack_from('<I', data, cd_pos + 42)[0]
+    if name.startswith('lib/') and name.endswith('.so'):
+        if method != 0:
+            raise SystemExit(f'Native library unexpectedly compressed: {name}')
+        if data[local:local+4] != LOCAL:
+            raise SystemExit(f'Invalid local header for {name}')
+        lnlen, lxlen = struct.unpack_from('<HH', data, local + 26)
+        start = local + 30 + lnlen + lxlen
+        end = start + csize
+        pos = data.find(NOTE, start, end)
+        if pos >= 0:
+            desc = pos + len(NOTE)
+            data[desc:desc+20] = b'\0' * 20
+            changed += 1
+    cd_pos += 46 + nlen + xlen + clen
+
+if not changed:
+    raise SystemExit('No GNU SHA-1 build-id notes found to normalize')
+open(apk, 'wb').write(data)
+print(f'[INFO] Normalized GNU build IDs in {changed} native libraries in-place')
+PY
+
 echo "[PASS] F-Droid recipe-compatible unsigned Android build completed."
