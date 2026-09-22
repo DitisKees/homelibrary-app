@@ -6,7 +6,7 @@ const root = process.cwd();
 const app = JSON.parse(fs.readFileSync(path.join(root, 'app.json'), 'utf8'));
 const pkg = JSON.parse(fs.readFileSync(path.join(root, 'package.json'), 'utf8'));
 const fdroidPath = path.join(root, '.fdroid.yml');
-const buildScriptPath = path.join(root, 'scripts', 'build-fdroid-android.sh');
+const buildScriptPath = path.join(root, 'scripts', 'build-fdroid-recipe-android.sh');
 const releaseWorkflowPath = path.join(root, '.github', 'workflows', 'android-release.yml');
 const errors = [];
 const expect = (condition, message) => {
@@ -62,7 +62,7 @@ for (const [locale, label] of localeSpecs) {
 }
 
 expect(fs.existsSync(fdroidPath), '.fdroid.yml is missing');
-expect(fs.existsSync(buildScriptPath), 'scripts/build-fdroid-android.sh is missing');
+expect(fs.existsSync(buildScriptPath), 'scripts/build-fdroid-recipe-android.sh is missing');
 expect(fs.existsSync(releaseWorkflowPath), '.github/workflows/android-release.yml is missing');
 
 if (fs.existsSync(fdroidPath)) {
@@ -77,7 +77,7 @@ if (fs.existsSync(fdroidPath)) {
   expect(fdroid.includes('Binaries: https://github.com/DitisKees/homelibrary-app/releases/download/v%v/HomeLibrary-%v.apk'), '.fdroid.yml must point reproducible verification at the immutable versioned GitHub Release APK');
   expect(!/^\s*subdir:/m.test(fdroid), '.fdroid.yml must not use subdir because android/ is generated during the build');
   expect(fdroid.includes('scanignore:\n      - node_modules'), '.fdroid.yml must explicitly document the node_modules scanner exception');
-  expect(fdroid.includes('build:\n      - bash scripts/build-fdroid-android.sh'), '.fdroid.yml must delegate the build to scripts/build-fdroid-android.sh');
+  expect(fdroid.includes('build:\n      - bash scripts/build-fdroid-recipe-android.sh'), '.fdroid.yml must delegate the build to scripts/build-fdroid-recipe-android.sh');
   expect(fdroid.includes('output: android/app/build/outputs/apk/release/app-release-unsigned.apk'), '.fdroid.yml must point to the exact unsigned release APK produced by the shared build script');
   expect(fdroid.includes('UpdateCheckMode: Tags'), '.fdroid.yml must check tagged releases');
   expect(fdroid.includes('AutoUpdateMode: Version'), '.fdroid.yml must enable version autoupdates');
@@ -98,7 +98,7 @@ if (fs.existsSync(releaseWorkflowPath)) {
 
 if (fs.existsSync(buildScriptPath)) {
   const buildScript = fs.readFileSync(buildScriptPath, 'utf8');
-  expect(buildScript.includes('scripts/prepare-fdroid-source-tree.sh'), 'shared F-Droid build script must remove bundled Expo local Maven repositories');
+  expect(buildScript.includes('scripts/prepare-fdroid-source-tree.sh'), 'F-Droid recipe build script must remove bundled Expo local Maven repositories');
   expect(buildScript.includes('scripts/check-fdroid-android-dependencies.sh'), 'shared F-Droid build script must run the Android non-free dependency guard');
   expect(buildScript.includes('./gradlew :app:assembleRelease --no-daemon'), 'shared F-Droid build script must assemble the release APK');
   expect(buildScript.includes('android/app/build/outputs/apk/release/app-release-unsigned.apk'), 'shared F-Droid build script must use the exact unsigned release APK path');
