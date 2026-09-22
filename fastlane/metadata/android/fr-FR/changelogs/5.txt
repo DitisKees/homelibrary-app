@@ -1,0 +1,1 @@
+Amélioration de la reproductibilité des builds Android pour F-Droid : les builds natifs sont désormais indépendants du chemin d'extraction et les identifiants ELF non déterministes sont normalisés. Les builds de publication utilisent maintenant le même processus reproductible vérifié par la CI.\n
