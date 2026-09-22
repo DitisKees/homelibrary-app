@@ -40,19 +40,9 @@ find node_modules -type d -name local-maven-repo -prune -exec rm -rf {} +
 
 npx expo prebuild -p android --clean
 
-# NDK r27b's CMake toolchain requests SHA-1 ELF build IDs. Those IDs are the
-# only bytes that still differ between otherwise identical native libraries.
-# Pin the note payload at the common NDK toolchain so it applies to every
-# independently configured React Native and Expo CMake project.
-NDK_TOOLCHAIN="$ANDROID_HOME/ndk/27.1.12297006/build/cmake/android.toolchain.cmake"
-test -f "$NDK_TOOLCHAIN"
-if ! grep -q -- '--build-id=sha1' "$NDK_TOOLCHAIN"; then
-  echo "Expected NDK --build-id=sha1 linker flag not found" >&2
-  exit 1
-fi
-sed -i 's/--build-id=sha1/--build-id=0x0000000000000000000000000000000000000000/g' "$NDK_TOOLCHAIN"
-grep -q -- '--build-id=0x0000000000000000000000000000000000000000' "$NDK_TOOLCHAIN"
-
+# Force deterministic ELF build IDs at the Gradle/CMake boundary. This is
+# injected into every externalNativeBuild configuration and overrides the
+# linker's default content-derived note without patching the installed NDK.
 # Android/React Native CMake projects do not consistently inherit environment
 # compiler flags. Inject prefix maps through Gradle's externalNativeBuild too.
 python3 - "$ROOT" <<'PY'
