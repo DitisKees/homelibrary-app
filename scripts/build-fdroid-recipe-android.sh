@@ -118,7 +118,7 @@ for _ in range(entries):
 if not changed:
     raise SystemExit('No GNU SHA-1 build-id notes found to normalize')
 open(apk, 'wb').write(data)
-print(f'[INFO] Normalized GNU build IDs in {changed} native libraries in-place')
+print(f'[INFO] Normalized GNU build IDs and refreshed ZIP CRCs in {changed} native libraries in-place')
 PY
 
 echo "[PASS] F-Droid recipe-compatible unsigned Android build completed."
