@@ -130,7 +130,7 @@ jobs:
           fi
 
       - name: Build canonical unsigned F-Droid APK
-        run: bash scripts/build-fdroid-android.sh
+        run: bash scripts/build-fdroid-recipe-android.sh
 
       - name: Sign reproducible APK
         run: |
