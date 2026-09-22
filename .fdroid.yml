@@ -12,9 +12,9 @@ Repo: https://github.com/DitisKees/homelibrary-app.git
 Binaries: https://github.com/DitisKees/homelibrary-app/releases/download/v%v/HomeLibrary-%v.apk
 
 Builds:
-  - versionName: 1.0.3
-    versionCode: 4
-    commit: v1.0.3
+  - versionName: 1.0.4
+    versionCode: 5
+    commit: v1.0.4
     ndk: r27b
     sudo:
       - apt-get update
@@ -29,24 +29,19 @@ Builds:
     scanignore:
       - node_modules
     build:
-      - bash scripts/build-fdroid-android.sh
+      - bash scripts/build-fdroid-recipe-android.sh
 
 MaintainerNotes: |-
   HomeLibrary uses Expo/React Native and does not commit android/; Expo prebuild
   creates the Android project during the build, so this recipe intentionally has
   no subdir entry.
 
-  Native React Native/Expo builds can embed their absolute source checkout path
-  in ELF objects. The build therefore stages all source/build inputs into the
-  fixed /tmp/homelibrary-fdroid-source path and performs npm install, validation,
-  Expo prebuild and the Gradle release build there. The unsigned APK is copied
-  back to the checkout at the output path above. The same build script is used by
-  upstream's two-clean-checkout reproducibility workflow, which compares the
-  resulting unsigned APKs byte-for-byte.
-
-  The canonical staging step deliberately excludes .git, node_modules, android
-  output and Gradle state, so no generated or checkout-specific state is carried
-  into the reproducible build root.
+  Native React Native/Expo builds can embed absolute checkout paths and varying
+  GNU build IDs in source-built ELF libraries. The shared recipe-compatible build
+  applies compiler prefix maps and normalizes only the GNU SHA-1 build-id note
+  in-place in stored native-library APK entries, refreshing ZIP CRCs without
+  changing offsets, timestamps, alignment or compression. Upstream CI builds two
+  independent checkouts and requires the unsigned APKs to match byte-for-byte.
 
   Expo SDK 57 bundles precompiled AARs in local-maven-repo directories. Upstream
   configures Expo autolinking buildFromSource [".*"] and the build script deletes
@@ -66,12 +61,9 @@ MaintainerNotes: |-
   React Native 0.86 is built with the Expo SDK 57 NDK baseline, pinned here as
   Android NDK r27b instead of relying on the buildserver's ambient NDK.
 
-  This upstream development copy refers to the intended immutable v1.0.3 tag.
-  Before submission to fdroiddata, resolve that tag and use its full Git commit
-  hash in the submitted metadata, as required by current fdroiddata style.
-
+  This upstream development copy refers to the intended immutable v1.0.4 tag.\n  The fdroiddata submission should use the tag's full Git commit hash once the\n  release tag has been created.\n
 AutoUpdateMode: Version
 UpdateCheckMode: Tags ^v[0-9]+\.[0-9]+\.[0-9]+$
 UpdateCheckData: 'app.json|"versionCode":\s*(\d+)|app.json|"version":\s*"([\d.]+)"'
-CurrentVersion: 1.0.3
-CurrentVersionCode: 4
+CurrentVersion: 1.0.4
+CurrentVersionCode: 5

@@ -1,0 +1,1 @@
+Improved Android build reproducibility for F-Droid by making native builds independent of checkout paths and normalizing non-deterministic ELF build IDs. Release builds now use the same reproducible build path verified by CI.\n
