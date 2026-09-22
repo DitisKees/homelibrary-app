@@ -6,7 +6,8 @@ const root = process.cwd();
 const app = JSON.parse(fs.readFileSync(path.join(root, 'app.json'), 'utf8'));
 const pkg = JSON.parse(fs.readFileSync(path.join(root, 'package.json'), 'utf8'));
 const fdroidPath = path.join(root, '.fdroid.yml');
-const buildScriptPath = path.join(root, 'scripts', 'build-fdroid-recipe-android.sh');\nconst sharedBuildScriptPath = path.join(root, 'scripts', 'build-fdroid-android.sh');
+const buildScriptPath = path.join(root, 'scripts', 'build-fdroid-recipe-android.sh');
+const sharedBuildScriptPath = path.join(root, 'scripts', 'build-fdroid-android.sh');
 const releaseWorkflowPath = path.join(root, '.github', 'workflows', 'android-release.yml');
 const errors = [];
 const expect = (condition, message) => {
