@@ -72,11 +72,12 @@ test -f "$APK"
 
 # The source-built native libraries are byte-identical except for their GNU
 # SHA-1 build-id note. Normalize that note in-place inside the stored APK
-# entries. In-place editing deliberately preserves every ZIP header, offset,
-# timestamp, alignment and compression choice produced by AGP.
+# entries. In-place editing preserves offsets, timestamps, alignment and
+# compression choices produced by AGP; CRC fields are refreshed below.
 python3 - "$APK" <<'PY'
 import struct
 import sys
+import zlib
 
 apk = sys.argv[1]
 data = bytearray(open(apk, 'rb').read())
@@ -95,6 +96,7 @@ changed = 0
 for _ in range(entries):
     if data[cd_pos:cd_pos+4] != CD:
         raise SystemExit('Invalid APK central directory')
+    flags = struct.unpack_from('<H', data, cd_pos + 8)[0]
     method = struct.unpack_from('<H', data, cd_pos + 10)[0]
     csize = struct.unpack_from('<I', data, cd_pos + 20)[0]
     nlen, xlen, clen = struct.unpack_from('<HHH', data, cd_pos + 28)
@@ -105,6 +107,9 @@ for _ in range(entries):
             raise SystemExit(f'Native library unexpectedly compressed: {name}')
         if data[local:local+4] != LOCAL:
             raise SystemExit(f'Invalid local header for {name}')
+        local_flags = struct.unpack_from('<H', data, local + 6)[0]
+        if flags & 0x08 or local_flags & 0x08:
+            raise SystemExit(f'Native library uses unsupported ZIP data descriptor: {name}')
         lnlen, lxlen = struct.unpack_from('<HH', data, local + 26)
         start = local + 30 + lnlen + lxlen
         end = start + csize
@@ -112,6 +117,12 @@ for _ in range(entries):
         if pos >= 0:
             desc = pos + len(NOTE)
             data[desc:desc+20] = b'\0' * 20
+            # The entry is stored (uncompressed), so changing its bytes also
+            # requires refreshing the CRC in both ZIP headers. Without this,
+            # the APK payload may compare correctly but the ZIP is corrupt.
+            crc = zlib.crc32(data[start:end]) & 0xffffffff
+            struct.pack_into('<I', data, cd_pos + 16, crc)
+            struct.pack_into('<I', data, local + 14, crc)
             changed += 1
     cd_pos += 46 + nlen + xlen + clen
 
