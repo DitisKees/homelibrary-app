@@ -17,7 +17,16 @@ permissions:
 jobs:
   reproducible-apk:
     runs-on: ubuntu-latest
+    container:
+      image: debian:forky
     timeout-minutes: 60
+    defaults:
+      run:
+        shell: bash
+    env:
+      ANDROID_HOME: /opt/android-sdk
+      ANDROID_SDK_ROOT: /opt/android-sdk
+      GRADLE_OPTS: -Dorg.gradle.jvmargs=-Xmx3g\ -XX:MaxMetaspaceSize=1g\ -Dfile.encoding=UTF-8 -Dorg.gradle.workers.max=2 -Dkotlin.compiler.execution.strategy=in-process
     steps:
       - name: Check out repository twice
         uses: actions/checkout@v4
@@ -29,26 +38,28 @@ jobs:
         with:
           path: source-b
 
-      - name: Set up Java
-        uses: actions/setup-java@v4
-        with:
-          distribution: temurin
-          java-version: '17'
-
-      - name: Install Debian Node.js and npm
+      - name: Install F-Droid build prerequisites from Debian forky
         run: |
-          sudo apt-get update
-          sudo apt-get install -y nodejs npm
+          set -euo pipefail
+          apt-get update
+          apt-get install -y --no-install-recommends ca-certificates curl git openjdk-21-jdk-headless nodejs npm python3 unzip binutils
+          mkdir -p "$ANDROID_HOME/cmdline-tools"
+          curl -fsSL https://dl.google.com/android/repository/commandlinetools-linux-13114758_latest.zip -o /tmp/cmdline-tools.zip
+          unzip -q /tmp/cmdline-tools.zip -d /tmp/android-cli
+          mv /tmp/android-cli/cmdline-tools "$ANDROID_HOME/cmdline-tools/latest"
+          yes | "$ANDROID_HOME/cmdline-tools/latest/bin/sdkmanager" --licenses >/dev/null || true
+          "$ANDROID_HOME/cmdline-tools/latest/bin/sdkmanager" "platform-tools" "platforms;android-36" "build-tools;36.0.0" "ndk;27.1.12297006"
+          java -version
           node --version
           npm --version
 
-      - name: Build first unsigned APK
+      - name: Build first unsigned APK with F-Droid recipe
         working-directory: source-a
-        run: bash scripts/build-fdroid-android.sh
+        run: bash scripts/build-fdroid-recipe-android.sh
 
-      - name: Build second unsigned APK
+      - name: Build second unsigned APK with F-Droid recipe
         working-directory: source-b
-        run: bash scripts/build-fdroid-android.sh
+        run: bash scripts/build-fdroid-recipe-android.sh
 
       - name: Compare unsigned APKs
         run: |
