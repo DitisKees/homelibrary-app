@@ -78,10 +78,8 @@ if (fs.existsSync(fdroidPath)) {
   expect(fdroid.includes('https://github.com/DitisKees/homelibrary-app'), '.fdroid.yml must reference the public upstream repository');
   expect(fdroid.includes('Binaries: https://github.com/DitisKees/homelibrary-app/releases/download/v%v/HomeLibrary-%v.apk'), '.fdroid.yml must point reproducible verification at the immutable versioned GitHub Release APK');
   expect(!/^\s*subdir:/m.test(fdroid), '.fdroid.yml must not use subdir because android/ is generated during the build');
-  expect(fdroid.includes('scanignore:
-      - node_modules'), '.fdroid.yml must explicitly document the node_modules scanner exception');
-  expect(fdroid.includes('build:
-      - bash scripts/build-fdroid-recipe-android.sh'), '.fdroid.yml must delegate the build to scripts/build-fdroid-recipe-android.sh');
+  expect(fdroid.includes(`scanignore:\n      - node_modules`), '.fdroid.yml must explicitly document the node_modules scanner exception');
+  expect(fdroid.includes(`build:\n      - bash scripts/build-fdroid-recipe-android.sh`), '.fdroid.yml must delegate the build to scripts/build-fdroid-recipe-android.sh');
   expect(fdroid.includes('output: android/app/build/outputs/apk/release/app-release-unsigned.apk'), '.fdroid.yml must point to the exact unsigned release APK produced by the shared build script');
   expect(fdroid.includes('UpdateCheckMode: Tags'), '.fdroid.yml must check tagged releases');
   expect(fdroid.includes('AutoUpdateMode: Version'), '.fdroid.yml must enable version autoupdates');
