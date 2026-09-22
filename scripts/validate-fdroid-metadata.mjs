@@ -63,7 +63,8 @@ for (const [locale, label] of localeSpecs) {
 }
 
 expect(fs.existsSync(fdroidPath), '.fdroid.yml is missing');
-expect(fs.existsSync(buildScriptPath), 'scripts/build-fdroid-recipe-android.sh is missing');\nexpect(fs.existsSync(sharedBuildScriptPath), 'scripts/build-fdroid-android.sh is missing');
+expect(fs.existsSync(buildScriptPath), 'scripts/build-fdroid-recipe-android.sh is missing');
+expect(fs.existsSync(sharedBuildScriptPath), 'scripts/build-fdroid-android.sh is missing');
 expect(fs.existsSync(releaseWorkflowPath), '.github/workflows/android-release.yml is missing');
 
 if (fs.existsSync(fdroidPath)) {
@@ -77,8 +78,10 @@ if (fs.existsSync(fdroidPath)) {
   expect(fdroid.includes('https://github.com/DitisKees/homelibrary-app'), '.fdroid.yml must reference the public upstream repository');
   expect(fdroid.includes('Binaries: https://github.com/DitisKees/homelibrary-app/releases/download/v%v/HomeLibrary-%v.apk'), '.fdroid.yml must point reproducible verification at the immutable versioned GitHub Release APK');
   expect(!/^\s*subdir:/m.test(fdroid), '.fdroid.yml must not use subdir because android/ is generated during the build');
-  expect(fdroid.includes('scanignore:\n      - node_modules'), '.fdroid.yml must explicitly document the node_modules scanner exception');
-  expect(fdroid.includes('build:\n      - bash scripts/build-fdroid-recipe-android.sh'), '.fdroid.yml must delegate the build to scripts/build-fdroid-recipe-android.sh');
+  expect(fdroid.includes('scanignore:
+      - node_modules'), '.fdroid.yml must explicitly document the node_modules scanner exception');
+  expect(fdroid.includes('build:
+      - bash scripts/build-fdroid-recipe-android.sh'), '.fdroid.yml must delegate the build to scripts/build-fdroid-recipe-android.sh');
   expect(fdroid.includes('output: android/app/build/outputs/apk/release/app-release-unsigned.apk'), '.fdroid.yml must point to the exact unsigned release APK produced by the shared build script');
   expect(fdroid.includes('UpdateCheckMode: Tags'), '.fdroid.yml must check tagged releases');
   expect(fdroid.includes('AutoUpdateMode: Version'), '.fdroid.yml must enable version autoupdates');
@@ -88,7 +91,8 @@ if (fs.existsSync(fdroidPath)) {
 
 if (fs.existsSync(releaseWorkflowPath)) {
   const releaseWorkflow = fs.readFileSync(releaseWorkflowPath, 'utf8');
-  expect(releaseWorkflow.includes("tags:\n      - 'v*.*.*'"), 'Android release workflow must run for immutable semantic-version tags');
+  expect(releaseWorkflow.includes("tags:
+      - 'v*.*.*'"), 'Android release workflow must run for immutable semantic-version tags');
   expect(releaseWorkflow.includes('release_tag:'), 'Android release workflow must support recovery from an existing immutable release tag');
   expect(releaseWorkflow.includes("ref: ${{ inputs.release_tag || github.ref }}"), 'Android release workflow must check out the explicitly requested immutable tag during recovery');
   expect(releaseWorkflow.includes("SDKMANAGER=\"${SDK_ROOT}/cmdline-tools/latest/bin/sdkmanager\""), 'Android release workflow must resolve sdkmanager from the Android SDK instead of assuming it is on PATH');
@@ -118,7 +122,8 @@ const root = process.cwd();
 const app = JSON.parse(fs.readFileSync(path.join(root, 'app.json'), 'utf8'));
 const pkg = JSON.parse(fs.readFileSync(path.join(root, 'package.json'), 'utf8'));
 const fdroidPath = path.join(root, '.fdroid.yml');
-const buildScriptPath = path.join(root, 'scripts', 'build-fdroid-recipe-android.sh');\nconst sharedBuildScriptPath = path.join(root, 'scripts', 'build-fdroid-android.sh');
+const buildScriptPath = path.join(root, 'scripts', 'build-fdroid-recipe-android.sh');
+const sharedBuildScriptPath = path.join(root, 'scripts', 'build-fdroid-android.sh');
 const releaseWorkflowPath = path.join(root, '.github', 'workflows', 'android-release.yml');
 const errors = [];
 const expect = (condition, message) => {
@@ -174,7 +179,8 @@ for (const [locale, label] of localeSpecs) {
 }
 
 expect(fs.existsSync(fdroidPath), '.fdroid.yml is missing');
-expect(fs.existsSync(buildScriptPath), 'scripts/build-fdroid-recipe-android.sh is missing');\nexpect(fs.existsSync(sharedBuildScriptPath), 'scripts/build-fdroid-android.sh is missing');
+expect(fs.existsSync(buildScriptPath), 'scripts/build-fdroid-recipe-android.sh is missing');
+expect(fs.existsSync(sharedBuildScriptPath), 'scripts/build-fdroid-android.sh is missing');
 expect(fs.existsSync(releaseWorkflowPath), '.github/workflows/android-release.yml is missing');
 
 if (fs.existsSync(fdroidPath)) {
@@ -188,8 +194,10 @@ if (fs.existsSync(fdroidPath)) {
   expect(fdroid.includes('https://github.com/DitisKees/homelibrary-app'), '.fdroid.yml must reference the public upstream repository');
   expect(fdroid.includes('Binaries: https://github.com/DitisKees/homelibrary-app/releases/download/v%v/HomeLibrary-%v.apk'), '.fdroid.yml must point reproducible verification at the immutable versioned GitHub Release APK');
   expect(!/^\s*subdir:/m.test(fdroid), '.fdroid.yml must not use subdir because android/ is generated during the build');
-  expect(fdroid.includes('scanignore:\n      - node_modules'), '.fdroid.yml must explicitly document the node_modules scanner exception');
-  expect(fdroid.includes('build:\n      - bash scripts/build-fdroid-recipe-android.sh'), '.fdroid.yml must delegate the build to scripts/build-fdroid-recipe-android.sh');
+  expect(fdroid.includes('scanignore:
+      - node_modules'), '.fdroid.yml must explicitly document the node_modules scanner exception');
+  expect(fdroid.includes('build:
+      - bash scripts/build-fdroid-recipe-android.sh'), '.fdroid.yml must delegate the build to scripts/build-fdroid-recipe-android.sh');
   expect(fdroid.includes('output: android/app/build/outputs/apk/release/app-release-unsigned.apk'), '.fdroid.yml must point to the exact unsigned release APK produced by the shared build script');
   expect(fdroid.includes('UpdateCheckMode: Tags'), '.fdroid.yml must check tagged releases');
   expect(fdroid.includes('AutoUpdateMode: Version'), '.fdroid.yml must enable version autoupdates');
@@ -199,7 +207,8 @@ if (fs.existsSync(fdroidPath)) {
 
 if (fs.existsSync(releaseWorkflowPath)) {
   const releaseWorkflow = fs.readFileSync(releaseWorkflowPath, 'utf8');
-  expect(releaseWorkflow.includes("tags:\n      - 'v*.*.*'"), 'Android release workflow must run for immutable semantic-version tags');
+  expect(releaseWorkflow.includes("tags:
+      - 'v*.*.*'"), 'Android release workflow must run for immutable semantic-version tags');
   expect(releaseWorkflow.includes('release_tag:'), 'Android release workflow must support recovery from an existing immutable release tag');
   expect(releaseWorkflow.includes("ref: ${{ inputs.release_tag || github.ref }}"), 'Android release workflow must check out the explicitly requested immutable tag during recovery');
   expect(releaseWorkflow.includes("SDKMANAGER=\"${SDK_ROOT}/cmdline-tools/latest/bin/sdkmanager\""), 'Android release workflow must resolve sdkmanager from the Android SDK instead of assuming it is on PATH');
@@ -218,11 +227,16 @@ if (fs.existsSync(buildScriptPath)) {
 }
 
 if (errors.length > 0) {
-  process.stderr.write('F-Droid metadata validation failed:\n');
-  for (const error of errors) process.stderr.write(`- ${error}\n`);
+  process.stderr.write('F-Droid metadata validation failed:
+');
+  for (const error of errors) process.stderr.write(`- ${error}
+`);
   process.exit(1);
 }
 
-process.stdout.write(`F-Droid metadata OK for HomeLibrary ${versionName} (${versionCode}).\n`);
-process.stdout.write('Fastlane text metadata exists for en-US, nl-NL, de-DE, and fr-FR.\n');
-process.stdout.write('Expo native modules are configured for source builds and the F-Droid recipe delegates to the validated shared reproducible build script.\n');
+process.stdout.write(`F-Droid metadata OK for HomeLibrary ${versionName} (${versionCode}).
+`);
+process.stdout.write('Fastlane text metadata exists for en-US, nl-NL, de-DE, and fr-FR.
+');
+process.stdout.write('Expo native modules are configured for source builds and the F-Droid recipe delegates to the validated shared reproducible build script.
+');
