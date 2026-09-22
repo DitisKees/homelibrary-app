@@ -1,0 +1,1 @@
+De reproduceerbaarheid van Android-builds voor F-Droid is verbeterd door native builds onafhankelijk te maken van het checkoutpad en niet-deterministische ELF build-ID's te normaliseren. Release-builds gebruiken nu hetzelfde reproduceerbare buildproces dat door CI wordt gecontroleerd.\n
