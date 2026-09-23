@@ -40,6 +40,15 @@ find node_modules -type d -name local-maven-repo -prune -exec rm -rf {} +
 
 npx expo prebuild -p android --clean
 
+# GitHub-hosted runners have limited memory. Source-building every Expo/React
+# Native module can exhaust the Kotlin compiler's default metaspace. Keep the
+# build bounded and avoid parallel compiler/Gradle workers competing for RAM.
+cat >> android/gradle.properties <<'EOF'
+org.gradle.jvmargs=-Xmx3g -XX:MaxMetaspaceSize=1g -Dfile.encoding=UTF-8
+org.gradle.workers.max=2
+kotlin.daemon.jvmargs=-Xmx2g -XX:MaxMetaspaceSize=768m
+EOF
+
 # Android/React Native CMake projects do not consistently inherit environment
 # compiler flags. Inject prefix maps through Gradle's externalNativeBuild too.
 python3 - "$ROOT" <<'PY'
