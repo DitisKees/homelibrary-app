@@ -44,9 +44,9 @@ npx expo prebuild -p android --clean
 # Native module can exhaust the Kotlin compiler's default metaspace. Keep the
 # build bounded and avoid parallel compiler/Gradle workers competing for RAM.
 cat >> android/gradle.properties <<'EOF'
-org.gradle.jvmargs=-Xmx3g -XX:MaxMetaspaceSize=1g -Dfile.encoding=UTF-8
-org.gradle.workers.max=2
-kotlin.daemon.jvmargs=-Xmx2g -XX:MaxMetaspaceSize=768m
+org.gradle.jvmargs=-Xmx3g -XX:MaxMetaspaceSize=1536m -Dfile.encoding=UTF-8
+org.gradle.workers.max=1
+kotlin.daemon.jvmargs=-Xmx1536m -XX:MaxMetaspaceSize=512m
 EOF
 
 # Android/React Native CMake projects do not consistently inherit environment
