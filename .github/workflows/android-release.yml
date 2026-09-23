@@ -23,6 +23,10 @@ jobs:
       HOMELIBRARY_RELEASE_KEYSTORE_PASSWORD: ${{ secrets.ANDROID_RELEASE_KEYSTORE_PASSWORD }}
       HOMELIBRARY_RELEASE_KEY_PASSWORD: ${{ secrets.ANDROID_RELEASE_KEY_PASSWORD }}
       HOMELIBRARY_RELEASE_CERT_SHA256: ${{ vars.ANDROID_RELEASE_CERT_SHA256 }}
+      # Keep recovery builds on the same proven Gradle/Kotlin memory model as
+      # Android reproducibility CI. These workflow-level settings still apply
+      # when the immutable release tag is checked out.
+      GRADLE_OPTS: -Dorg.gradle.jvmargs=-Xmx3g\ -XX:MaxMetaspaceSize=1g\ -Dfile.encoding=UTF-8 -Dorg.gradle.workers.max=2 -Dkotlin.compiler.execution.strategy=in-process
 
     steps:
       - name: Check out repository
@@ -76,7 +80,7 @@ jobs:
         uses: actions/setup-java@v4
         with:
           distribution: temurin
-          java-version: '17'
+          java-version: '21'
 
       - name: Install F-Droid-compatible APK signing tools
         run: |
