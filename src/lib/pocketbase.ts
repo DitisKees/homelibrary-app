@@ -48,11 +48,20 @@ export async function hydrateAuthStore(): Promise<void> {
   await prepareAuthStorage();
   const stored = await getPersistedAuth();
   if (!stored) return;
+
   try {
     const { token, model } = JSON.parse(stored);
     authStore.save(token, model);
+
+    // A persisted user model is not proof of an authenticated session. PocketBase
+    // can restore an expired JWT together with its model, which previously made
+    // HomeLibrary enter the authenticated UI while every protected API request
+    // failed. Reject locally invalid/expired tokens before exposing that model.
+    if (!authStore.isValid) {
+      await clearPocketBaseSession();
+    }
   } catch {
-    await clearPersistedAuth();
+    await clearPocketBaseSession();
   }
 }
 
