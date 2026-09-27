@@ -1,14 +1,34 @@
 jest.mock('pocketbase', () => {
   class MockAsyncAuthStore {
-    clear = jest.fn();
-    save = jest.fn();
+    token = '';
+    model: { id: string } | null = null;
+
+    clear = jest.fn(() => {
+      this.token = '';
+      this.model = null;
+    });
+
+    save = jest.fn((token: string, model: { id: string } | null) => {
+      this.token = token;
+      this.model = model;
+    });
+
+    get isValid() {
+      return Boolean(this.token) && this.token !== 'expired-token';
+    }
   }
 
   class MockPocketBase {
+    authStore: MockAsyncAuthStore;
+
     files = {
       getToken: jest.fn(),
       getUrl: jest.fn(),
     };
+
+    constructor(_endpoint: string, authStore: MockAsyncAuthStore) {
+      this.authStore = authStore;
+    }
   }
 
   return {
@@ -29,11 +49,67 @@ jest.mock('@/lib/eventSource', () => ({
   ensurePocketBaseEventSource: jest.fn(),
 }));
 
-import { fileUrl, pb } from '@/lib/pocketbase';
+import {
+  clearPersistedAuth,
+  getPersistedAuth,
+  prepareAuthStorage,
+} from '@/lib/authStorage';
+import {
+  fileUrl,
+  hydrateAuthStore,
+  initializePocketBase,
+  pb,
+} from '@/lib/pocketbase';
+
+const getPersistedAuthMock = getPersistedAuth as jest.MockedFunction<typeof getPersistedAuth>;
+const clearPersistedAuthMock = clearPersistedAuth as jest.MockedFunction<typeof clearPersistedAuth>;
+const prepareAuthStorageMock = prepareAuthStorage as jest.MockedFunction<typeof prepareAuthStorage>;
+
+describe('PocketBase auth hydration', () => {
+  beforeEach(() => {
+    jest.clearAllMocks();
+    initializePocketBase('https://books.example.com');
+  });
+
+  it('restores a persisted session while its token is still valid', async () => {
+    getPersistedAuthMock.mockResolvedValueOnce(
+      JSON.stringify({ token: 'valid-token', model: { id: 'user-1' } })
+    );
+
+    await hydrateAuthStore();
+
+    expect(prepareAuthStorageMock).toHaveBeenCalledTimes(1);
+    expect(pb.authStore.isValid).toBe(true);
+    expect(pb.authStore.model).toEqual({ id: 'user-1' });
+    expect(clearPersistedAuthMock).not.toHaveBeenCalled();
+  });
+
+  it('clears an expired persisted session instead of exposing its cached user model', async () => {
+    getPersistedAuthMock.mockResolvedValueOnce(
+      JSON.stringify({ token: 'expired-token', model: { id: 'user-1' } })
+    );
+
+    await hydrateAuthStore();
+
+    expect(pb.authStore.isValid).toBe(false);
+    expect(pb.authStore.model).toBeNull();
+    expect(clearPersistedAuthMock).toHaveBeenCalledTimes(1);
+  });
+
+  it('clears malformed persisted auth state', async () => {
+    getPersistedAuthMock.mockResolvedValueOnce('{not-json');
+
+    await hydrateAuthStore();
+
+    expect(pb.authStore.model).toBeNull();
+    expect(clearPersistedAuthMock).toHaveBeenCalledTimes(1);
+  });
+});
 
 describe('fileUrl', () => {
-  afterEach(() => {
+  beforeEach(() => {
     jest.clearAllMocks();
+    initializePocketBase('https://books.example.com');
   });
 
   it('shares one in-flight file token request across concurrent thumbnail URLs', async () => {
