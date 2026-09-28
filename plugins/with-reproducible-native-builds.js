@@ -2,6 +2,9 @@ const { withProjectBuildGradle } = require('expo/config-plugins');
 
 const MARKER = '// HomeLibrary reproducible native builds';
 
+// This config plugin is the authoritative upstream location for native compiler
+// reproducibility settings. F-Droid metadata must not patch externalNativeBuild
+// after Expo prebuild.
 module.exports = function withReproducibleNativeBuilds(config) {
   return withProjectBuildGradle(config, (config) => {
     if (config.modResults.language !== 'groovy') {
@@ -24,17 +27,17 @@ ${MARKER}
 // projects such as react-native-screens.
 def reproducibleCheckoutRoot = rootProject.projectDir.parentFile.absolutePath.replace('\\\\', '/')
 def reproduciblePrefixFlags = [
-    "-ffile-prefix-map=${'$'}{reproducibleCheckoutRoot}=/src",
-    "-fdebug-prefix-map=${'$'}{reproducibleCheckoutRoot}=/src",
-    "-fmacro-prefix-map=${'$'}{reproducibleCheckoutRoot}=/src"
+    "-ffile-prefix-map=${reproducibleCheckoutRoot}=/homelibrary-src",
+    "-fdebug-prefix-map=${reproducibleCheckoutRoot}=/homelibrary-src",
+    "-fmacro-prefix-map=${reproducibleCheckoutRoot}=/homelibrary-src"
 ].join(' ')
 
 subprojects { subproject ->
     ["com.android.application", "com.android.library"].each { pluginId ->
         subproject.plugins.withId(pluginId) {
             subproject.android.defaultConfig.externalNativeBuild.cmake {
-                arguments "-DCMAKE_C_FLAGS=${'$'}{reproduciblePrefixFlags}",
-                          "-DCMAKE_CXX_FLAGS=${'$'}{reproduciblePrefixFlags}"
+                arguments "-DCMAKE_C_FLAGS=${reproduciblePrefixFlags}",
+                          "-DCMAKE_CXX_FLAGS=${reproduciblePrefixFlags}"
             }
         }
     }
