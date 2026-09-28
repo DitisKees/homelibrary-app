@@ -9,12 +9,12 @@ See [`fdroid-dependencies.md`](./fdroid-dependencies.md) for the dependency/lice
 The next release is:
 
 ```text
-versionName: 1.0.3
-versionCode: 4
-tag: v1.0.3
+versionName: 1.0.5
+versionCode: 6
+tag: v1.0.5
 ```
 
-`v1.0.2` / versionCode 3 already identifies the earlier F-Droid candidate at its existing immutable source commit. The reproducibility and permanent production-signing work was merged afterwards, so that tag must not be moved. The first upstream-signed reproducible candidate is therefore `v1.0.3` / versionCode 4.
+`v1.0.4` / versionCode 5 is the currently published reproducible upstream release and is the version presently referenced by the open fdroiddata submission. Version 1.0.5 advances the candidate so F-Droid receives the expired-session fix and the current Expo SDK 57 patch dependencies rather than publishing the known-buggy 1.0.4 app behavior.
 
 `app.json` is the source of truth for Android versionName and versionCode. `package.json` remains the private JavaScript package manifest.
 
@@ -52,7 +52,7 @@ The upstream F-Droid recipe contains:
 Binaries: https://github.com/DitisKees/homelibrary-app/releases/download/v%v/HomeLibrary-%v.apk
 ```
 
-F-Droid can therefore rebuild the source and compare its output with the versioned upstream APK. The official `fdroiddata` recipe must also add `AllowedAPKSigningKeys` using the lower-case SHA-256 certificate fingerprint after the first `v1.0.3` APK has been independently verified.
+F-Droid can therefore rebuild the source and compare its output with the versioned upstream APK. The official `fdroiddata` recipe already contains `AllowedAPKSigningKeys` using the independently verified lower-case SHA-256 certificate fingerprint. Keep that signing identity unchanged for 1.0.5 and later updates.
 
 The production signing key itself is never committed or published.
 
@@ -79,7 +79,7 @@ CI verifies, among other things:
 
 ## F-Droid submission status
 
-The official fdroiddata submission is already open as `fdroid/fdroiddata!48673`. The remaining release path is:
+The official fdroiddata submission is already open as `fdroid/fdroiddata!48673`. It currently references the published 1.0.4 release. The next release path is:
 
 - [x] Public GPL-3.0-or-later source repository
 - [x] Permanent Android application ID
@@ -90,11 +90,12 @@ The official fdroiddata submission is already open as `fdroid/fdroiddata!48673`.
 - [x] Fastlane metadata and real screenshots
 - [x] Deterministic upstream unsigned builds
 - [x] Permanent production signing workflow
-- [x] Stable versioned GitHub Release APK publication defined for tag builds
-- [ ] Merge the 1.0.3 release-preparation PR with all checks green
-- [ ] Create immutable `v1.0.3` from that exact main commit
-- [ ] Verify the signed `HomeLibrary-1.0.3.apk` and certificate fingerprint independently
-- [ ] Update fdroiddata !48673 to versionCode 4/full source SHA, `Binaries`, and `AllowedAPKSigningKeys`
+- [x] Reproducible versioned GitHub Release APK publication
+- [x] Initial fdroiddata submission opened and updated to reproducible 1.0.4
+- [ ] Merge the 1.0.5 release-preparation PR with all checks green
+- [ ] Create immutable `v1.0.5` from that exact main commit
+- [ ] Verify the signed `HomeLibrary-1.0.5.apk` and existing certificate fingerprint
+- [ ] Update fdroiddata !48673 to versionCode 6/full source SHA and 1.0.5 release details
 - [ ] Run/obtain F-Droid buildserver verification and address review feedback
 - [ ] Obtain the first successful official F-Droid publication
 

@@ -12,9 +12,9 @@ Repo: https://github.com/DitisKees/homelibrary-app.git
 Binaries: https://github.com/DitisKees/homelibrary-app/releases/download/v%v/HomeLibrary-%v.apk
 
 Builds:
-  - versionName: 1.0.4
-    versionCode: 5
-    commit: v1.0.4
+  - versionName: 1.0.5
+    versionCode: 6
+    commit: v1.0.5
     ndk: r27b
     sudo:
       - apt-get update
@@ -61,9 +61,12 @@ MaintainerNotes: |-
   React Native 0.86 is built with the Expo SDK 57 NDK baseline, pinned here as
   Android NDK r27b instead of relying on the buildserver's ambient NDK.
 
-  This upstream development copy refers to the intended immutable v1.0.4 tag.\n  The fdroiddata submission should use the tag's full Git commit hash once the\n  release tag has been created.\n
+  This upstream development copy refers to the intended immutable v1.0.5 tag.
+  The fdroiddata submission should use the tag's full Git commit hash once the
+  release tag has been created.
+
 AutoUpdateMode: Version
 UpdateCheckMode: Tags ^v[0-9]+\.[0-9]+\.[0-9]+$
 UpdateCheckData: 'app.json|"versionCode":\s*(\d+)|app.json|"version":\s*"([\d.]+)"'
-CurrentVersion: 1.0.4
-CurrentVersionCode: 5
+CurrentVersion: 1.0.5
+CurrentVersionCode: 6
