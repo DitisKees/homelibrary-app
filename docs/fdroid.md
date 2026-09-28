@@ -9,12 +9,12 @@ See [`fdroid-dependencies.md`](./fdroid-dependencies.md) for the dependency/lice
 The next release is:
 
 ```text
-versionName: 1.0.6
-versionCode: 7
-tag: v1.0.6
+versionName: 1.0.7
+versionCode: 8
+tag: v1.0.7
 ```
 
-`v1.0.5` / versionCode 6 is the currently published reproducible upstream release. During review of the open fdroiddata submission, the F-Droid maintainer requested that Python not be embedded in metadata and that `externalNativeBuild` configuration live upstream. Version 1.0.6 implements that review feedback while preserving the same reproducible native build design.
+`v1.0.6` / versionCode 7 is the currently published upstream release. Its APK exposed a release-build regression: Gradle memory settings were appended to a generated `gradle.properties` file that could lack a trailing newline, corrupting Expo Camera's `expo.camera.barcode-scanner-enabled=false` value and packaging Google ML Kit/Barhopper barcode artifacts. Version 1.0.7 fixes that path and adds guards around both the final dependency graph and APK contents.
 
 `app.json` is the source of truth for Android versionName and versionCode. `package.json` remains the private JavaScript package manifest.
 
@@ -67,7 +67,9 @@ The English listing also contains four representative real-app phone screenshots
 CI verifies, among other things:
 
 - reviewed FLOSS license/provenance for production npm packages;
-- no Google Play Services, Firebase, ML Kit, or Play SDK runtime artifacts;
+- no Google Play Services, Firebase, ML Kit, or Play SDK runtime dependencies;
+- the built APK itself contains no Barhopper native library, ML Kit barcode models, or Google barcode-scanner metadata;
+- Expo Camera's generated `expo.camera.barcode-scanner-enabled=false` Gradle property remains intact after release-only Gradle settings are appended;
 - Expo native modules build from source;
 - bundled Expo local Maven repositories are removed;
 - deterministic application/store icon generation;
@@ -79,7 +81,7 @@ CI verifies, among other things:
 
 ## F-Droid submission status
 
-The official fdroiddata submission is already open as `fdroid/fdroiddata!48673`. Version 1.0.5 is published and verified; the current review feedback requires one build-system-only follow-up release:
+The official fdroiddata submission is already open as `fdroid/fdroiddata!48673`. Version 1.0.6 is published, but the upstream APK must be superseded because of the ML Kit packaging regression:
 
 - [x] Public GPL-3.0-or-later source repository
 - [x] Permanent Android application ID
@@ -90,12 +92,13 @@ The official fdroiddata submission is already open as `fdroid/fdroiddata!48673`.
 - [x] Fastlane metadata and real screenshots
 - [x] Deterministic upstream unsigned builds
 - [x] Permanent production signing workflow
-- [x] Reproducible 1.0.5 GitHub Release APK verified
+- [x] Reproducible 1.0.6 GitHub Release APK published
 - [x] F-Droid maintainer review: keep Python and `externalNativeBuild` logic upstream
-- [ ] Merge the 1.0.6 review-fix PR with all checks green
-- [ ] Create immutable `v1.0.6` from that exact main commit
-- [ ] Verify the signed `HomeLibrary-1.0.6.apk` and existing certificate fingerprint
-- [ ] Update fdroiddata !48673 to versionCode 7/full source SHA with no embedded Python
+- [x] Diagnose 1.0.5/1.0.6 ML Kit packaging regression in generated Gradle properties
+- [ ] Merge the 1.0.7 regression-fix PR with all checks green
+- [ ] Create immutable `v1.0.7` from that exact main commit
+- [ ] Verify the signed `HomeLibrary-1.0.7.apk`, certificate fingerprint, and absence of ML Kit/Barhopper artifacts
+- [ ] Update fdroiddata !48673 to versionCode 8/full source SHA with the guarded Gradle-properties path
 - [ ] Obtain a successful F-Droid buildserver verification and acceptance
 
 ## Release discipline

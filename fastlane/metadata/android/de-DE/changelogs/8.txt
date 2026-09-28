@@ -1,0 +1,1 @@
+Behebt einen Fehler im Android-Release-Build, durch den Expo Camera unbeabsichtigt Googles ML-Kit-Barcodestack einbinden konnte. Release- und F-Droid-Builds sichern nun die ZXing-Konfiguration ab und lehnen ML-Kit/Barhopper-Artefakte ab.

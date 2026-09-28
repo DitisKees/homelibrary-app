@@ -2,7 +2,7 @@
 
 HomeLibrary is a cross-platform client for managing a shared, self-hosted household book collection backed by PocketBase.
 
-> **F-Droid status:** The official `fdroid/fdroiddata!48673` submission is open. HomeLibrary 1.0.5 is published upstream as a developer-signed reproducible release. F-Droid review requested that native `externalNativeBuild` configuration and APK-normalization logic live in the upstream repository rather than inline metadata. The next candidate is **1.0.6 / versionCode 7**, which applies that build-system cleanup without user-facing feature changes.
+> **F-Droid status:** The official `fdroid/fdroiddata!48673` submission is open. HomeLibrary 1.0.6 is published upstream, but its Android release APK exposed a build regression that accidentally packaged Expo Camera's Google ML Kit barcode stack even though HomeLibrary uses the local ZXing scanner. The next candidate is **1.0.7 / versionCode 8**, which fixes that release-path bug and adds dependency/APK guards against recurrence.
 
 ## Features
 
@@ -137,10 +137,11 @@ The initial official F-Droid submission is open as `fdroid/fdroiddata!48673`.
 2. ~~audit the generated Android and npm dependency graph for non-free libraries~~ — completed;
 3. ~~build Expo/React Native native modules from public source and verify reproducibility~~ — completed;
 4. ~~add Fastlane metadata, screenshots, changelogs, permanent signing, and reproducible GitHub Release APKs~~ — completed;
-5. ~~publish and verify reproducible upstream 1.0.5~~ — completed;
-6. move F-Droid-specific native build configuration and APK normalization out of inline metadata and into checked-in upstream files — in progress for **1.0.6 / versionCode 7**;
-7. tag and publish 1.0.6 after all CI/reproducibility checks are green, then update !48673 to the exact source SHA and APK;
-8. obtain a successful F-Droid buildserver verification and acceptance.
+5. ~~publish and verify reproducible upstream 1.0.6~~ — completed;
+6. fix the Gradle-properties append regression that re-enabled Expo Camera's ML Kit barcode dependencies in the published APK — in progress for **1.0.7 / versionCode 8**;
+7. require both the final dependency graph and built APK to remain free of Google ML Kit/Barhopper barcode artifacts;
+8. tag and publish 1.0.7 after all CI/reproducibility checks are green, then update !48673 to the exact source SHA and APK;
+9. obtain a successful F-Droid buildserver verification and acceptance.
 
 See [`docs/fdroid.md`](docs/fdroid.md) and [`docs/fdroid-release.md`](docs/fdroid-release.md) for details.
 

@@ -1,0 +1,1 @@
+Corrige un bug du build Android qui pouvait réactiver par erreur la pile de codes-barres Google ML Kit d’Expo Camera. Les builds Release et F-Droid préservent désormais la configuration ZXing et refusent les artefacts ML Kit/Barhopper.

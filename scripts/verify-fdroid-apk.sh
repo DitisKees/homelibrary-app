@@ -37,7 +37,30 @@ if ! grep -Fq "targetSdkVersion:'$EXPECTED_TARGET_SDK'" <<<"$BADGING"; then
   exit 1
 fi
 
+if ! command -v unzip >/dev/null 2>&1; then
+  echo "[FAIL] unzip is required to audit APK contents." >&2
+  exit 2
+fi
+
+APK_ENTRIES="$(unzip -Z1 "$APK")"
+for forbidden_entry in \
+  'libbarhopper_v3.so' \
+  'assets/mlkit_barcode_models/' \
+  'play-services-code-scanner.properties' \
+  'play-services-mlkit-barcode-scanning.properties' \
+  'barcode-scanning-common.properties' \
+  'barcode-scanning.properties' \
+  'androidx.camera_camera-mlkit-vision.version'
+do
+  if grep -Fq "$forbidden_entry" <<<"$APK_ENTRIES"; then
+    echo "[FAIL] APK contains forbidden Google/ML Kit barcode artifact: $forbidden_entry" >&2
+    grep -F "$forbidden_entry" <<<"$APK_ENTRIES" >&2 || true
+    exit 1
+  fi
+done
+
 SHA256="$(sha256sum "$APK" | awk '{print $1}')"
 echo "[PASS] Source-built release APK package: $EXPECTED_PACKAGE"
 echo "[PASS] Source-built release APK targetSdkVersion: $EXPECTED_TARGET_SDK"
+echo "[PASS] APK contains no Barhopper, ML Kit barcode model, or Google barcode-scanner artifacts."
 echo "APK SHA-256: $SHA256"

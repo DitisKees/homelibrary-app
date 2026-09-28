@@ -7,6 +7,9 @@ const app = JSON.parse(fs.readFileSync(path.join(root, 'app.json'), 'utf8'));
 const pkg = JSON.parse(fs.readFileSync(path.join(root, 'package.json'), 'utf8'));
 const fdroidPath = path.join(root, '.fdroid.yml');
 const buildScriptPath = path.join(root, 'scripts', 'build-fdroid-recipe-android.sh');
+const canonicalBuildScriptPath = path.join(root, 'scripts', 'build-fdroid-android.sh');
+const gradlePropertiesGuardPath = path.join(root, 'scripts', 'prepare-android-gradle-properties.sh');
+const verifyApkScriptPath = path.join(root, 'scripts', 'verify-fdroid-apk.sh');
 const normalizeScriptPath = path.join(root, 'scripts', 'normalize-fdroid-apk-build-ids.py');
 const reproduciblePluginPath = path.join(root, 'plugins', 'with-reproducible-native-builds.js');
 const releaseWorkflowPath = path.join(root, '.github', 'workflows', 'android-release.yml');
@@ -65,6 +68,9 @@ for (const [locale, label] of localeSpecs) {
 
 expect(fs.existsSync(fdroidPath), '.fdroid.yml is missing');
 expect(fs.existsSync(buildScriptPath), 'scripts/build-fdroid-recipe-android.sh is missing');
+expect(fs.existsSync(canonicalBuildScriptPath), 'scripts/build-fdroid-android.sh is missing');
+expect(fs.existsSync(gradlePropertiesGuardPath), 'scripts/prepare-android-gradle-properties.sh is missing');
+expect(fs.existsSync(verifyApkScriptPath), 'scripts/verify-fdroid-apk.sh is missing');
 expect(fs.existsSync(normalizeScriptPath), 'scripts/normalize-fdroid-apk-build-ids.py is missing');
 expect(fs.existsSync(reproduciblePluginPath), 'plugins/with-reproducible-native-builds.js is missing');
 expect(fs.existsSync(releaseWorkflowPath), '.github/workflows/android-release.yml is missing');
@@ -80,6 +86,9 @@ if (fs.existsSync(fdroidPath)) {
   expect(fdroid.includes('https://github.com/DitisKees/homelibrary-app'), '.fdroid.yml must reference the public upstream repository');
   expect(fdroid.includes('Binaries: https://github.com/DitisKees/homelibrary-app/releases/download/v%v/HomeLibrary-%v.apk'), '.fdroid.yml must point reproducible verification at the immutable versioned GitHub Release APK');
   expect(fdroid.includes('subdir: android/app'), '.fdroid.yml must use the generated Android app subdir used by the official React Native recipe');
+  expect(fdroid.includes('bash scripts/prepare-android-gradle-properties.sh'), '.fdroid.yml must guard Expo Camera Gradle properties before and after appending build settings');
+  expect(fdroid.includes('bash scripts/check-fdroid-android-dependencies.sh'), '.fdroid.yml must audit the final Android runtime dependency graph');
+  expect(fdroid.includes('bash scripts/verify-fdroid-apk.sh'), '.fdroid.yml must verify the final APK for forbidden barcode artifacts');
   expect(fdroid.includes('python3 scripts/normalize-fdroid-apk-build-ids.py'), '.fdroid.yml must call the checked-in APK build-id normalization helper');
   expect(!/python3\s+-[^\n]*<<['"]?PY/m.test(fdroid), '.fdroid.yml must not embed Python scripts');
   expect(!fdroid.includes('externalNativeBuild {'), '.fdroid.yml must not patch externalNativeBuild in metadata; keep it upstream');
@@ -105,7 +114,30 @@ if (fs.existsSync(buildScriptPath)) {
   expect(buildScript.includes('./gradlew :app:assembleRelease --no-daemon'), 'F-Droid recipe build script must assemble the release APK');
   expect(buildScript.includes('android/app/build/outputs/apk/release/app-release-unsigned.apk'), 'F-Droid recipe build script must use the exact unsigned release APK path');
   expect(!/python3\s+-[^\n]*<<['"]?PY/m.test(buildScript), 'F-Droid recipe build script must not embed Python scripts');
+  expect(buildScript.includes('bash scripts/prepare-android-gradle-properties.sh'), 'F-Droid recipe build script must guard generated Expo Camera Gradle properties');
+  expect(buildScript.includes('bash scripts/check-fdroid-android-dependencies.sh'), 'F-Droid recipe build script must audit the exact release runtime dependency graph');
+  expect(buildScript.includes('bash scripts/verify-fdroid-apk.sh'), 'F-Droid recipe build script must audit final APK contents');
   expect(buildScript.includes('python3 scripts/normalize-fdroid-apk-build-ids.py'), 'F-Droid recipe build script must call the checked-in build-id normalization helper');
+}
+
+if (fs.existsSync(canonicalBuildScriptPath)) {
+  const canonicalBuildScript = fs.readFileSync(canonicalBuildScriptPath, 'utf8');
+  expect(canonicalBuildScript.includes('bash scripts/prepare-android-gradle-properties.sh'), 'canonical Android build must guard generated Expo Camera Gradle properties');
+  expect(canonicalBuildScript.includes('bash scripts/check-fdroid-android-dependencies.sh'), 'canonical Android build must audit release runtime dependencies');
+  expect(canonicalBuildScript.includes('bash scripts/verify-fdroid-apk.sh'), 'canonical Android build must audit final APK contents');
+}
+
+if (fs.existsSync(gradlePropertiesGuardPath)) {
+  const guardScript = fs.readFileSync(gradlePropertiesGuardPath, 'utf8');
+  expect(guardScript.includes('expo.camera.barcode-scanner-enabled=false'), 'Gradle-properties guard must require Expo Camera barcode scanning to remain disabled');
+  expect(guardScript.includes("printf '\\n'"), 'Gradle-properties guard must normalize a missing trailing newline before release settings are appended');
+}
+
+if (fs.existsSync(verifyApkScriptPath)) {
+  const verifyApkScript = fs.readFileSync(verifyApkScriptPath, 'utf8');
+  expect(verifyApkScript.includes('libbarhopper_v3.so'), 'APK verification must reject the ML Kit Barhopper native library');
+  expect(verifyApkScript.includes('assets/mlkit_barcode_models/'), 'APK verification must reject ML Kit barcode models');
+  expect(verifyApkScript.includes('play-services-code-scanner.properties'), 'APK verification must reject Google code-scanner metadata');
 }
 
 if (fs.existsSync(reproduciblePluginPath)) {

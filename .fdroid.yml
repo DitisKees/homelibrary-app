@@ -12,9 +12,9 @@ Repo: https://github.com/DitisKees/homelibrary-app.git
 Binaries: https://github.com/DitisKees/homelibrary-app/releases/download/v%v/HomeLibrary-%v.apk
 
 Builds:
-  - versionName: 1.0.6
-    versionCode: 7
-    commit: v1.0.6
+  - versionName: 1.0.7
+    versionCode: 8
+    commit: v1.0.7
     subdir: android/app
     ndk: r27b
     sudo:
@@ -33,16 +33,20 @@ Builds:
       - sed -i -e 's/"node":\ ">=22.13.0 <23"/"node":\ ">=22.13.0"/' package.json
       - find node_modules -type d -name local-maven-repo -prune -exec rm -rf {} +
       - npx expo prebuild -p android --clean
+      - bash scripts/prepare-android-gradle-properties.sh
       - |-
         cat >> android/gradle.properties <<'EOF'
         org.gradle.jvmargs=-Xmx3g -XX:MaxMetaspaceSize=1g -Dfile.encoding=UTF-8
         org.gradle.workers.max=2
         kotlin.compiler.execution.strategy=in-process
         EOF
+      - bash scripts/prepare-android-gradle-properties.sh
+      - bash scripts/check-fdroid-android-dependencies.sh
       - sed -i -e '/signingConfig /d' android/app/build.gradle
     postbuild:
       - cd ../..
       - python3 scripts/normalize-fdroid-apk-build-ids.py android/app/build/outputs/apk/release/app-release-unsigned.apk
+      - bash scripts/verify-fdroid-apk.sh android/app/build/outputs/apk/release/app-release-unsigned.apk
     scanignore:
       - node_modules/react-native/sdks/hermesc/linux64-bin/hermesc
       - node_modules/expo-modules-core/android/ExpoModulesCorePlugin.gradle
@@ -76,12 +80,20 @@ MaintainerNotes: |-
   React Native 0.86 is built with the Expo SDK 57 NDK baseline, pinned here as
   Android NDK r27b.
 
-  This upstream development copy refers to the intended immutable v1.0.6 tag.
+  The 1.0.7 follow-up fixes a release-build regression where Gradle memory
+  settings could be concatenated onto Expo Camera's generated
+  expo.camera.barcode-scanner-enabled=false property. That accidentally enabled
+  Google ML Kit barcode artifacts in 1.0.5/1.0.6 upstream APKs despite the source
+  configuration requesting the local ZXing path. The recipe now guards the
+  generated property before and after appending settings, audits the final
+  dependency graph, and rejects ML Kit/Barhopper artifacts in the built APK.
+
+  This upstream development copy refers to the intended immutable v1.0.7 tag.
   The fdroiddata submission should use the tag's full Git commit hash once the
   release tag has been created.
 
 AutoUpdateMode: Version
 UpdateCheckMode: Tags ^v[0-9]+\.[0-9]+\.[0-9]+$
 UpdateCheckData: 'app.json|"versionCode":\s*(\d+)|app.json|"version":\s*"([\d.]+)"'
-CurrentVersion: 1.0.6
-CurrentVersionCode: 7
+CurrentVersion: 1.0.7
+CurrentVersionCode: 8

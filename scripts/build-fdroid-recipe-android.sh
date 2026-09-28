@@ -40,6 +40,11 @@ find node_modules -type d -name local-maven-repo -prune -exec rm -rf {} +
 
 npx expo prebuild -p android --clean
 
+# Verify Expo Camera's source-build switch before appending release-only Gradle
+# settings, and normalize the generated file's trailing newline so the appended
+# properties cannot become part of the barcode-scanner value.
+bash scripts/prepare-android-gradle-properties.sh
+
 # GitHub-hosted runners have limited memory. Source-building every Expo/React
 # Native module can exhaust the Kotlin compiler's default metaspace. Keep the
 # build bounded and avoid parallel compiler/Gradle workers competing for RAM.
@@ -48,6 +53,11 @@ org.gradle.jvmargs=-Xmx3g -Dfile.encoding=UTF-8
 org.gradle.workers.max=1
 kotlin.daemon.jvmargs=-Xmx1536m
 EOF
+
+# Re-check after the append and audit the exact runtime graph that will be
+# packaged into the release APK.
+bash scripts/prepare-android-gradle-properties.sh
+bash scripts/check-fdroid-android-dependencies.sh
 
 # externalNativeBuild prefix maps are generated upstream by
 # plugins/with-reproducible-native-builds.js during Expo prebuild. Keep this
@@ -65,5 +75,6 @@ test -f "$APK"
 
 # Normalize remaining GNU SHA-1 build-id notes with the checked-in helper.
 python3 scripts/normalize-fdroid-apk-build-ids.py "$APK"
+bash scripts/verify-fdroid-apk.sh "$APK"
 
 echo "[PASS] F-Droid recipe-compatible unsigned Android build completed."
