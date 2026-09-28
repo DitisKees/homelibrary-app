@@ -81,7 +81,7 @@ if (fs.existsSync(fdroidPath)) {
   expect(fdroid.includes('Binaries: https://github.com/DitisKees/homelibrary-app/releases/download/v%v/HomeLibrary-%v.apk'), '.fdroid.yml must point reproducible verification at the immutable versioned GitHub Release APK');
   expect(fdroid.includes('subdir: android/app'), '.fdroid.yml must use the generated Android app subdir used by the official React Native recipe');
   expect(fdroid.includes('python3 scripts/normalize-fdroid-apk-build-ids.py'), '.fdroid.yml must call the checked-in APK build-id normalization helper');
-  expect(!/python3\s+-[^\n]*<<['\"]?PY/m.test(fdroid), '.fdroid.yml must not embed Python scripts');
+  expect(!/python3\s+-[^\n]*<<['"]?PY/m.test(fdroid), '.fdroid.yml must not embed Python scripts');
   expect(!fdroid.includes('externalNativeBuild {'), '.fdroid.yml must not patch externalNativeBuild in metadata; keep it upstream');
   expect(fdroid.includes('UpdateCheckMode: Tags'), '.fdroid.yml must check tagged releases');
   expect(fdroid.includes('AutoUpdateMode: Version'), '.fdroid.yml must enable version autoupdates');
@@ -104,7 +104,7 @@ if (fs.existsSync(buildScriptPath)) {
   const buildScript = fs.readFileSync(buildScriptPath, 'utf8');
   expect(buildScript.includes('./gradlew :app:assembleRelease --no-daemon'), 'F-Droid recipe build script must assemble the release APK');
   expect(buildScript.includes('android/app/build/outputs/apk/release/app-release-unsigned.apk'), 'F-Droid recipe build script must use the exact unsigned release APK path');
-  expect(!/python3\s+-[^\n]*<<['\"]?PY/m.test(buildScript), 'F-Droid recipe build script must not embed Python scripts');
+  expect(!/python3\s+-[^\n]*<<['"]?PY/m.test(buildScript), 'F-Droid recipe build script must not embed Python scripts');
   expect(buildScript.includes('python3 scripts/normalize-fdroid-apk-build-ids.py'), 'F-Droid recipe build script must call the checked-in build-id normalization helper');
 }
 
