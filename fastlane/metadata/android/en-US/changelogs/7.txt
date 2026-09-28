@@ -1,0 +1,1 @@
+Updated the F-Droid source-build setup so native reproducibility configuration and APK normalization live in checked-in upstream files instead of inline metadata. No user-facing feature changes.
