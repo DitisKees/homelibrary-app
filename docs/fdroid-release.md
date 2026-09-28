@@ -156,7 +156,7 @@ The F-Droid parent build environment observed during review supplied Node 20.19.
 Confirm that:
 
 - package is `io.github.ditiskees.homelibrary`;
-- versionName is 1.0.6 and versionCode is 6;
+- versionName is 1.0.6 and versionCode is 7;
 - target SDK remains 36;
 - no Google Play Services, Firebase, ML Kit, or Play SDK dependency appears;
 - bundled Expo `local-maven-repo` directories are absent before Android generation;
