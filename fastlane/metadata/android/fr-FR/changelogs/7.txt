@@ -1,0 +1,1 @@
+Nettoyage du build source F-Droid : la configuration de reproductibilité native et la normalisation de l’APK résident désormais dans des fichiers upstream versionnés plutôt que dans les métadonnées intégrées. Aucun changement fonctionnel pour l’utilisateur.
