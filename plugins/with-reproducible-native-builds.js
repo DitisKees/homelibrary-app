@@ -27,17 +27,17 @@ ${MARKER}
 // projects such as react-native-screens.
 def reproducibleCheckoutRoot = rootProject.projectDir.parentFile.absolutePath.replace('\\\\', '/')
 def reproduciblePrefixFlags = [
-    "-ffile-prefix-map=${reproducibleCheckoutRoot}=/homelibrary-src",
-    "-fdebug-prefix-map=${reproducibleCheckoutRoot}=/homelibrary-src",
-    "-fmacro-prefix-map=${reproducibleCheckoutRoot}=/homelibrary-src"
+    "-ffile-prefix-map=${'$'}{reproducibleCheckoutRoot}=/homelibrary-src",
+    "-fdebug-prefix-map=${'$'}{reproducibleCheckoutRoot}=/homelibrary-src",
+    "-fmacro-prefix-map=${'$'}{reproducibleCheckoutRoot}=/homelibrary-src"
 ].join(' ')
 
 subprojects { subproject ->
     ["com.android.application", "com.android.library"].each { pluginId ->
         subproject.plugins.withId(pluginId) {
             subproject.android.defaultConfig.externalNativeBuild.cmake {
-                arguments "-DCMAKE_C_FLAGS=${reproduciblePrefixFlags}",
-                          "-DCMAKE_CXX_FLAGS=${reproduciblePrefixFlags}"
+                arguments "-DCMAKE_C_FLAGS=${'$'}{reproduciblePrefixFlags}",
+                          "-DCMAKE_CXX_FLAGS=${'$'}{reproduciblePrefixFlags}"
             }
         }
     }
