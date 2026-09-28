@@ -47,6 +47,9 @@ jobs:
       - name: Prebuild clean Android native project
         run: npx expo prebuild --clean --no-install --platform android
 
+      - name: Guard generated Expo Camera Gradle properties
+        run: bash scripts/prepare-android-gradle-properties.sh
+
       - name: Check F-Droid Android dependency graph
         run: bash scripts/check-fdroid-android-dependencies.sh
 
