@@ -49,6 +49,7 @@ npm run validate:fdroid-metadata
 bash scripts/prepare-fdroid-source-tree.sh
 
 npx expo prebuild --clean --no-install --platform android
+bash scripts/prepare-android-gradle-properties.sh
 # F-Droid/upstream reproducibility compares the unsigned release artifact.
 sed -i -e '/signingConfig /d' android/app/build.gradle
 bash scripts/check-fdroid-android-dependencies.sh
