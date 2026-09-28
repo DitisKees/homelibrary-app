@@ -1,0 +1,1 @@
+Fixed an Android release-build bug that could re-enable Expo Camera's Google ML Kit barcode stack. Release and F-Droid builds now preserve the ZXing-only configuration and reject ML Kit/Barhopper artifacts.
