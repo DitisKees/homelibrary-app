@@ -1,0 +1,1 @@
+Der F-Droid-Quellbuild wurde bereinigt: Konfiguration für reproduzierbare native Builds und APK-Normalisierung liegen nun in eingecheckten Upstream-Dateien statt in eingebetteten Metadaten. Keine funktionalen Änderungen für Nutzer.
