@@ -1,0 +1,1 @@
+Verhelpt een fout in de Android-releasebuild waardoor Expo Camera onbedoeld Google ML Kit voor barcodes kon meenemen. Release- en F-Droid-builds bewaken nu de ZXing-configuratie en weigeren ML Kit/Barhopper-artefacten.
