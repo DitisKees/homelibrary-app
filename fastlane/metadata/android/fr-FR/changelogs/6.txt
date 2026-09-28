@@ -1,0 +1,1 @@
+Corrige la gestion des sessions PocketBase expirées au démarrage afin que HomeLibrary ne paraisse plus connecté lorsque les requêtes protégées échouent. Met également à jour les dépendances correctives d’Expo SDK 57 tout en conservant le build Android/F-Droid reproductible.

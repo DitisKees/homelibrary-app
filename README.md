@@ -2,7 +2,7 @@
 
 HomeLibrary is a cross-platform client for managing a shared, self-hosted household book collection backed by PocketBase.
 
-> **F-Droid status:** HomeLibrary is being prepared for submission to the official F-Droid repository. Android barcode scanning uses the FLOSS ZXing Core implementation; runtime dependencies and licenses are audited; Expo native Android modules build from source rather than bundled AARs; and CI verifies a clean public release build. Upstream Fastlane text metadata and an initial F-Droid recipe are included. Real-device screenshots, the `v1.0.2` release tag, and final `fdroiddata` validation/submission remain.
+> **F-Droid status:** The official `fdroid/fdroiddata!48673` submission is open. HomeLibrary 1.0.4 is already published upstream as a developer-signed reproducible release. The next candidate is **1.0.5 / versionCode 6**, which includes the expired PocketBase session fix and current Expo SDK 57 patch dependencies. Fastlane metadata, screenshots, reproducible-build checks, and signing are in place; the remaining work is to publish 1.0.5, update the open F-Droid MR to that immutable release, and obtain buildserver verification/acceptance.
 
 ## Features
 
@@ -21,7 +21,7 @@ HomeLibrary is a cross-platform client for managing a shared, self-hosted househ
 
 ## Development status
 
-HomeLibrary is early-stage software. The current source snapshot is functional and the proprietary Android barcode-scanning dependency has been removed. See `docs/fdroid.md` and the repository issues for the remaining F-Droid work.
+HomeLibrary is early-stage software, but the current source is functional and the Android release path is reproducible and prepared for F-Droid review. See `docs/fdroid.md` and the open `fdroid/fdroiddata!48673` submission for the remaining publication work.
 
 The permanent Android application ID is:
 
@@ -84,7 +84,7 @@ npm start
 Useful checks before opening a pull request:
 
 ```bash
-npx expo-doctor@latest
+npx expo-doctor
 npm run validate:android-release
 npm run validate:fdroid-metadata
 npm run typecheck
@@ -129,16 +129,18 @@ ISBN lookup supports Open Library and Google Books through a provider abstractio
 
 A Google Books API key stored in a client application is not a secret. Apply appropriate restrictions and quotas if you configure one.
 
-## F-Droid roadmap
+## F-Droid status
 
-Before submitting HomeLibrary to the official F-Droid repository:
+The initial official F-Droid submission is open as `fdroid/fdroiddata!48673`.
 
 1. ~~replace the ML Kit barcode scanner with a fully FLOSS implementation~~ — completed with ZXing Core;
 2. ~~audit the generated Android and npm dependency graph for non-free libraries~~ — completed;
-3. ~~ensure the Android app builds from a clean checkout without relying on EAS or private services~~ — completed;
-4. add upstream F-Droid/Fastlane metadata, screenshots, and changelogs — text metadata and changelog prepared; real-device screenshots remain;
-5. create a tagged source release suitable for F-Droid's build recipe — `1.0.2` / versionCode `3` is prepared, but the immutable `v1.0.2` tag must be created after the release commit is merged and verified;
-6. test the initial `.fdroid.yml` recipe with current `fdroidserver` and submit the resulting metadata to `fdroiddata`.
+3. ~~build Expo/React Native native modules from public source and verify reproducibility~~ — completed;
+4. ~~add Fastlane metadata, screenshots, changelogs, permanent signing, and reproducible GitHub Release APKs~~ — completed;
+5. ~~publish a reproducible upstream candidate and update the existing fdroiddata submission~~ — completed for 1.0.4;
+6. prepare and tag **1.0.5 / versionCode 6** from an exact green `main` commit;
+7. publish and independently verify `HomeLibrary-1.0.5.apk`, then update !48673 to the full 1.0.5 source SHA and binary hash;
+8. obtain a successful F-Droid buildserver verification and acceptance.
 
 See [`docs/fdroid.md`](docs/fdroid.md) and [`docs/fdroid-release.md`](docs/fdroid-release.md) for details.
 

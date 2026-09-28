@@ -1,0 +1,1 @@
+Behebt die Behandlung abgelaufener PocketBase-Sitzungen beim Start, sodass HomeLibrary nicht mehr als angemeldet erscheint, während geschützte Bibliotheksanfragen fehlschlagen. Außerdem wurden Expo-SDK-57-Patch-Abhängigkeiten aktualisiert und der reproduzierbare Android/F-Droid-Build beibehalten.

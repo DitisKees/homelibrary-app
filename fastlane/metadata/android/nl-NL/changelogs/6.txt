@@ -1,0 +1,1 @@
+Verbetert de afhandeling van verlopen PocketBase-sessies bij het starten, zodat HomeLibrary niet meer ingelogd lijkt terwijl bibliotheekverzoeken mislukken. Ook zijn de Expo SDK 57-patchafhankelijkheden bijgewerkt en blijft het reproduceerbare Android/F-Droid-buildproces behouden.

@@ -1,0 +1,1 @@
+Fixed startup handling of expired PocketBase sessions so HomeLibrary no longer appears signed in while protected library requests fail. Updated Expo SDK 57 patch dependencies and retained the reproducible Android/F-Droid build path.

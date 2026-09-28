@@ -1,8 +1,8 @@
 # F-Droid release procedure
 
-This document describes the release path for HomeLibrary's first upstream-signed reproducible F-Droid publication. The current candidate is Android `1.0.3` / versionCode `4`, with intended immutable tag `v1.0.3`.
+This document describes the release path for HomeLibrary's upstream-signed reproducible F-Droid publication. The current candidate is Android `1.0.5` / versionCode `6`, with intended immutable tag `v1.0.5`.
 
-The earlier `v1.0.2` / versionCode 3 candidate must remain untouched. Reproducibility and permanent signing were completed after that source point.
+`v1.0.4` / versionCode 5 is already published upstream and is currently referenced by the open fdroiddata submission. Published tags remain immutable; 1.0.5 is a new release containing the expired-session fix and current Expo SDK 57 patch dependencies.
 
 ## Version source of truth
 
@@ -11,9 +11,9 @@ Android release versions are defined in `app.json`:
 ```json
 {
   "expo": {
-    "version": "1.0.3",
+    "version": "1.0.5",
     "android": {
-      "versionCode": 4
+      "versionCode": 6
     }
   }
 }
@@ -76,14 +76,14 @@ git pull --ff-only
 git status --short
 node -p "require('./app.json').expo.version"
 node -p "require('./app.json').expo.android.versionCode"
-git tag -a v1.0.3 -m "HomeLibrary 1.0.3"
-git push origin v1.0.3
+git tag -a v1.0.5 -m "HomeLibrary 1.0.5"
+git push origin v1.0.5
 ```
 
 Expected version output:
 
 ```text
-1.0.3
+1.0.5
 4
 ```
 
@@ -104,11 +104,11 @@ For a `vX.Y.Z` tag, `.github/workflows/android-release.yml`:
 
 Manual workflow runs remain useful for signing tests. If an immutable tag-triggered release fails because of release infrastructure, the corrected workflow may be run manually with `release_tag` set to that existing tag; it checks out and verifies the exact immutable tag source and may publish the permanent assets without moving the tag.
 
-After `v1.0.3` finishes, independently download and verify:
+After `v1.0.5` finishes, independently download and verify:
 
 ```bash
-apksigner verify --verbose --print-certs HomeLibrary-1.0.3.apk
-sha256sum HomeLibrary-1.0.3.apk
+apksigner verify --verbose --print-certs HomeLibrary-1.0.5.apk
+sha256sum HomeLibrary-1.0.5.apk
 ```
 
 The signer certificate SHA-256 must equal the configured production certificate. Keep that fingerprint: fdroiddata needs its lower-case hex form in `AllowedAPKSigningKeys`.
@@ -123,37 +123,31 @@ It also defines the reproducible binary location:
 Binaries: https://github.com/DitisKees/homelibrary-app/releases/download/v%v/HomeLibrary-%v.apk
 ```
 
-The submitted fdroiddata metadata must replace `commit: v1.0.3` with the full 40-character SHA resolved from the immutable tag.
+The submitted fdroiddata metadata must replace `commit: v1.0.5` with the full 40-character SHA resolved from the immutable tag.
 
-The official metadata must additionally contain:
-
-```text
-AllowedAPKSigningKeys: <lower-case production certificate SHA-256>
-```
-
-Do not add or guess this value before independently verifying the first production APK.
+The official metadata must retain the already verified `AllowedAPKSigningKeys` value for the permanent production certificate. Do not change the signing identity between releases.
 
 ## Test with fdroidserver
 
 Resolve the source commit:
 
 ```bash
-git rev-list -n 1 v1.0.3
+git rev-list -n 1 v1.0.5
 ```
 
-In the fdroiddata fork, update `metadata/io.github.ditiskees.homelibrary.yml` to versionName 1.0.3/versionCode 4 and the full SHA, then run:
+In the fdroiddata fork, update `metadata/io.github.ditiskees.homelibrary.yml` to versionName 1.0.5/versionCode 6 and the full SHA, then run:
 
 ```bash
 fdroid readmeta
 fdroid rewritemeta io.github.ditiskees.homelibrary
 fdroid checkupdates --allow-dirty io.github.ditiskees.homelibrary
 fdroid lint io.github.ditiskees.homelibrary
-fdroid build -v -l io.github.ditiskees.homelibrary:4
+fdroid build -v -l io.github.ditiskees.homelibrary:6
 ```
 
 Review `rewritemeta` output rather than blindly committing it.
 
-The current fdroiddata MR previously failed at the HomeLibrary build command because the old recipe invoked `scripts/check-fdroid-android-dependencies.sh` from the repository root, where `./gradlew` did not exist. The current upstream recipe delegates to `scripts/build-fdroid-android.sh`; that script performs Expo prebuild and runs Gradle from `android/`, eliminating that path mismatch.
+The open fdroiddata MR uses the reviewer-requested React Native recipe shape with Debian forky Node/npm, Expo prebuild, direct Gradle assembly, and the same native path/build-ID reproducibility normalization proven by upstream CI. Keep those recipe mechanics stable while advancing only the release-specific version, source SHA, and binary details unless review feedback requires another build change.
 
 The F-Droid parent build environment observed during review supplied Node 20.19.2, while the current React Native/Expo toolchain requires a newer supported Node baseline. The fdroiddata recipe should keep the reviewer-approved Debian packaging approach where possible, but the final build-tool solution must satisfy the actual React Native/Expo engine requirement and should be discussed transparently in the MR rather than hidden with disabled checks.
 
@@ -162,7 +156,7 @@ The F-Droid parent build environment observed during review supplied Node 20.19.
 Confirm that:
 
 - package is `io.github.ditiskees.homelibrary`;
-- versionName is 1.0.3 and versionCode is 4;
+- versionName is 1.0.5 and versionCode is 4;
 - target SDK remains 36;
 - no Google Play Services, Firebase, ML Kit, or Play SDK dependency appears;
 - bundled Expo `local-maven-repo` directories are absent before Android generation;
@@ -173,15 +167,15 @@ Confirm that:
 
 ## Update existing fdroiddata MR !48673
 
-Do not open a second app-submission MR. Update the existing `fdroid/fdroiddata!48673` branch after `v1.0.3` and its GitHub Release APK exist:
+Do not open a second app-submission MR. Update the existing `fdroid/fdroiddata!48673` branch after `v1.0.5` and its GitHub Release APK exist:
 
-1. set `CurrentVersion: 1.0.3` and `CurrentVersionCode: 4`;
-2. add/update the build entry for versionCode 4 with the full `v1.0.3` commit SHA;
+1. set `CurrentVersion: 1.0.5` and `CurrentVersionCode: 6`;
+2. add/update the build entry for versionCode 6 with the full `v1.0.5` commit SHA;
 3. use the shared canonical build path;
 4. add `Binaries: https://github.com/DitisKees/homelibrary-app/releases/download/v%v/HomeLibrary-%v.apk`;
 5. add the independently verified lower-case certificate fingerprint as `AllowedAPKSigningKeys`;
 6. retain `AuthorName`;
-7. run `rewritemeta`, `lint`, `checkupdates`, and the versionCode 4 build;
+7. run `rewritemeta`, `lint`, `checkupdates`, and the versionCode 6 build;
 8. update the MR description to state that upstream reproducible signing is complete;
 9. ask for the parent pipeline/buildserver to be rerun.
 
