@@ -13,7 +13,7 @@ Android release versions are defined in `app.json`:
   "expo": {
     "version": "1.0.7",
     "android": {
-      "versionCode": 7
+      "versionCode": 8
     }
   }
 }
@@ -84,7 +84,7 @@ Expected version output:
 
 ```text
 1.0.7
-7
+8
 ```
 
 Never move, delete/recreate, or reuse a published tag. If correction is needed after tagging, create a new version/versionCode.
@@ -156,7 +156,7 @@ The F-Droid parent build environment observed during review supplied Node 20.19.
 Confirm that:
 
 - package is `io.github.ditiskees.homelibrary`;
-- versionName is 1.0.7 and versionCode is 7;
+- versionName is 1.0.7 and versionCode is 8;
 - target SDK remains 36;
 - no Google Play Services, Firebase, ML Kit, or Play SDK dependency appears;
 - `expo.camera.barcode-scanner-enabled=false` remains an exact generated Gradle property after release-only settings are appended;
@@ -171,7 +171,7 @@ Confirm that:
 
 Do not open a second app-submission MR. Update the existing `fdroid/fdroiddata!48673` branch after `v1.0.7` and its GitHub Release APK exist:
 
-1. set `CurrentVersion: 1.0.7` and `CurrentVersionCode: 7`;
+1. set `CurrentVersion: 1.0.7` and `CurrentVersionCode: 8`;
 2. add/update the build entry for versionCode 8 with the full `v1.0.7` commit SHA;
 3. use the shared canonical build path;
 4. add `Binaries: https://github.com/DitisKees/homelibrary-app/releases/download/v%v/HomeLibrary-%v.apk`;
