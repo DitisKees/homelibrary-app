@@ -2,7 +2,7 @@
 
 HomeLibrary is a cross-platform client for managing a shared, self-hosted household book collection backed by PocketBase.
 
-> **F-Droid status:** The official `fdroid/fdroiddata!48673` submission is open. HomeLibrary 1.0.4 is already published upstream as a developer-signed reproducible release. The next candidate is **1.0.5 / versionCode 6**, which includes the expired PocketBase session fix and current Expo SDK 57 patch dependencies. Fastlane metadata, screenshots, reproducible-build checks, and signing are in place; the remaining work is to publish 1.0.5, update the open F-Droid MR to that immutable release, and obtain buildserver verification/acceptance.
+> **F-Droid status:** The official `fdroid/fdroiddata!48673` submission is open. HomeLibrary 1.0.5 is published upstream as a developer-signed reproducible release. F-Droid review requested that native `externalNativeBuild` configuration and APK-normalization logic live in the upstream repository rather than inline metadata. The next candidate is **1.0.6 / versionCode 7**, which applies that build-system cleanup without user-facing feature changes.
 
 ## Features
 
@@ -137,9 +137,9 @@ The initial official F-Droid submission is open as `fdroid/fdroiddata!48673`.
 2. ~~audit the generated Android and npm dependency graph for non-free libraries~~ — completed;
 3. ~~build Expo/React Native native modules from public source and verify reproducibility~~ — completed;
 4. ~~add Fastlane metadata, screenshots, changelogs, permanent signing, and reproducible GitHub Release APKs~~ — completed;
-5. ~~publish a reproducible upstream candidate and update the existing fdroiddata submission~~ — completed for 1.0.4;
-6. prepare and tag **1.0.5 / versionCode 6** from an exact green `main` commit;
-7. publish and independently verify `HomeLibrary-1.0.5.apk`, then update !48673 to the full 1.0.5 source SHA and binary hash;
+5. ~~publish and verify reproducible upstream 1.0.5~~ — completed;
+6. move F-Droid-specific native build configuration and APK normalization out of inline metadata and into checked-in upstream files — in progress for **1.0.6 / versionCode 7**;
+7. tag and publish 1.0.6 after all CI/reproducibility checks are green, then update !48673 to the exact source SHA and APK;
 8. obtain a successful F-Droid buildserver verification and acceptance.
 
 See [`docs/fdroid.md`](docs/fdroid.md) and [`docs/fdroid-release.md`](docs/fdroid-release.md) for details.
