@@ -1,0 +1,1 @@
+De F-Droid-bronbuild is opgeschoond: configuratie voor reproduceerbare native builds en APK-normalisatie staan nu in ingecheckte upstreambestanden in plaats van inline metadata. Geen functionele wijzigingen voor gebruikers.

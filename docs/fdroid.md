@@ -9,12 +9,12 @@ See [`fdroid-dependencies.md`](./fdroid-dependencies.md) for the dependency/lice
 The next release is:
 
 ```text
-versionName: 1.0.5
-versionCode: 6
-tag: v1.0.5
+versionName: 1.0.6
+versionCode: 7
+tag: v1.0.6
 ```
 
-`v1.0.4` / versionCode 5 is the currently published reproducible upstream release and is the version presently referenced by the open fdroiddata submission. Version 1.0.5 advances the candidate so F-Droid receives the expired-session fix and the current Expo SDK 57 patch dependencies rather than publishing the known-buggy 1.0.4 app behavior.
+`v1.0.5` / versionCode 6 is the currently published reproducible upstream release. During review of the open fdroiddata submission, the F-Droid maintainer requested that Python not be embedded in metadata and that `externalNativeBuild` configuration live upstream. Version 1.0.6 implements that review feedback while preserving the same reproducible native build design.
 
 `app.json` is the source of truth for Android versionName and versionCode. `package.json` remains the private JavaScript package manifest.
 
@@ -24,7 +24,7 @@ Android ISBN barcode scanning uses the local Expo module backed by ZXing Core 3.
 
 ## Source-only native build
 
-Expo SDK 57 can ship precompiled Android AARs in package-local Maven repositories. HomeLibrary configures Expo Android autolinking with `buildFromSource: [".*"]`, removes bundled `local-maven-repo` directories before prebuild, and compiles the release APK from source.
+Expo SDK 57 can ship precompiled Android AARs in package-local Maven repositories. HomeLibrary configures Expo Android autolinking with `buildFromSource: [".*"]`, removes bundled `local-maven-repo` directories before prebuild, and compiles the release APK from source. `plugins/with-reproducible-native-builds.js` is the checked-in source of truth for the generated Gradle `externalNativeBuild` CMake prefix maps; fdroiddata no longer patches that block.
 
 The canonical build entry point is:
 
@@ -79,7 +79,7 @@ CI verifies, among other things:
 
 ## F-Droid submission status
 
-The official fdroiddata submission is already open as `fdroid/fdroiddata!48673`. It currently references the published 1.0.4 release. The next release path is:
+The official fdroiddata submission is already open as `fdroid/fdroiddata!48673`. Version 1.0.5 is published and verified; the current review feedback requires one build-system-only follow-up release:
 
 - [x] Public GPL-3.0-or-later source repository
 - [x] Permanent Android application ID
@@ -90,14 +90,13 @@ The official fdroiddata submission is already open as `fdroid/fdroiddata!48673`.
 - [x] Fastlane metadata and real screenshots
 - [x] Deterministic upstream unsigned builds
 - [x] Permanent production signing workflow
-- [x] Reproducible versioned GitHub Release APK publication
-- [x] Initial fdroiddata submission opened and updated to reproducible 1.0.4
-- [ ] Merge the 1.0.5 release-preparation PR with all checks green
-- [ ] Create immutable `v1.0.5` from that exact main commit
-- [ ] Verify the signed `HomeLibrary-1.0.5.apk` and existing certificate fingerprint
-- [ ] Update fdroiddata !48673 to versionCode 6/full source SHA and 1.0.5 release details
-- [ ] Run/obtain F-Droid buildserver verification and address review feedback
-- [ ] Obtain the first successful official F-Droid publication
+- [x] Reproducible 1.0.5 GitHub Release APK verified
+- [x] F-Droid maintainer review: keep Python and `externalNativeBuild` logic upstream
+- [ ] Merge the 1.0.6 review-fix PR with all checks green
+- [ ] Create immutable `v1.0.6` from that exact main commit
+- [ ] Verify the signed `HomeLibrary-1.0.6.apk` and existing certificate fingerprint
+- [ ] Update fdroiddata !48673 to versionCode 7/full source SHA with no embedded Python
+- [ ] Obtain a successful F-Droid buildserver verification and acceptance
 
 ## Release discipline
 

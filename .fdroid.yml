@@ -12,61 +12,76 @@ Repo: https://github.com/DitisKees/homelibrary-app.git
 Binaries: https://github.com/DitisKees/homelibrary-app/releases/download/v%v/HomeLibrary-%v.apk
 
 Builds:
-  - versionName: 1.0.5
-    versionCode: 6
-    commit: v1.0.5
+  - versionName: 1.0.6
+    versionCode: 7
+    commit: v1.0.6
+    subdir: android/app
     ndk: r27b
     sudo:
+      - echo "deb https://deb.debian.org/debian forky main" > /etc/apt/sources.list.d/forky.list
       - apt-get update
-      - apt-get install -y curl xz-utils
-      - curl -fsSL https://nodejs.org/dist/v22.13.1/node-v22.13.1-linux-x64.tar.xz -o /tmp/node-v22.13.1-linux-x64.tar.xz
-      - echo '0d2a5af33c7deab5555c8309cd3f373446fe1526c1b95833935ab3f019733b3b  /tmp/node-v22.13.1-linux-x64.tar.xz' | sha256sum -c -
-      - tar -xJf /tmp/node-v22.13.1-linux-x64.tar.xz -C /usr/local --strip-components=1
+      - apt-get install -y -t forky npm
     init:
+      - cd ../..
       - node --version
       - npm --version
-    output: android/app/build/outputs/apk/release/app-release-unsigned.apk
+      - npm ci
+    gradle:
+      - yes
+    prebuild:
+      - cd ../..
+      - sed -i -e 's/"node":\ ">=22.13.0 <23"/"node":\ ">=22.13.0"/' package.json
+      - find node_modules -type d -name local-maven-repo -prune -exec rm -rf {} +
+      - npx expo prebuild -p android --clean
+      - |-
+        cat >> android/gradle.properties <<'EOF'
+        org.gradle.jvmargs=-Xmx3g -XX:MaxMetaspaceSize=1g -Dfile.encoding=UTF-8
+        org.gradle.workers.max=2
+        kotlin.compiler.execution.strategy=in-process
+        EOF
+      - sed -i -e '/signingConfig /d' android/app/build.gradle
+    postbuild:
+      - cd ../..
+      - python3 scripts/normalize-fdroid-apk-build-ids.py android/app/build/outputs/apk/release/app-release-unsigned.apk
     scanignore:
+      - node_modules/react-native/sdks/hermesc/linux64-bin/hermesc
+      - node_modules/expo-modules-core/android/ExpoModulesCorePlugin.gradle
+      - node_modules/expo-modules-autolinking/scripts/android/autolinking_implementation.gradle
+    scandelete:
       - node_modules
-    build:
-      - bash scripts/build-fdroid-recipe-android.sh
+
+AllowedAPKSigningKeys: 99115557adc7601e8d71adbf8884b0d359ab3f720cbec10c17828c36b7bdd813
 
 MaintainerNotes: |-
-  HomeLibrary uses Expo/React Native and does not commit android/; Expo prebuild
-  creates the Android project during the build, so this recipe intentionally has
-  no subdir entry.
+  HomeLibrary uses Expo/React Native and does not commit android/. The recipe
+  follows templates/build-react-native.yml: npm dependencies are installed during
+  init, Expo prebuild generates the Android project, signingConfig is removed,
+  and F-Droid invokes Gradle directly.
+
+  Node.js/npm are installed from Debian forky as requested by the F-Droid
+  maintainer. Forky currently provides a newer Node.js than the source tag's
+  conservative <23 engines upper bound, so the recipe removes only that upper
+  bound before npm install/prebuild.
+
+  Expo SDK 57 bundles precompiled AARs in local-maven-repo directories. Expo
+  autolinking is configured upstream to build all native modules from source and
+  bundled local Maven repositories are removed before Android generation.
 
   Native React Native/Expo builds can embed absolute checkout paths and varying
-  GNU build IDs in source-built ELF libraries. The shared recipe-compatible build
-  applies compiler prefix maps and normalizes only the GNU SHA-1 build-id note
-  in-place in stored native-library APK entries, refreshing ZIP CRCs without
-  changing offsets, timestamps, alignment or compression. Upstream CI builds two
-  independent checkouts and requires the unsigned APKs to match byte-for-byte.
-
-  Expo SDK 57 bundles precompiled AARs in local-maven-repo directories. Upstream
-  configures Expo autolinking buildFromSource [".*"] and the build script deletes
-  every bundled local-maven-repo so native Expo modules are compiled from source.
-
-  node_modules is scanignored rather than scandeleted because the React Native /
-  Expo source tree is required to compile the application. Upstream separately
-  audits production npm licenses/provenance and removes the bundled Expo AARs
-  before Android generation. During build, the generated release dependency graph
-  is checked for Google Play Services, Firebase, ML Kit and Play SDK artifacts.
-
-  Expo SDK 57 requires Node.js 22.13.x or newer. Debian trixie's Node.js is too
-  old for this SDK, so the recipe installs the checksum-pinned official Node.js
-  22.13.1 build tool before running the shared build script. Node.js itself is not
-  bundled in the APK.
+  GNU build IDs in source-built ELF libraries. The upstream Expo config plugin
+  plugins/with-reproducible-native-builds.js configures externalNativeBuild CMake
+  prefix maps. APK build-id normalization is implemented in the checked-in
+  scripts/normalize-fdroid-apk-build-ids.py helper rather than embedded metadata.
 
   React Native 0.86 is built with the Expo SDK 57 NDK baseline, pinned here as
-  Android NDK r27b instead of relying on the buildserver's ambient NDK.
+  Android NDK r27b.
 
-  This upstream development copy refers to the intended immutable v1.0.5 tag.
+  This upstream development copy refers to the intended immutable v1.0.6 tag.
   The fdroiddata submission should use the tag's full Git commit hash once the
   release tag has been created.
 
 AutoUpdateMode: Version
 UpdateCheckMode: Tags ^v[0-9]+\.[0-9]+\.[0-9]+$
 UpdateCheckData: 'app.json|"versionCode":\s*(\d+)|app.json|"version":\s*"([\d.]+)"'
-CurrentVersion: 1.0.5
-CurrentVersionCode: 6
+CurrentVersion: 1.0.6
+CurrentVersionCode: 7

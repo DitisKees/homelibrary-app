@@ -1,45 +1,48 @@
-const { withProjectBuildGradle } = require('expo/config-plugins');
+const { withAppBuildGradle } = require('expo/config-plugins');
 
 const MARKER = '// HomeLibrary reproducible native builds';
 
+// This config plugin is the authoritative upstream location for the app-level
+// externalNativeBuild compiler flags used by React Native codegen. F-Droid
+// metadata must not patch the generated Gradle project after Expo prebuild.
 module.exports = function withReproducibleNativeBuilds(config) {
-  return withProjectBuildGradle(config, (config) => {
+  return withAppBuildGradle(config, (config) => {
     if (config.modResults.language !== 'groovy') {
-      throw new Error('with-reproducible-native-builds requires a Groovy project build.gradle');
+      throw new Error('with-reproducible-native-builds requires a Groovy app build.gradle');
     }
 
     if (config.modResults.contents.includes(MARKER)) {
       return config;
     }
 
-    config.modResults.contents += `
+    const needle = 'defaultConfig {';
+    if (!config.modResults.contents.includes(needle)) {
+      throw new Error('with-reproducible-native-builds could not find defaultConfig in app build.gradle');
+    }
 
-${MARKER}
-// Locally compiled React Native/Expo libraries can embed their absolute checkout
-// directory in __FILE__, debug information and therefore their GNU build-id.
-// Pass the prefix maps as CMake's initial compiler flags for every Android
-// application/library subproject. Unlike process CFLAGS/CXXFLAGS or a
-// CMAKE_PROJECT_INCLUDE hook, these values are part of each Gradle external
-// native build's CMake configuration and therefore reach dependency/codegen
-// projects such as react-native-screens.
-def reproducibleCheckoutRoot = rootProject.projectDir.parentFile.absolutePath.replace('\\\\', '/')
-def reproduciblePrefixFlags = [
-    "-ffile-prefix-map=${'$'}{reproducibleCheckoutRoot}=/src",
-    "-fdebug-prefix-map=${'$'}{reproducibleCheckoutRoot}=/src",
-    "-fmacro-prefix-map=${'$'}{reproducibleCheckoutRoot}=/src"
-].join(' ')
-
-subprojects { subproject ->
-    ["com.android.application", "com.android.library"].each { pluginId ->
-        subproject.plugins.withId(pluginId) {
-            subproject.android.defaultConfig.externalNativeBuild.cmake {
-                arguments "-DCMAKE_C_FLAGS=${'$'}{reproduciblePrefixFlags}",
-                          "-DCMAKE_CXX_FLAGS=${'$'}{reproduciblePrefixFlags}"
+    const block = `
+        ${MARKER}
+        // React Native codegen CMake builds can embed the absolute checkout path
+        // in generated native libraries such as react_codegen_rnscreens. Keep
+        // the compiler prefix maps in the generated app Gradle configuration so
+        // all app/codegen external native compilation sees the same source root.
+        def reproducibleCheckoutRoot = rootProject.projectDir.parentFile.absolutePath.replace('\\\\', '/')
+        externalNativeBuild {
+            cmake {
+                cppFlags "-ffile-prefix-map=\${reproducibleCheckoutRoot}=/homelibrary-src",
+                         "-fdebug-prefix-map=\${reproducibleCheckoutRoot}=/homelibrary-src",
+                         "-fmacro-prefix-map=\${reproducibleCheckoutRoot}=/homelibrary-src"
+                cFlags "-ffile-prefix-map=\${reproducibleCheckoutRoot}=/homelibrary-src",
+                       "-fdebug-prefix-map=\${reproducibleCheckoutRoot}=/homelibrary-src",
+                       "-fmacro-prefix-map=\${reproducibleCheckoutRoot}=/homelibrary-src"
             }
         }
-    }
-}
 `;
+
+    config.modResults.contents = config.modResults.contents.replace(
+      needle,
+      needle + block,
+    );
 
     return config;
   });
