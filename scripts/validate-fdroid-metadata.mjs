@@ -110,7 +110,9 @@ if (fs.existsSync(buildScriptPath)) {
 
 if (fs.existsSync(reproduciblePluginPath)) {
   const plugin = fs.readFileSync(reproduciblePluginPath, 'utf8');
-  expect(plugin.includes('externalNativeBuild.cmake'), 'reproducible native build plugin must configure externalNativeBuild upstream');
+  expect(plugin.includes('externalNativeBuild {'), 'reproducible native build plugin must configure app externalNativeBuild upstream');
+  expect(plugin.includes('cppFlags'), 'reproducible native build plugin must configure C++ prefix-map flags');
+  expect(plugin.includes('cFlags'), 'reproducible native build plugin must configure C prefix-map flags');
   expect(plugin.includes('-ffile-prefix-map='), 'reproducible native build plugin must configure file prefix mapping');
   expect(plugin.includes('-fdebug-prefix-map='), 'reproducible native build plugin must configure debug prefix mapping');
 }
