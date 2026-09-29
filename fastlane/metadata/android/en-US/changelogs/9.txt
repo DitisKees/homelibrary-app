@@ -1,0 +1,1 @@
+Build-system update: Android release APKs are now produced through the same F-Droid buildserver and scanner path used for official verification, with an additional signed-reference parity check before fdroiddata is updated.
