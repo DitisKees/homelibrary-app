@@ -12,6 +12,7 @@ on:
       - 'package-lock.json'
       - 'plugins/**'
       - 'scripts/**'
+      - 'scripts/fdroid/**'
       - 'src/**'
   push:
     branches:
@@ -35,7 +36,7 @@ jobs:
     name: fdroid-buildserver-${{ matrix.copy }}
     runs-on: ubuntu-latest
     container:
-      image: registry.gitlab.com/fdroid/fdroidserver:buildserver-trixie
+      image: registry.gitlab.com/fdroid/fdroidserver:buildserver-trixie@sha256:9cb68105642ca4e7b295f0ceab10f069f5b3247dc18fa7c36046e9d81aa469a8
     timeout-minutes: 90
     strategy:
       fail-fast: false
@@ -44,9 +45,8 @@ jobs:
     env:
       ANDROID_HOME: /opt/android-sdk
       ANDROID_SDK_ROOT: /opt/android-sdk
-      FDROID_SIMULATION_SOURCE_REF: ${{ github.event.pull_request.head.sha || github.sha }}
-      FDROID_SIMULATION_MODE: source
-      FDROID_SIMULATION_EXPORT_APK: ${{ github.workspace }}/fdroid-buildserver-output/app-release-unsigned.apk
+      FDROID_SOURCE_REF: ${{ github.event.pull_request.head.sha || github.sha }}
+      FDROID_EXPORT_APK: fdroid-buildserver-output/app-release-unsigned.apk
 
     steps:
       - name: Check out HomeLibrary
@@ -58,10 +58,10 @@ jobs:
         run: |
           set -euo pipefail
           git config --global --add safe.directory "$GITHUB_WORKSPACE"
-          test "$(git rev-parse HEAD)" = "$FDROID_SIMULATION_SOURCE_REF"
+          test "$(git rev-parse HEAD)" = "$FDROID_SOURCE_REF"
 
       - name: Run F-Droid production-buildserver simulation
-        run: bash scripts/run-fdroid-buildserver-simulation.sh "$FDROID_SIMULATION_SOURCE_REF" .fdroid.yml source
+        run: bash scripts/fdroid/run-source-build.sh "$FDROID_SOURCE_REF" .fdroid.yml
 
       - name: Upload unsigned buildserver APK
         uses: actions/upload-artifact@v4
