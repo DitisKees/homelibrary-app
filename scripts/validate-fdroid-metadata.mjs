@@ -118,6 +118,11 @@ if (fs.existsSync(releaseWorkflowPath)) {
   expect(releaseWorkflow.includes("SDKMANAGER=\"${SDK_ROOT}/cmdline-tools/latest/bin/sdkmanager\""), 'Android release workflow must resolve sdkmanager from the Android SDK instead of assuming it is on PATH');
   expect(releaseWorkflow.includes('build-tools;34.0.0'), 'Android release workflow must use apksigner from Android build-tools 34.0.0 for F-Droid signature-copy compatibility');
   expect(releaseWorkflow.includes('HomeLibrary-${HOMELIBRARY_RELEASE_VERSION}.apk'), 'Android release workflow must produce a versioned stable APK filename');
+  expect(releaseWorkflow.includes('registry.gitlab.com/fdroid/fdroidserver:buildserver-trixie'), 'Android release workflow must build the unsigned APK in F-Droid\'s buildserver image');
+  expect(releaseWorkflow.includes('run-fdroid-buildserver-simulation.sh'), 'Android release workflow must build through the checked-in F-Droid simulation path');
+  expect(releaseWorkflow.includes('fdroid-buildserver-output/app-release-unsigned.apk'), 'Android release workflow must sign the APK produced by the F-Droid buildserver path');
+  expect(releaseWorkflow.includes('verify-fdroid-release-parity'), 'Android release workflow must run F-Droid signed-reference parity verification');
+  expect(releaseWorkflow.includes('.fdroid.yml release'), 'Android release parity must retain Binaries and AllowedAPKSigningKeys');
   expect(releaseWorkflow.includes('gh release upload'), 'Android release workflow must publish the signed APK to the GitHub Release for the immutable tag');
 }
 
@@ -126,6 +131,8 @@ if (fs.existsSync(buildserverSimulationWorkflowPath)) {
   expect(workflow.includes('registry.gitlab.com/fdroid/fdroidserver:buildserver-trixie'), 'F-Droid simulation must use the production buildserver image');
   expect(workflow.includes('run-fdroid-buildserver-simulation.sh'), 'F-Droid simulation workflow must call the checked-in simulation script');
   expect(workflow.includes('github.event.pull_request.head.sha || github.sha'), 'F-Droid simulation must build the PR head/source commit rather than the synthetic merge commit');
+  expect(workflow.includes('matrix:\n        copy: [a, b]'), 'F-Droid simulation must run two independent buildserver copies');
+  expect(workflow.includes('cmp --silent'), 'F-Droid simulation must byte-compare the independent buildserver APKs');
 }
 
 if (fs.existsSync(buildserverSimulationScriptPath)) {
@@ -136,6 +143,9 @@ if (fs.existsSync(buildserverSimulationScriptPath)) {
   expect(script.includes('--no-tarball'), 'F-Droid simulation must mirror the parent fdroiddata build command');
   expect(script.includes('fetchsrclibs'), 'F-Droid simulation must run fdroid fetchsrclibs before building');
   expect(script.includes('a35fdfddd9c66823987a410566a6101186e39c84'), 'F-Droid simulation must use the same fdroidserver trust root as fdroiddata CI');
+  expect(script.includes('MODE='), 'F-Droid simulation must support explicit source/release modes');
+  expect(script.includes('release mode requires Binaries and AllowedAPKSigningKeys'), 'release parity mode must require F-Droid binary/signing metadata');
+  expect(script.includes('FDROID_SIMULATION_EXPORT_APK'), 'F-Droid simulation must export the exact unsigned buildserver APK for signing/comparison');
 }
 
 if (fs.existsSync(buildScriptPath)) {
@@ -192,4 +202,4 @@ if (errors.length > 0) {
 
 process.stdout.write(`F-Droid metadata OK for HomeLibrary ${versionName} (${versionCode}).\n`);
 process.stdout.write('Fastlane text metadata exists for en-US, nl-NL, de-DE, and fr-FR.\n');
-process.stdout.write('Expo native modules are configured for source builds, and CI includes reproducibility plus a production-buildserver simulation.\n');
+process.stdout.write('Expo native modules are configured for source builds; CI requires two independent production-buildserver APKs, and releases sign that exact F-Droid build path before signed-reference parity verification.\n');
