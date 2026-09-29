@@ -2,7 +2,7 @@
 
 HomeLibrary is a cross-platform client for managing a shared, self-hosted household book collection backed by PocketBase.
 
-> **F-Droid status:** The official `fdroid/fdroiddata!48673` submission is open. HomeLibrary 1.0.6 is published upstream, but its Android release APK exposed a build regression that accidentally packaged Expo Camera's Google ML Kit barcode stack even though HomeLibrary uses the local ZXing scanner. The next candidate is **1.0.7 / versionCode 8**, which fixes that release-path bug and adds dependency/APK guards against recurrence.
+> **F-Droid status:** The official `fdroid/fdroiddata!48673` submission is open. HomeLibrary **1.0.7 / versionCode 8** is published upstream with the ML Kit packaging regression fixed. The remaining work is to get the official F-Droid buildserver recipe green; GitHub CI now includes a production-buildserver simulation so scanner/buildserver failures are caught before updating fdroiddata.
 
 ## Features
 
@@ -93,13 +93,13 @@ npm test
 npm run build:web
 ```
 
-For the complete source-only Android release path used to approximate the F-Droid build environment:
+For the canonical source-only Android release path:
 
 ```bash
 npm run build:fdroid-android
 ```
 
-CI runs these checks, verifies all committed PocketBase migrations against PocketBase 0.40.1, and validates the Docker self-hosting path when deployment-related files change.
+CI runs these checks, verifies all committed PocketBase migrations against PocketBase 0.40.1, validates the Docker self-hosting path when deployment-related files change, and runs a separate F-Droid production-buildserver simulation in `registry.gitlab.com/fdroid/fdroidserver:buildserver-trixie` for F-Droid-relevant changes.
 
 ## Authentication storage
 
@@ -137,11 +137,11 @@ The initial official F-Droid submission is open as `fdroid/fdroiddata!48673`.
 2. ~~audit the generated Android and npm dependency graph for non-free libraries~~ — completed;
 3. ~~build Expo/React Native native modules from public source and verify reproducibility~~ — completed;
 4. ~~add Fastlane metadata, screenshots, changelogs, permanent signing, and reproducible GitHub Release APKs~~ — completed;
-5. ~~publish and verify reproducible upstream 1.0.6~~ — completed;
-6. fix the Gradle-properties append regression that re-enabled Expo Camera's ML Kit barcode dependencies in the published APK — in progress for **1.0.7 / versionCode 8**;
-7. require both the final dependency graph and built APK to remain free of Google ML Kit/Barhopper barcode artifacts;
-8. tag and publish 1.0.7 after all CI/reproducibility checks are green, then update !48673 to the exact source SHA and APK;
-9. obtain a successful F-Droid buildserver verification and acceptance.
+5. ~~publish and verify reproducible upstream 1.0.7~~ — completed;
+6. ~~fix the Gradle-properties append regression and add dependency/APK guards against ML Kit/Barhopper~~ — completed in 1.0.7;
+7. run the F-Droid production-buildserver image and live scanner in GitHub CI before fdroiddata changes are submitted;
+8. keep the checked-in `.fdroid.yml` aligned with the actual fdroiddata recipe, including reviewed scanner exceptions;
+9. obtain a successful official F-Droid buildserver verification and acceptance.
 
 See [`docs/fdroid.md`](docs/fdroid.md) and [`docs/fdroid-release.md`](docs/fdroid-release.md) for details.
 
