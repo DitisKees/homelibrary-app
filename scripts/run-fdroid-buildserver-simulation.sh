@@ -79,6 +79,24 @@ collect_diagnostics() {
     done
   fi
 
+  {
+    echo "mode=$MODE"
+    echo "build_spec=$BUILD_SPEC"
+    echo "source_ref=$SOURCE_REF"
+    printf 'node='; node --version 2>/dev/null || true
+    printf 'npm='; npm --version 2>/dev/null || true
+    printf 'java='; java -version 2>&1 | head -n 1 || true
+    if command -v gradle >/dev/null 2>&1; then
+      gradle --version 2>/dev/null | sed -n '1,8p' || true
+    fi
+    if [[ -d "$FDROIDSERVER_DIR/.git" ]]; then
+      echo "fdroidserver=$(git -C "$FDROIDSERVER_DIR" rev-parse HEAD 2>/dev/null || true)"
+    fi
+    if [[ -d "$FDROIDDATA_DIR/.git" ]]; then
+      echo "fdroiddata=$(git -C "$FDROIDDATA_DIR" rev-parse HEAD 2>/dev/null || true)"
+    fi
+  } > "$DIAG_ROOT/toolchain.txt"
+
   local apk=""
   apk="$(find_unsigned_apk 2>/dev/null || true)"
   if [[ -n "$apk" ]]; then
@@ -185,7 +203,20 @@ fdroid_as_vagrant() {
       fdroid "$@"
 }
 
+# Mirror the parent fdroiddata metadata jobs before doing the expensive build.
+# Fail if our checked-in/effective recipe is not already in fdroidserver's
+# canonical rewritemeta form; this prevents formatting-only remote failures.
+cp "$home_vagrant/metadata/$APP_ID.yml" "$DIAG_ROOT/metadata-before-rewritemeta.yml"
 pushd "$home_vagrant" >/dev/null
+fdroid_as_vagrant lint "$APP_ID"
+fdroid_as_vagrant rewritemeta "$APP_ID"
+if ! cmp --silent "$DIAG_ROOT/metadata-before-rewritemeta.yml" "$home_vagrant/metadata/$APP_ID.yml"; then
+  cp -f "$home_vagrant/metadata/$APP_ID.yml" "$DIAG_ROOT/metadata-after-rewritemeta.yml"
+  echo "[FAIL] Effective F-Droid metadata is not canonical according to fdroid rewritemeta." >&2
+  diff -u "$DIAG_ROOT/metadata-before-rewritemeta.yml" "$home_vagrant/metadata/$APP_ID.yml" || true
+  exit 2
+fi
+
 fdroid_as_vagrant fetchsrclibs "$BUILD_SPEC" --verbose
 
 set +e
@@ -206,6 +237,14 @@ popd >/dev/null
 if [[ "$status" -ne 0 ]]; then
   echo "[FAIL] F-Droid buildserver simulation failed for $BUILD_SPEC in $MODE mode." >&2
   exit "$status"
+fi
+
+if [[ "$MODE" == "release" ]]; then
+  # Mirror the parent checkupdates job once the immutable tag exists. --allow-dirty
+  # prevents the check from rejecting our temporary effective metadata.
+  pushd "$home_vagrant" >/dev/null
+  fdroid_as_vagrant checkupdates --allow-dirty -v "$APP_ID"
+  popd >/dev/null
 fi
 
 if [[ -n "$EXPORT_APK" ]]; then
