@@ -18,13 +18,12 @@ jobs:
   build-fdroid-unsigned:
     runs-on: ubuntu-latest
     container:
-      image: registry.gitlab.com/fdroid/fdroidserver:buildserver-trixie
+      image: registry.gitlab.com/fdroid/fdroidserver:buildserver-trixie@sha256:9cb68105642ca4e7b295f0ceab10f069f5b3247dc18fa7c36046e9d81aa469a8
     timeout-minutes: 90
     env:
       ANDROID_HOME: /opt/android-sdk
       ANDROID_SDK_ROOT: /opt/android-sdk
-      FDROID_SIMULATION_MODE: source
-      FDROID_SIMULATION_EXPORT_APK: ${{ github.workspace }}/fdroid-buildserver-output/app-release-unsigned.apk
+      FDROID_EXPORT_APK: fdroid-buildserver-output/app-release-unsigned.apk
 
     steps:
       - name: Check out immutable release source
@@ -61,7 +60,7 @@ jobs:
           set -euo pipefail
           git config --global --add safe.directory "$GITHUB_WORKSPACE"
           SOURCE_SHA="$(git rev-parse HEAD)"
-          bash scripts/run-fdroid-buildserver-simulation.sh "${SOURCE_SHA}" .fdroid.yml source
+          bash scripts/fdroid/run-source-build.sh "${SOURCE_SHA}" .fdroid.yml
 
       - name: Upload F-Droid buildserver unsigned APK
         uses: actions/upload-artifact@v4
@@ -284,14 +283,13 @@ jobs:
   verify-fdroid-release-parity:
     runs-on: ubuntu-latest
     container:
-      image: registry.gitlab.com/fdroid/fdroidserver:buildserver-trixie
+      image: registry.gitlab.com/fdroid/fdroidserver:buildserver-trixie@sha256:9cb68105642ca4e7b295f0ceab10f069f5b3247dc18fa7c36046e9d81aa469a8
     timeout-minutes: 90
     needs: sign-and-publish
     if: needs.sign-and-publish.outputs.release_tag != ''
     env:
       ANDROID_HOME: /opt/android-sdk
       ANDROID_SDK_ROOT: /opt/android-sdk
-      FDROID_SIMULATION_MODE: release
 
     steps:
       - name: Check out parity tooling and canonical metadata
@@ -305,7 +303,7 @@ jobs:
         run: |
           set -euo pipefail
           git config --global --add safe.directory "$GITHUB_WORKSPACE"
-          bash scripts/run-fdroid-buildserver-simulation.sh "" .fdroid.yml release
+          bash scripts/fdroid/run-release-verification.sh .fdroid.yml
 
       - name: Upload F-Droid release-parity diagnostics
         if: always()
