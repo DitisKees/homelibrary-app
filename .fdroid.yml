@@ -9,7 +9,7 @@ Changelog: https://github.com/DitisKees/homelibrary-app/tags
 
 RepoType: git
 Repo: https://github.com/DitisKees/homelibrary-app.git
-Binaries:
+Binaries: 
   https://github.com/DitisKees/homelibrary-app/releases/download/v%v/HomeLibrary-%v.apk
 
 Builds:
