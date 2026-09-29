@@ -4,9 +4,9 @@ HomeLibrary is intended for distribution through the official F-Droid repository
 
 See [`fdroid-dependencies.md`](./fdroid-dependencies.md) for the dependency/license audit, [`fdroid-release.md`](./fdroid-release.md) for the release and submission procedure, and [`android-release-signing.md`](./android-release-signing.md) for production signing.
 
-## Current release candidate
+## Current upstream release
 
-The next release is:
+The current upstream release is:
 
 ```text
 versionName: 1.0.7
@@ -14,7 +14,7 @@ versionCode: 8
 tag: v1.0.7
 ```
 
-`v1.0.6` / versionCode 7 is the currently published upstream release. Its APK exposed a release-build regression: Gradle memory settings were appended to a generated `gradle.properties` file that could lack a trailing newline, corrupting Expo Camera's `expo.camera.barcode-scanner-enabled=false` value and packaging Google ML Kit/Barhopper barcode artifacts. Version 1.0.7 fixes that path and adds guards around both the final dependency graph and APK contents.
+`v1.0.7` / versionCode 8 is published upstream and fixes the release-build regression where Gradle settings could corrupt Expo Camera's `expo.camera.barcode-scanner-enabled=false` value. The 1.0.7 release also audits the final dependency graph and APK contents to reject ML Kit/Barhopper barcode artifacts.
 
 `app.json` is the source of truth for Android versionName and versionCode. `package.json` remains the private JavaScript package manifest.
 
@@ -34,7 +34,7 @@ npm run build:fdroid-android
 
 The script stages source-controlled inputs at the fixed `/tmp/homelibrary-fdroid-source` path, installs pinned npm dependencies, runs the FLOSS/native dependency guards, performs Expo prebuild, builds the unsigned release APK, and verifies package metadata. The fixed path removes checkout-location differences from native ELF objects.
 
-Upstream CI independently builds the same commit from two clean checkouts and requires the unsigned APKs to be byte-for-byte identical.
+Upstream CI independently builds the same commit from two clean checkouts and requires the unsigned APKs to be byte-for-byte identical. A separate `F-Droid buildserver simulation` workflow runs the official `buildserver-trixie` image, live F-Droid scanner, `fetchsrclibs`, and `fdroid build --refresh-scanner --on-server` path against the pull-request/source commit. This catches scanner mutations and buildserver-only toolchain behavior before fdroiddata is updated.
 
 ## Production signing and reproducible verification
 
@@ -77,11 +77,13 @@ CI verifies, among other things:
 - the upstream recipe delegates to the shared canonical build script;
 - the reproducible binary URL uses the versioned GitHub Release asset;
 - the release workflow publishes only version-matched tagged releases;
+- the F-Droid production-buildserver image and live source scanner can build the exact candidate source commit;
+- scanner-sensitive React Native Gradle files remain intact through reviewed `scanignore` entries;
 - the unsigned APK retains package `io.github.ditiskees.homelibrary` and target SDK 36.
 
 ## F-Droid submission status
 
-The official fdroiddata submission is already open as `fdroid/fdroiddata!48673`. Version 1.0.6 is published, but the upstream APK must be superseded because of the ML Kit packaging regression:
+The official fdroiddata submission is already open as `fdroid/fdroiddata!48673`. Version 1.0.7 is published upstream; the remaining work is official buildserver verification:
 
 - [x] Public GPL-3.0-or-later source repository
 - [x] Permanent Android application ID
@@ -92,14 +94,14 @@ The official fdroiddata submission is already open as `fdroid/fdroiddata!48673`.
 - [x] Fastlane metadata and real screenshots
 - [x] Deterministic upstream unsigned builds
 - [x] Permanent production signing workflow
-- [x] Reproducible 1.0.6 GitHub Release APK published
+- [x] Reproducible 1.0.7 GitHub Release APK published
 - [x] F-Droid maintainer review: keep Python and `externalNativeBuild` logic upstream
 - [x] Diagnose 1.0.5/1.0.6 ML Kit packaging regression in generated Gradle properties
-- [ ] Merge the 1.0.7 regression-fix PR with all checks green
-- [ ] Create immutable `v1.0.7` from that exact main commit
-- [ ] Verify the signed `HomeLibrary-1.0.7.apk`, certificate fingerprint, and absence of ML Kit/Barhopper artifacts
-- [ ] Update fdroiddata !48673 to versionCode 8/full source SHA with the guarded Gradle-properties path
-- [ ] Obtain a successful F-Droid buildserver verification and acceptance
+- [x] Merge the 1.0.7 regression-fix PR with all checks green
+- [x] Create immutable `v1.0.7` and publish/verify the signed APK
+- [x] Update fdroiddata !48673 to versionCode 8/full source SHA
+- [ ] Require the new GitHub F-Droid buildserver simulation to pass for recipe/source changes
+- [ ] Obtain a successful official F-Droid buildserver verification and acceptance
 
 ## Release discipline
 
