@@ -74,7 +74,7 @@ CI verifies, among other things:
 - bundled Expo local Maven repositories are removed;
 - deterministic application/store icon generation;
 - F-Droid metadata, changelogs, versionName and versionCode agree;
-- the upstream recipe delegates to the shared canonical build script;
+- the checked-in recipe matches the F-Droid buildserver path used for production release APKs;
 - the reproducible binary URL uses the versioned GitHub Release asset;
 - the release workflow publishes only version-matched tagged releases;
 - two independent F-Droid production-buildserver runs produce identical unsigned APKs;
