@@ -48,7 +48,7 @@ npm run build:web
 npm run build:fdroid-android
 ```
 
-The pinned repository `expo-doctor` version must be used; do not use `@latest` in release validation. GitHub CI and the two-clean-checkout reproducibility workflow must be green before tagging.
+The pinned repository `expo-doctor` version must be used; do not use `@latest` in release validation. GitHub CI, the two-clean-checkout reproducibility workflow, and the `F-Droid buildserver simulation` workflow must all be green before tagging or updating fdroiddata.
 
 ## Store metadata
 
@@ -129,6 +129,19 @@ The official metadata must retain the already verified `AllowedAPKSigningKeys` v
 
 ## Test with fdroidserver
 
+The preferred pre-submission test is the GitHub `F-Droid buildserver simulation` workflow. It runs the same public buildserver image used by fdroiddata CI, uses the live F-Droid source scanner, rewrites only the metadata `commit` field to the pull-request/source SHA, and runs:
+
+```text
+fdroid fetchsrclibs <appid>:<versionCode> --verbose
+fdroid build --verbose --test --refresh-scanner --on-server --no-tarball <appid>:<versionCode>
+```
+
+The simulation intentionally omits `Binaries`/signing-key comparison so it can run before an immutable release exists; byte-for-byte reproducibility and signed-binary verification remain separate release gates. On failure it uploads the build log, effective metadata, generated Android files, and scanner-sensitive React Native Gradle files.
+
+Only after that workflow is green should the fdroiddata branch be updated.
+
+For manual fdroidserver testing, resolve the source commit as before:
+
 Resolve the source commit:
 
 ```bash
@@ -177,7 +190,7 @@ Do not open a second app-submission MR. Update the existing `fdroid/fdroiddata!4
 4. add `Binaries: https://github.com/DitisKees/homelibrary-app/releases/download/v%v/HomeLibrary-%v.apk`;
 5. add the independently verified lower-case certificate fingerprint as `AllowedAPKSigningKeys`;
 6. retain `AuthorName`;
-7. run `rewritemeta`, `lint`, `checkupdates`, and the versionCode 8 build;
+7. require the GitHub `F-Droid buildserver simulation` workflow to be green, then run `rewritemeta`, `lint`, `checkupdates`, and the versionCode 8 build;
 8. update the MR description to state that upstream reproducible signing is complete;
 9. ask for the parent pipeline/buildserver to be rerun.
 
