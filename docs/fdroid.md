@@ -2,7 +2,7 @@
 
 HomeLibrary is intended for distribution through the official F-Droid repository. The Android release path is designed so F-Droid can build the application entirely from public source and, for reproducible releases, verify the upstream-signed APK before publishing that same APK.
 
-See [`fdroid-dependencies.md`](./fdroid-dependencies.md) for the dependency/license audit, [`fdroid-release.md`](./fdroid-release.md) for the release and submission procedure, and [`android-release-signing.md`](./android-release-signing.md) for production signing.
+See [`fdroid-dependencies.md`](./fdroid-dependencies.md) for the dependency/license audit, [`fdroid-release.md`](./fdroid-release.md) for the release and submission procedure, [`fdroid-harness.md`](./fdroid-harness.md) for the build-harness architecture and maintenance rules, and [`android-release-signing.md`](./android-release-signing.md) for production signing.
 
 ## Current F-Droid candidate
 
@@ -34,7 +34,7 @@ npm run build:fdroid-android
 
 The script stages source-controlled inputs at the fixed `/tmp/homelibrary-fdroid-source` path, installs pinned npm dependencies, runs the FLOSS/native dependency guards, performs Expo prebuild, builds the unsigned release APK, and verifies package metadata. The fixed path removes checkout-location differences from native ELF objects.
 
-Upstream CI retains the existing two-clean-checkout Android reproducibility check and also runs two independent F-Droid buildserver simulations. Both use the official `buildserver-trixie` image, live F-Droid scanner, `fetchsrclibs`, and `fdroid build --refresh-scanner --on-server`; their unsigned APKs must be byte-for-byte identical before release.
+Upstream CI retains the existing two-clean-checkout Android reproducibility check and also runs two independent F-Droid buildserver source builds. The harness pins the buildserver image by digest plus exact fdroidserver/fdroiddata commits, derives source-test metadata structurally with fdroidserver itself, runs the live scanner and `fdroid build --refresh-scanner --on-server`, and requires both unsigned APKs to be byte-for-byte identical before release. Release verification is a separate path that uses canonical `.fdroid.yml` unchanged.
 
 ## Production signing and reproducible verification
 
@@ -74,6 +74,10 @@ CI verifies, among other things:
 - bundled Expo local Maven repositories are removed;
 - deterministic application/store icon generation;
 - F-Droid metadata, changelogs, versionName and versionCode agree;
+- `.fdroid.yml` remains the single canonical release recipe;
+- source-test metadata is derived structurally with fdroidserver rather than regex/string editing;
+- the F-Droid image, fdroidserver revision, and fdroiddata baseline are pinned and never updated during a build;
+- source-build and released-version verification use separate runners;
 - the checked-in recipe matches the F-Droid buildserver path used for production release APKs;
 - the reproducible binary URL uses the versioned GitHub Release asset;
 - the release workflow publishes only version-matched tagged releases;
@@ -109,3 +113,5 @@ The official fdroiddata submission is already open as `fdroid/fdroiddata!48673`.
 ## Release discipline
 
 Never move or recreate a published `v<versionName>` tag. Every Android release gets a new monotonically increasing versionCode and an immutable source tag. If a tagged candidate needs correction, prepare a new version instead.
+
+The F-Droid harness itself is governed by [`fdroid-harness.md`](./fdroid-harness.md). In particular, do not reintroduce regex-based YAML editing, moving `git pull` inputs, `apt dist-upgrade` inside the pinned buildserver, or a combined source/release mode script.
