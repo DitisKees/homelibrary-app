@@ -250,12 +250,34 @@ jobs:
               --generate-notes
           fi
 
-          gh release upload "${TAG}" \
-            "${APK}" \
-            "${CHECKSUM}" \
-            "release/unsigned-apk.sha256" \
-            "release/apksigner.txt" \
-            --clobber
+          # Release APK assets are immutable just like release tags. On a recovery
+          # run, accept an existing asset only when it is byte-for-byte identical.
+          TMP="${RUNNER_TEMP}/existing-release-assets"
+          mkdir -p "${TMP}"
+          if gh release download "${TAG}" --pattern "HomeLibrary-${HOMELIBRARY_RELEASE_VERSION}.apk" --dir "${TMP}" >/dev/null 2>&1; then
+            EXISTING="${TMP}/HomeLibrary-${HOMELIBRARY_RELEASE_VERSION}.apk"
+            if ! cmp --silent "${APK}" "${EXISTING}"; then
+              echo "Published release APK already exists with different bytes. Refusing to overwrite an immutable release asset." >&2
+              sha256sum "${APK}" "${EXISTING}" >&2
+              exit 1
+            fi
+            echo "Published APK already exists and is byte-for-byte identical; keeping it unchanged."
+          else
+            gh release upload "${TAG}" "${APK}"
+          fi
+
+          for ASSET in "${CHECKSUM}" "release/unsigned-apk.sha256" "release/apksigner.txt"; do
+            NAME="$(basename "${ASSET}")"
+            rm -f "${TMP}/${NAME}"
+            if gh release download "${TAG}" --pattern "${NAME}" --dir "${TMP}" >/dev/null 2>&1; then
+              if ! cmp --silent "${ASSET}" "${TMP}/${NAME}"; then
+                echo "Published release asset ${NAME} exists with different bytes. Refusing to overwrite it." >&2
+                exit 1
+              fi
+            else
+              gh release upload "${TAG}" "${ASSET}"
+            fi
+          done
 
   verify-fdroid-release-parity:
     runs-on: ubuntu-latest
