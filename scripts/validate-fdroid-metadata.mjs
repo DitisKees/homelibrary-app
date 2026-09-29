@@ -14,7 +14,13 @@ const normalizeScriptPath = path.join(root, 'scripts', 'normalize-fdroid-apk-bui
 const reproduciblePluginPath = path.join(root, 'plugins', 'with-reproducible-native-builds.js');
 const releaseWorkflowPath = path.join(root, '.github', 'workflows', 'android-release.yml');
 const buildserverSimulationWorkflowPath = path.join(root, '.github', 'workflows', 'fdroid-buildserver-simulation.yml');
-const buildserverSimulationScriptPath = path.join(root, 'scripts', 'run-fdroid-buildserver-simulation.sh');
+const fdroidPinsPath = path.join(root, 'scripts', 'fdroid', 'pins.env');
+const fdroidLibPath = path.join(root, 'scripts', 'fdroid', 'lib-buildserver.sh');
+const fdroidSourceRunnerPath = path.join(root, 'scripts', 'fdroid', 'run-source-build.sh');
+const fdroidReleaseRunnerPath = path.join(root, 'scripts', 'fdroid', 'run-release-verification.sh');
+const fdroidDerivePath = path.join(root, 'scripts', 'fdroid', 'derive-source-metadata.py');
+const fdroidDeriveTestPath = path.join(root, 'scripts', 'fdroid', 'test-derive-source-metadata.py');
+const legacyBuildserverScriptPath = path.join(root, 'scripts', 'run-fdroid-buildserver-simulation.sh');
 const errors = [];
 const expect = (condition, message) => {
   if (!condition) errors.push(message);
@@ -77,7 +83,13 @@ expect(fs.existsSync(normalizeScriptPath), 'scripts/normalize-fdroid-apk-build-i
 expect(fs.existsSync(reproduciblePluginPath), 'plugins/with-reproducible-native-builds.js is missing');
 expect(fs.existsSync(releaseWorkflowPath), '.github/workflows/android-release.yml is missing');
 expect(fs.existsSync(buildserverSimulationWorkflowPath), '.github/workflows/fdroid-buildserver-simulation.yml is missing');
-expect(fs.existsSync(buildserverSimulationScriptPath), 'scripts/run-fdroid-buildserver-simulation.sh is missing');
+expect(fs.existsSync(fdroidPinsPath), 'scripts/fdroid/pins.env is missing');
+expect(fs.existsSync(fdroidLibPath), 'scripts/fdroid/lib-buildserver.sh is missing');
+expect(fs.existsSync(fdroidSourceRunnerPath), 'scripts/fdroid/run-source-build.sh is missing');
+expect(fs.existsSync(fdroidReleaseRunnerPath), 'scripts/fdroid/run-release-verification.sh is missing');
+expect(fs.existsSync(fdroidDerivePath), 'scripts/fdroid/derive-source-metadata.py is missing');
+expect(fs.existsSync(fdroidDeriveTestPath), 'scripts/fdroid/test-derive-source-metadata.py is missing');
+expect(!fs.existsSync(legacyBuildserverScriptPath), 'legacy mode-switching F-Droid simulation script must remain removed');
 
 if (fs.existsSync(fdroidPath)) {
   const fdroid = fs.readFileSync(fdroidPath, 'utf8');
@@ -116,16 +128,15 @@ if (fs.existsSync(releaseWorkflowPath)) {
   expect(releaseWorkflow.includes("tags:\n      - 'v*.*.*'"), 'Android release workflow must run for immutable semantic-version tags');
   expect(releaseWorkflow.includes('release_tag:'), 'Android release workflow must support recovery from an existing immutable release tag');
   expect(releaseWorkflow.includes("ref: ${{ inputs.release_tag || github.ref }}"), 'Android release workflow must check out the explicitly requested immutable tag during recovery');
-  expect(releaseWorkflow.includes("SDKMANAGER=\"${SDK_ROOT}/cmdline-tools/latest/bin/sdkmanager\""), 'Android release workflow must resolve sdkmanager from the Android SDK instead of assuming it is on PATH');
   expect(releaseWorkflow.includes('build-tools;34.0.0'), 'Android release workflow must use apksigner from Android build-tools 34.0.0 for F-Droid signature-copy compatibility');
   expect(releaseWorkflow.includes('HomeLibrary-${HOMELIBRARY_RELEASE_VERSION}.apk'), 'Android release workflow must produce a versioned stable APK filename');
-  expect(releaseWorkflow.includes('registry.gitlab.com/fdroid/fdroidserver:buildserver-trixie'), 'Android release workflow must build the unsigned APK in F-Droid\'s buildserver image');
-  expect(releaseWorkflow.includes('run-fdroid-buildserver-simulation.sh'), 'Android release workflow must build through the checked-in F-Droid simulation path');
+  expect(releaseWorkflow.includes('@sha256:9cb68105642ca4e7b295f0ceab10f069f5b3247dc18fa7c36046e9d81aa469a8'), 'Android release workflow must pin the F-Droid buildserver image digest');
+  expect(releaseWorkflow.includes('scripts/fdroid/run-source-build.sh'), 'Android release workflow must build unsigned APKs through the explicit source runner');
+  expect(releaseWorkflow.includes('scripts/fdroid/run-release-verification.sh'), 'Android release workflow must verify published APKs through the explicit release runner');
+  expect(!releaseWorkflow.includes('run-fdroid-buildserver-simulation.sh'), 'Android release workflow must not use the legacy mode-switching harness');
   expect(releaseWorkflow.includes('fdroid-buildserver-output/app-release-unsigned.apk'), 'Android release workflow must sign the APK produced by the F-Droid buildserver path');
-  expect((releaseWorkflow.match(/git config --global --add safe\.directory "\$GITHUB_WORKSPACE"/g) ?? []).length >= 3, 'Android release container jobs must restore Git safe.directory before workspace Git commands');
   expect(releaseWorkflow.includes('verify-fdroid-release-parity'), 'Android release workflow must run F-Droid signed-reference parity verification');
   expect(releaseWorkflow.includes('inputs.release_tag && github.sha || needs.sign-and-publish.outputs.release_tag'), 'release recovery parity must use current main tooling while metadata targets the immutable tag');
-  expect(releaseWorkflow.includes('.fdroid.yml release'), 'Android release parity must retain Binaries and AllowedAPKSigningKeys');
   expect(releaseWorkflow.includes('gh release upload'), 'Android release workflow must publish the signed APK to the GitHub Release for the immutable tag');
   expect(!releaseWorkflow.includes('--clobber'), 'Android release workflow must never overwrite immutable release assets');
   expect(releaseWorkflow.includes('Refusing to overwrite an immutable release asset'), 'Android release recovery must fail when an existing APK differs');
@@ -133,31 +144,57 @@ if (fs.existsSync(releaseWorkflowPath)) {
 
 if (fs.existsSync(buildserverSimulationWorkflowPath)) {
   const workflow = fs.readFileSync(buildserverSimulationWorkflowPath, 'utf8');
-  expect(workflow.includes('registry.gitlab.com/fdroid/fdroidserver:buildserver-trixie'), 'F-Droid simulation must use the production buildserver image');
-  expect(workflow.includes('run-fdroid-buildserver-simulation.sh'), 'F-Droid simulation workflow must call the checked-in simulation script');
+  expect(workflow.includes('@sha256:9cb68105642ca4e7b295f0ceab10f069f5b3247dc18fa7c36046e9d81aa469a8'), 'F-Droid simulation must pin the production buildserver image digest');
+  expect(workflow.includes('scripts/fdroid/run-source-build.sh'), 'F-Droid simulation must call the explicit source-build runner');
+  expect(!workflow.includes('run-fdroid-buildserver-simulation.sh'), 'F-Droid simulation must not call the legacy mode-switching harness');
   expect(workflow.includes('github.event.pull_request.head.sha || github.sha'), 'F-Droid simulation must build the PR head/source commit rather than the synthetic merge commit');
   expect(workflow.includes('matrix:\n        copy: [a, b]'), 'F-Droid simulation must run two independent buildserver copies');
   expect(workflow.includes('cmp --silent'), 'F-Droid simulation must byte-compare the independent buildserver APKs');
   expect(workflow.includes('Verify container checkout Git access'), 'F-Droid simulation must regression-test Git workspace ownership inside the buildserver container');
-  expect(workflow.includes('git config --global --add safe.directory "$GITHUB_WORKSPACE"'), 'F-Droid simulation must restore Git safe.directory after checkout');
 }
 
-if (fs.existsSync(buildserverSimulationScriptPath)) {
-  const script = fs.readFileSync(buildserverSimulationScriptPath, 'utf8');
-  expect(script.includes('fdroid_as_vagrant build'), 'F-Droid simulation script must invoke fdroid build through the vagrant buildserver user');
-  expect(script.includes('--refresh-scanner'), 'F-Droid simulation must run the live F-Droid source scanner');
-  expect(script.includes('--on-server'), 'F-Droid simulation must exercise the buildserver path');
-  expect(script.includes('--no-tarball'), 'F-Droid simulation must mirror the parent fdroiddata build command');
-  expect(script.includes('fetchsrclibs'), 'F-Droid simulation must run fdroid fetchsrclibs before building');
-  expect(script.includes('a35fdfddd9c66823987a410566a6101186e39c84'), 'F-Droid simulation must use the same fdroidserver trust root as fdroiddata CI');
-  expect(script.includes('MODE='), 'F-Droid simulation must support explicit source/release modes');
-  expect(script.includes('release mode requires Binaries and AllowedAPKSigningKeys'), 'release parity mode must require F-Droid binary/signing metadata');
-  expect(script.includes('source mode must remove Binaries and AllowedAPKSigningKeys together'), 'source simulation must never leave Binaries/signing-key metadata inconsistent');
-  expect(script.includes('FDROID_SIMULATION_EXPORT_APK'), 'F-Droid simulation must export the exact unsigned buildserver APK for signing/comparison');
-  expect(script.includes('fdroid_as_vagrant lint'), 'F-Droid simulation must run fdroid lint on the effective metadata');
-  expect(script.includes('fdroid_as_vagrant rewritemeta'), 'F-Droid simulation must require canonical fdroid rewritemeta output');
-  expect(script.includes('checkupdates --allow-dirty -v'), 'release parity mode must mirror F-Droid checkupdates');
-  expect(script.includes('toolchain.txt'), 'F-Droid simulation must capture the exact build toolchain for diagnostics');
+if (fs.existsSync(fdroidPinsPath)) {
+  const pins = fs.readFileSync(fdroidPinsPath, 'utf8');
+  expect(pins.includes('FDROID_BUILDSERVER_IMAGE="registry.gitlab.com/fdroid/fdroidserver:buildserver-trixie@sha256:'), 'F-Droid buildserver image must be pinned by digest');
+  expect(/FDROIDSERVER_COMMIT="[0-9a-f]{40}"/.test(pins), 'fdroidserver must be pinned to a full commit SHA');
+  expect(/FDROIDDATA_COMMIT="[0-9a-f]{40}"/.test(pins), 'fdroiddata must be pinned to a full commit SHA');
+}
+
+if (fs.existsSync(fdroidLibPath)) {
+  const lib = fs.readFileSync(fdroidLibPath, 'utf8');
+  expect(lib.includes('fdroid_clone_exact'), 'F-Droid harness must clone exact pinned commits');
+  expect(lib.includes('FDROIDSERVER_COMMIT'), 'F-Droid harness must consume the fdroidserver pin');
+  expect(lib.includes('FDROIDDATA_COMMIT'), 'F-Droid harness must consume the fdroiddata pin');
+  expect(lib.includes('--refresh-scanner'), 'F-Droid harness must run the live source scanner');
+  expect(lib.includes('--on-server'), 'F-Droid harness must exercise the buildserver path');
+  expect(lib.includes('--no-tarball'), 'F-Droid harness must mirror the fdroiddata build command');
+  expect(!lib.includes('git pull'), 'F-Droid harness must never git-pull moving branches during a build');
+  expect(!lib.includes('dist-upgrade'), 'F-Droid harness must never dist-upgrade the pinned buildserver image during a build');
+}
+
+if (fs.existsSync(fdroidDerivePath)) {
+  const derive = fs.readFileSync(fdroidDerivePath, 'utf8');
+  expect(derive.includes('metadata.parse_metadata'), 'source metadata must be parsed structurally with fdroidserver');
+  expect(derive.includes('metadata.write_metadata'), 'source metadata must be written canonically with fdroidserver');
+  expect(derive.includes('app.pop("Binaries", None)'), 'source metadata derivation must remove Binaries structurally');
+  expect(derive.includes('app.pop("AllowedAPKSigningKeys", None)'), 'source metadata derivation must remove AllowedAPKSigningKeys structurally');
+  expect(!derive.includes('re.sub'), 'source metadata derivation must not edit YAML with regexes');
+}
+
+if (fs.existsSync(fdroidSourceRunnerPath)) {
+  const sourceRunner = fs.readFileSync(fdroidSourceRunnerPath, 'utf8');
+  expect(sourceRunner.includes('test-derive-source-metadata.py'), 'source runner must execute fast metadata-derivation tests before Android work');
+  expect(sourceRunner.includes('derive-source-metadata.py'), 'source runner must structurally derive candidate metadata');
+  expect(sourceRunner.includes('fdroid_assert_metadata_canonical'), 'source runner must require canonical generated metadata');
+  expect(!sourceRunner.includes('run-release-verification.sh'), 'source runner must not share release-verification control flow');
+}
+
+if (fs.existsSync(fdroidReleaseRunnerPath)) {
+  const releaseRunner = fs.readFileSync(fdroidReleaseRunnerPath, 'utf8');
+  expect(releaseRunner.includes('fdroid_install_metadata "${METADATA_SOURCE}"'), 'release runner must install canonical metadata without transformation');
+  expect(releaseRunner.includes('fdroid_checkupdates'), 'release runner must mirror F-Droid update checks');
+  expect(releaseRunner.includes('fdroid_build'), 'release runner must execute the F-Droid signed-reference build');
+  expect(!releaseRunner.includes('derive-source-metadata.py'), 'release verification must never derive or mutate source-test metadata');
 }
 
 if (fs.existsSync(buildScriptPath)) {
@@ -214,4 +251,4 @@ if (errors.length > 0) {
 
 process.stdout.write(`F-Droid metadata OK for HomeLibrary ${versionName} (${versionCode}).\n`);
 process.stdout.write('Fastlane text metadata exists for en-US, nl-NL, de-DE, and fr-FR.\n');
-process.stdout.write('Expo native modules are configured for source builds; CI requires two independent production-buildserver APKs, and releases sign that exact F-Droid build path before signed-reference parity verification.\n');
+process.stdout.write('F-Droid harness OK: canonical metadata, pinned toolchain inputs, separate source/release runners, structural source-metadata derivation, and two-build reproducibility are enforced.\n');
