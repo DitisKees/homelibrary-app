@@ -13,6 +13,8 @@ const verifyApkScriptPath = path.join(root, 'scripts', 'verify-fdroid-apk.sh');
 const normalizeScriptPath = path.join(root, 'scripts', 'normalize-fdroid-apk-build-ids.py');
 const reproduciblePluginPath = path.join(root, 'plugins', 'with-reproducible-native-builds.js');
 const releaseWorkflowPath = path.join(root, '.github', 'workflows', 'android-release.yml');
+const buildserverSimulationWorkflowPath = path.join(root, '.github', 'workflows', 'fdroid-buildserver-simulation.yml');
+const buildserverSimulationScriptPath = path.join(root, 'scripts', 'run-fdroid-buildserver-simulation.sh');
 const errors = [];
 const expect = (condition, message) => {
   if (!condition) errors.push(message);
@@ -74,6 +76,8 @@ expect(fs.existsSync(verifyApkScriptPath), 'scripts/verify-fdroid-apk.sh is miss
 expect(fs.existsSync(normalizeScriptPath), 'scripts/normalize-fdroid-apk-build-ids.py is missing');
 expect(fs.existsSync(reproduciblePluginPath), 'plugins/with-reproducible-native-builds.js is missing');
 expect(fs.existsSync(releaseWorkflowPath), '.github/workflows/android-release.yml is missing');
+expect(fs.existsSync(buildserverSimulationWorkflowPath), '.github/workflows/fdroid-buildserver-simulation.yml is missing');
+expect(fs.existsSync(buildserverSimulationScriptPath), 'scripts/run-fdroid-buildserver-simulation.sh is missing');
 
 if (fs.existsSync(fdroidPath)) {
   const fdroid = fs.readFileSync(fdroidPath, 'utf8');
@@ -84,11 +88,19 @@ if (fs.existsSync(fdroidPath)) {
   expect(fdroid.includes('AuthorName: Kees van \'t Slot'), '.fdroid.yml must declare the upstream author');
   expect(fdroid.includes('RepoType: git'), '.fdroid.yml must declare RepoType: git');
   expect(fdroid.includes('https://github.com/DitisKees/homelibrary-app'), '.fdroid.yml must reference the public upstream repository');
-  expect(fdroid.includes('Binaries: https://github.com/DitisKees/homelibrary-app/releases/download/v%v/HomeLibrary-%v.apk'), '.fdroid.yml must point reproducible verification at the immutable versioned GitHub Release APK');
-  expect(fdroid.includes('subdir: android/app'), '.fdroid.yml must use the generated Android app subdir used by the official React Native recipe');
+  expect(fdroid.includes('https://github.com/DitisKees/homelibrary-app/releases/download/v%v/HomeLibrary-%v.apk'), '.fdroid.yml must point reproducible verification at the immutable versioned GitHub Release APK');
+  expect(!/^\s*subdir:/m.test(fdroid), '.fdroid.yml must not declare subdir because Expo generates android/ after checkout');
+  expect(fdroid.includes('output: android/app/build/outputs/apk/release/app-release-unsigned.apk'), '.fdroid.yml must declare the generated unsigned APK output');
+  expect(fdroid.includes('cd android/app'), '.fdroid.yml must build from the generated Android app directory');
+  expect(fdroid.includes('gradle assembleRelease'), '.fdroid.yml must use F-Droid system Gradle after scanner removes the wrapper');
+  expect(fdroid.includes("jvmToolchain\\|JavaVersion/s/17/21/"), '.fdroid.yml must apply F-Droid React Native Java 17-to-21 toolchain compatibility');
   expect(fdroid.includes('bash scripts/prepare-android-gradle-properties.sh'), '.fdroid.yml must guard Expo Camera Gradle properties before and after appending build settings');
   expect(fdroid.includes('bash scripts/check-fdroid-android-dependencies.sh'), '.fdroid.yml must audit the final Android runtime dependency graph');
   expect(fdroid.includes('bash scripts/verify-fdroid-apk.sh'), '.fdroid.yml must verify the final APK for forbidden barcode artifacts');
+  expect(fdroid.includes('node_modules/hermes-compiler/hermesc/linux64-bin/hermesc'), '.fdroid.yml must use the current Hermes scanner path');
+  expect(fdroid.includes('node_modules/@react-native-async-storage/async-storage/android/build.gradle'), '.fdroid.yml must preserve the reviewed AsyncStorage Gradle file from scanner rewriting');
+  expect(fdroid.includes('node_modules/react-native-safe-area-context/android/build.gradle'), '.fdroid.yml must preserve the reviewed Safe Area Context Gradle file from scanner rewriting');
+  expect(fdroid.includes('node_modules/react-native-screens/android/build.gradle'), '.fdroid.yml must preserve the reviewed Screens Gradle file from scanner rewriting');
   expect(fdroid.includes('python3 scripts/normalize-fdroid-apk-build-ids.py'), '.fdroid.yml must call the checked-in APK build-id normalization helper');
   expect(!/python3\s+-[^\n]*<<['"]?PY/m.test(fdroid), '.fdroid.yml must not embed Python scripts');
   expect(!fdroid.includes('externalNativeBuild {'), '.fdroid.yml must not patch externalNativeBuild in metadata; keep it upstream');
@@ -107,6 +119,23 @@ if (fs.existsSync(releaseWorkflowPath)) {
   expect(releaseWorkflow.includes('build-tools;34.0.0'), 'Android release workflow must use apksigner from Android build-tools 34.0.0 for F-Droid signature-copy compatibility');
   expect(releaseWorkflow.includes('HomeLibrary-${HOMELIBRARY_RELEASE_VERSION}.apk'), 'Android release workflow must produce a versioned stable APK filename');
   expect(releaseWorkflow.includes('gh release upload'), 'Android release workflow must publish the signed APK to the GitHub Release for the immutable tag');
+}
+
+if (fs.existsSync(buildserverSimulationWorkflowPath)) {
+  const workflow = fs.readFileSync(buildserverSimulationWorkflowPath, 'utf8');
+  expect(workflow.includes('registry.gitlab.com/fdroid/fdroidserver:buildserver-trixie'), 'F-Droid simulation must use the production buildserver image');
+  expect(workflow.includes('run-fdroid-buildserver-simulation.sh'), 'F-Droid simulation workflow must call the checked-in simulation script');
+  expect(workflow.includes('github.event.pull_request.head.sha || github.sha'), 'F-Droid simulation must build the PR head/source commit rather than the synthetic merge commit');
+}
+
+if (fs.existsSync(buildserverSimulationScriptPath)) {
+  const script = fs.readFileSync(buildserverSimulationScriptPath, 'utf8');
+  expect(script.includes('fdroid build'), 'F-Droid simulation script must invoke fdroid build');
+  expect(script.includes('--refresh-scanner'), 'F-Droid simulation must run the live F-Droid source scanner');
+  expect(script.includes('--on-server'), 'F-Droid simulation must exercise the buildserver path');
+  expect(script.includes('--no-tarball'), 'F-Droid simulation must mirror the parent fdroiddata build command');
+  expect(script.includes('fetchsrclibs'), 'F-Droid simulation must run fdroid fetchsrclibs before building');
+  expect(script.includes('a35fdfddd9c66823987a410566a6101186e39c84'), 'F-Droid simulation must use the same fdroidserver trust root as fdroiddata CI');
 }
 
 if (fs.existsSync(buildScriptPath)) {
@@ -163,4 +192,4 @@ if (errors.length > 0) {
 
 process.stdout.write(`F-Droid metadata OK for HomeLibrary ${versionName} (${versionCode}).\n`);
 process.stdout.write('Fastlane text metadata exists for en-US, nl-NL, de-DE, and fr-FR.\n');
-process.stdout.write('Expo native modules are configured for source builds and the F-Droid recipe delegates to the validated shared reproducible build script.\n');
+process.stdout.write('Expo native modules are configured for source builds, and CI includes reproducibility plus a production-buildserver simulation.\n');
