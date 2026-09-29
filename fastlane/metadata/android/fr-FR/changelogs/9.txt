@@ -1,0 +1,1 @@
+Mise à jour du système de build : les APK Android sont désormais produits via le même environnement F-Droid et son scanner que la vérification officielle, avec un contrôle de parité de l’APK signé avant toute mise à jour de fdroiddata.
