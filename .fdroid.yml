@@ -1,6 +1,6 @@
 Categories:
-  - Reading
   - Inventory
+  - Reading
 License: GPL-3.0-or-later
 AuthorName: Kees van 't Slot
 SourceCode: https://github.com/DitisKees/homelibrary-app
@@ -9,91 +9,96 @@ Changelog: https://github.com/DitisKees/homelibrary-app/tags
 
 RepoType: git
 Repo: https://github.com/DitisKees/homelibrary-app.git
-Binaries: https://github.com/DitisKees/homelibrary-app/releases/download/v%v/HomeLibrary-%v.apk
+Binaries:
+  https://github.com/DitisKees/homelibrary-app/releases/download/v%v/HomeLibrary-%v.apk
 
 Builds:
   - versionName: 1.0.7
     versionCode: 8
     commit: v1.0.7
-    subdir: android/app
-    ndk: r27b
     sudo:
       - echo "deb https://deb.debian.org/debian forky main" > /etc/apt/sources.list.d/forky.list
       - apt-get update
       - apt-get install -y -t forky npm
     init:
-      - cd ../..
       - node --version
       - npm --version
       - npm ci
-    gradle:
-      - yes
+    output: android/app/build/outputs/apk/release/app-release-unsigned.apk
     prebuild:
-      - cd ../..
       - sed -i -e 's/"node":\ ">=22.13.0 <23"/"node":\ ">=22.13.0"/' package.json
       - find node_modules -type d -name local-maven-repo -prune -exec rm -rf {} +
+      - sed -i '/jvmToolchain\|JavaVersion/s/17/21/' node_modules/@react-native/gradle-plugin/*/build.gradle.kts
+        node_modules/@react-native/gradle-plugin/react-native-gradle-plugin/src/main/kotlin/com/facebook/react/utils/JdkConfiguratorUtils.kt
       - npx expo prebuild -p android --clean
       - bash scripts/prepare-android-gradle-properties.sh
-      - |-
-        cat >> android/gradle.properties <<'EOF'
-        org.gradle.jvmargs=-Xmx3g -XX:MaxMetaspaceSize=1g -Dfile.encoding=UTF-8
-        org.gradle.workers.max=2
-        kotlin.compiler.execution.strategy=in-process
-        EOF
+      - echo 'org.gradle.jvmargs=-Xmx3g -XX:MaxMetaspaceSize=1g -Dfile.encoding=UTF-8'
+        >> android/gradle.properties
+      - echo 'org.gradle.workers.max=2' >> android/gradle.properties
+      - echo 'kotlin.compiler.execution.strategy=in-process' >> android/gradle.properties
       - bash scripts/prepare-android-gradle-properties.sh
       - bash scripts/check-fdroid-android-dependencies.sh
       - sed -i -e '/signingConfig /d' android/app/build.gradle
-    postbuild:
-      - cd ../..
-      - python3 scripts/normalize-fdroid-apk-build-ids.py android/app/build/outputs/apk/release/app-release-unsigned.apk
-      - bash scripts/verify-fdroid-apk.sh android/app/build/outputs/apk/release/app-release-unsigned.apk
     scanignore:
-      - node_modules/react-native/sdks/hermesc/linux64-bin/hermesc
+      - node_modules/hermes-compiler/hermesc/linux64-bin/hermesc
       - node_modules/expo-modules-core/android/ExpoModulesCorePlugin.gradle
-      - node_modules/expo-modules-autolinking/scripts/android/autolinking_implementation.gradle
+      - node_modules/@react-native-async-storage/async-storage/android/build.gradle
+      - node_modules/react-native-safe-area-context/android/build.gradle
+      - node_modules/react-native-screens/android/build.gradle
     scandelete:
       - node_modules
+    build:
+      - cd android/app
+      - gradle assembleRelease
+    ndk: r27b
+    postbuild:
+      - python3 scripts/normalize-fdroid-apk-build-ids.py android/app/build/outputs/apk/release/app-release-unsigned.apk
+      - bash scripts/verify-fdroid-apk.sh android/app/build/outputs/apk/release/app-release-unsigned.apk
 
 AllowedAPKSigningKeys: 99115557adc7601e8d71adbf8884b0d359ab3f720cbec10c17828c36b7bdd813
 
 MaintainerNotes: |-
-  HomeLibrary uses Expo/React Native and does not commit android/. The recipe
-  follows templates/build-react-native.yml: npm dependencies are installed during
-  init, Expo prebuild generates the Android project, signingConfig is removed,
-  and F-Droid invokes Gradle directly.
+  HomeLibrary uses Expo/React Native and does not commit android/. Expo prebuild
+  therefore generates the Android project after checkout. Because fdroidserver
+  validates subdir before init/prebuild, no subdir is declared; output points to
+  the generated APK and the build command runs Gradle from android/app.
 
   Node.js/npm are installed from Debian forky as requested by the F-Droid
-  maintainer. Forky currently provides a newer Node.js than the source tag's
-  conservative <23 engines upper bound, so the recipe removes only that upper
-  bound before npm install/prebuild.
+  maintainer. The React Native Gradle plugin still declares a Java 17 toolchain,
+  while the current F-Droid build image supplies Java 21. The prebuild applies
+  the same 17-to-21 toolchain adjustment used by F-Droid's React Native template.
 
   Expo SDK 57 bundles precompiled AARs in local-maven-repo directories. Expo
   autolinking is configured upstream to build all native modules from source and
   bundled local Maven repositories are removed before Android generation.
 
+  F-Droid's scanner recognizes legacy/relative Maven repository declarations in
+  several React Native module Gradle files as unknown repositories and rewrites
+  those files. Existing accepted React Native recipes preserve those reviewed
+  Gradle files with scanignore; HomeLibrary does the same for AsyncStorage,
+  Safe Area Context, and Screens.
+
   Native React Native/Expo builds can embed absolute checkout paths and varying
-  GNU build IDs in source-built ELF libraries. The upstream Expo config plugin
-  plugins/with-reproducible-native-builds.js configures externalNativeBuild CMake
-  prefix maps. APK build-id normalization is implemented in the checked-in
-  scripts/normalize-fdroid-apk-build-ids.py helper rather than embedded metadata.
+  GNU build IDs in source-built ELF libraries. The checked-in upstream Expo
+  config plugin adds app-level externalNativeBuild C/C++ prefix-map flags during
+  Expo prebuild. APK build-id normalization is implemented by the checked-in
+  scripts/normalize-fdroid-apk-build-ids.py helper.
 
   React Native 0.86 is built with the Expo SDK 57 NDK baseline, pinned here as
   Android NDK r27b.
 
-  The 1.0.7 follow-up fixes a release-build regression where Gradle memory
-  settings could be concatenated onto Expo Camera's generated
-  expo.camera.barcode-scanner-enabled=false property. That accidentally enabled
-  Google ML Kit barcode artifacts in 1.0.5/1.0.6 upstream APKs despite the source
-  configuration requesting the local ZXing path. The recipe now guards the
-  generated property before and after appending settings, audits the final
-  dependency graph, and rejects ML Kit/Barhopper artifacts in the built APK.
+  Version 1.0.7 fixes a release-build regression where release Gradle settings
+  could be concatenated onto Expo Camera's generated
+  expo.camera.barcode-scanner-enabled=false property. The recipe normalizes and
+  validates that property, audits the release dependency graph, and rejects
+  ML Kit/Barhopper artifacts in the built APK.
 
-  This upstream development copy refers to the intended immutable v1.0.7 tag.
-  The fdroiddata submission should use the tag's full Git commit hash once the
-  release tag has been created.
+  This upstream development copy uses the immutable v1.0.7 tag. The GitHub
+  F-Droid buildserver simulation rewrites only the commit field to the current
+  pull-request/source commit so scanner-mutated builds are tested before release.
 
 AutoUpdateMode: Version
 UpdateCheckMode: Tags ^v[0-9]+\.[0-9]+\.[0-9]+$
-UpdateCheckData: 'app.json|"versionCode":\s*(\d+)|app.json|"version":\s*"([\d.]+)"'
+UpdateCheckData: app.json|"versionCode":\s*(\d+)|app.json|"version":\s*"([\d.]+)"
 CurrentVersion: 1.0.7
 CurrentVersionCode: 8
