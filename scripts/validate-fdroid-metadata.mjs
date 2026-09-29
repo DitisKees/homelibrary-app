@@ -94,6 +94,7 @@ if (fs.existsSync(fdroidPath)) {
   expect(fdroid.includes('cd android/app'), '.fdroid.yml must build from the generated Android app directory');
   expect(fdroid.includes('gradle assembleRelease'), '.fdroid.yml must use F-Droid system Gradle after scanner removes the wrapper');
   expect(fdroid.includes("jvmToolchain\\|JavaVersion/s/17/21/"), '.fdroid.yml must apply F-Droid React Native Java 17-to-21 toolchain compatibility');
+  expect(fdroid.indexOf('sed -i -e \'s/"node"') < fdroid.indexOf('npm ci'), '.fdroid.yml must relax the Node engine ceiling before npm ci');
   expect(fdroid.includes('bash scripts/prepare-android-gradle-properties.sh'), '.fdroid.yml must guard Expo Camera Gradle properties before and after appending build settings');
   expect(fdroid.includes('bash scripts/check-fdroid-android-dependencies.sh'), '.fdroid.yml must audit the final Android runtime dependency graph');
   expect(fdroid.includes('bash scripts/verify-fdroid-apk.sh'), '.fdroid.yml must verify the final APK for forbidden barcode artifacts');
@@ -124,6 +125,8 @@ if (fs.existsSync(releaseWorkflowPath)) {
   expect(releaseWorkflow.includes('verify-fdroid-release-parity'), 'Android release workflow must run F-Droid signed-reference parity verification');
   expect(releaseWorkflow.includes('.fdroid.yml release'), 'Android release parity must retain Binaries and AllowedAPKSigningKeys');
   expect(releaseWorkflow.includes('gh release upload'), 'Android release workflow must publish the signed APK to the GitHub Release for the immutable tag');
+  expect(!releaseWorkflow.includes('--clobber'), 'Android release workflow must never overwrite immutable release assets');
+  expect(releaseWorkflow.includes('Refusing to overwrite an immutable release asset'), 'Android release recovery must fail when an existing APK differs');
 }
 
 if (fs.existsSync(buildserverSimulationWorkflowPath)) {
@@ -146,6 +149,10 @@ if (fs.existsSync(buildserverSimulationScriptPath)) {
   expect(script.includes('MODE='), 'F-Droid simulation must support explicit source/release modes');
   expect(script.includes('release mode requires Binaries and AllowedAPKSigningKeys'), 'release parity mode must require F-Droid binary/signing metadata');
   expect(script.includes('FDROID_SIMULATION_EXPORT_APK'), 'F-Droid simulation must export the exact unsigned buildserver APK for signing/comparison');
+  expect(script.includes('fdroid_as_vagrant lint'), 'F-Droid simulation must run fdroid lint on the effective metadata');
+  expect(script.includes('fdroid_as_vagrant rewritemeta'), 'F-Droid simulation must require canonical fdroid rewritemeta output');
+  expect(script.includes('checkupdates --allow-dirty -v'), 'release parity mode must mirror F-Droid checkupdates');
+  expect(script.includes('toolchain.txt'), 'F-Droid simulation must capture the exact build toolchain for diagnostics');
 }
 
 if (fs.existsSync(buildScriptPath)) {
