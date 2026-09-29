@@ -4,17 +4,17 @@ HomeLibrary is intended for distribution through the official F-Droid repository
 
 See [`fdroid-dependencies.md`](./fdroid-dependencies.md) for the dependency/license audit, [`fdroid-release.md`](./fdroid-release.md) for the release and submission procedure, and [`android-release-signing.md`](./android-release-signing.md) for production signing.
 
-## Current upstream release
+## Current F-Droid candidate
 
-The current upstream release is:
+The next F-Droid candidate is:
 
 ```text
-versionName: 1.0.7
-versionCode: 8
-tag: v1.0.7
+versionName: 1.0.8
+versionCode: 9
+tag: v1.0.8
 ```
 
-`v1.0.7` / versionCode 8 is published upstream and fixes the release-build regression where Gradle settings could corrupt Expo Camera's `expo.camera.barcode-scanner-enabled=false` value. The 1.0.7 release also audits the final dependency graph and APK contents to reject ML Kit/Barhopper barcode artifacts.
+`v1.0.7` / versionCode 8 is immutable and its source builds successfully on F-Droid, but its published signed APK does not reproduce F-Droid's buildserver output. Version 1.0.8 is therefore a build-system-only parity release: upstream will sign the exact unsigned APK produced by the same F-Droid buildserver/scanner path used for official verification.
 
 `app.json` is the source of truth for Android versionName and versionCode. `package.json` remains the private JavaScript package manifest.
 
@@ -34,17 +34,17 @@ npm run build:fdroid-android
 
 The script stages source-controlled inputs at the fixed `/tmp/homelibrary-fdroid-source` path, installs pinned npm dependencies, runs the FLOSS/native dependency guards, performs Expo prebuild, builds the unsigned release APK, and verifies package metadata. The fixed path removes checkout-location differences from native ELF objects.
 
-Upstream CI independently builds the same commit from two clean checkouts and requires the unsigned APKs to be byte-for-byte identical. A separate `F-Droid buildserver simulation` workflow runs the official `buildserver-trixie` image, live F-Droid scanner, `fetchsrclibs`, and `fdroid build --refresh-scanner --on-server` path against the pull-request/source commit. This catches scanner mutations and buildserver-only toolchain behavior before fdroiddata is updated.
+Upstream CI retains the existing two-clean-checkout Android reproducibility check and also runs two independent F-Droid buildserver simulations. Both use the official `buildserver-trixie` image, live F-Droid scanner, `fetchsrclibs`, and `fdroid build --refresh-scanner --on-server`; their unsigned APKs must be byte-for-byte identical before release.
 
 ## Production signing and reproducible verification
 
-The production signing workflow keeps signing outside Gradle and outside the F-Droid source build:
+The production signing workflow keeps signing outside Gradle, but the unsigned artifact is now built by the F-Droid buildserver path itself:
 
-1. build the canonical unsigned APK;
-2. sign it with the permanent upstream key using Android build-tools 34.0.0 `apksigner`;
-3. verify the configured certificate fingerprint;
-4. keep a normal GitHub Actions artifact for manual runs;
-5. for an immutable `vX.Y.Z` tag, publish `HomeLibrary-X.Y.Z.apk` to that GitHub Release.
+1. build the unsigned APK in `buildserver-trixie` using the live scanner and the checked-in fdroid recipe;
+2. export that exact unsigned APK from the buildserver job;
+3. sign it with the permanent upstream key using Android build-tools 34.0.0 `apksigner`;
+4. publish `HomeLibrary-X.Y.Z.apk` for the immutable tag;
+5. run F-Droid again in release mode with `Binaries` and `AllowedAPKSigningKeys` intact, requiring its own signature-copy/reference-binary verification to pass.
 
 The upstream F-Droid recipe contains:
 
@@ -77,13 +77,14 @@ CI verifies, among other things:
 - the upstream recipe delegates to the shared canonical build script;
 - the reproducible binary URL uses the versioned GitHub Release asset;
 - the release workflow publishes only version-matched tagged releases;
-- the F-Droid production-buildserver image and live source scanner can build the exact candidate source commit;
+- two independent F-Droid production-buildserver runs produce identical unsigned APKs;
 - scanner-sensitive React Native Gradle files remain intact through reviewed `scanignore` entries;
+- the signed GitHub Release APK passes F-Droid's own reference-binary/signature-copy verification;
 - the unsigned APK retains package `io.github.ditiskees.homelibrary` and target SDK 36.
 
 ## F-Droid submission status
 
-The official fdroiddata submission is already open as `fdroid/fdroiddata!48673`. Version 1.0.7 is published upstream; the remaining work is official buildserver verification:
+The official fdroiddata submission is already open as `fdroid/fdroiddata!48673`. Version 1.0.7 exposed a cross-environment reproducibility gap; version 1.0.8 closes that gap before the MR is updated:
 
 - [x] Public GPL-3.0-or-later source repository
 - [x] Permanent Android application ID
@@ -94,14 +95,16 @@ The official fdroiddata submission is already open as `fdroid/fdroiddata!48673`.
 - [x] Fastlane metadata and real screenshots
 - [x] Deterministic upstream unsigned builds
 - [x] Permanent production signing workflow
-- [x] Reproducible 1.0.7 GitHub Release APK published
+- [x] Diagnose why the 1.0.7 signed APK differs from F-Droid's successful source rebuild
 - [x] F-Droid maintainer review: keep Python and `externalNativeBuild` logic upstream
 - [x] Diagnose 1.0.5/1.0.6 ML Kit packaging regression in generated Gradle properties
 - [x] Merge the 1.0.7 regression-fix PR with all checks green
 - [x] Create immutable `v1.0.7` and publish/verify the signed APK
 - [x] Update fdroiddata !48673 to versionCode 8/full source SHA
-- [ ] Require the new GitHub F-Droid buildserver simulation to pass for recipe/source changes
-- [ ] Obtain a successful official F-Droid buildserver verification and acceptance
+- [ ] Require two independent F-Droid buildserver APKs to match for 1.0.8
+- [ ] Publish 1.0.8 by signing the exact F-Droid-buildserver unsigned APK
+- [ ] Require post-publication F-Droid signed-reference parity to pass
+- [ ] Only then update fdroiddata !48673 and obtain official acceptance
 
 ## Release discipline
 
