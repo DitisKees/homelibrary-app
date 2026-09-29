@@ -99,7 +99,7 @@ For the canonical source-only Android release path:
 npm run build:fdroid-android
 ```
 
-CI runs these checks, verifies all committed PocketBase migrations against PocketBase 0.40.1, validates Docker self-hosting when relevant, and runs two independent F-Droid production-buildserver simulations in `registry.gitlab.com/fdroid/fdroidserver:buildserver-trixie`, requiring their unsigned APKs to match byte-for-byte.
+CI runs these checks, verifies all committed PocketBase migrations against PocketBase 0.40.1, validates Docker self-hosting when relevant, and runs two independent F-Droid source builds in a buildserver image pinned by digest. The harness also pins fdroidserver/fdroiddata revisions, derives temporary source metadata structurally with fdroidserver itself, and requires both unsigned APKs to match byte-for-byte.
 
 ## Authentication storage
 
@@ -144,7 +144,7 @@ The initial official F-Droid submission is open as `fdroid/fdroiddata!48673`.
 9. sign the exact APK produced by the F-Droid buildserver path and require F-Droid signed-reference parity after publication;
 10. only then update fdroiddata and obtain official buildserver verification and acceptance.
 
-See [`docs/fdroid.md`](docs/fdroid.md) and [`docs/fdroid-release.md`](docs/fdroid-release.md) for details.
+See [`docs/fdroid.md`](docs/fdroid.md), [`docs/fdroid-release.md`](docs/fdroid-release.md), and [`docs/fdroid-harness.md`](docs/fdroid-harness.md) for details. The harness document records the architectural rules that prevent ad-hoc metadata rewriting and moving F-Droid toolchains from creeping back into CI.
 
 ## License
 
