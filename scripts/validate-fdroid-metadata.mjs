@@ -130,7 +130,7 @@ if (fs.existsSync(buildserverSimulationWorkflowPath)) {
 
 if (fs.existsSync(buildserverSimulationScriptPath)) {
   const script = fs.readFileSync(buildserverSimulationScriptPath, 'utf8');
-  expect(script.includes('fdroid build'), 'F-Droid simulation script must invoke fdroid build');
+  expect(script.includes('fdroid_as_vagrant build'), 'F-Droid simulation script must invoke fdroid build through the vagrant buildserver user');
   expect(script.includes('--refresh-scanner'), 'F-Droid simulation must run the live F-Droid source scanner');
   expect(script.includes('--on-server'), 'F-Droid simulation must exercise the buildserver path');
   expect(script.includes('--no-tarball'), 'F-Droid simulation must mirror the parent fdroiddata build command');
