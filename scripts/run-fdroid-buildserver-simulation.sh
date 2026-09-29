@@ -206,17 +206,19 @@ fdroid_as_vagrant() {
 # Mirror the parent fdroiddata metadata jobs before doing the expensive build.
 # Fail if our checked-in/effective recipe is not already in fdroidserver's
 # canonical rewritemeta form; this prevents formatting-only remote failures.
-cp "$home_vagrant/metadata/$APP_ID.yml" "$DIAG_ROOT/metadata-before-rewritemeta.yml"
-pushd "$home_vagrant" >/dev/null
+cp "$FDROIDDATA_DIR/metadata/$APP_ID.yml" "$DIAG_ROOT/metadata-before-rewritemeta.yml"
+pushd "$FDROIDDATA_DIR" >/dev/null
 fdroid_as_vagrant lint "$APP_ID"
 fdroid_as_vagrant rewritemeta "$APP_ID"
-if ! cmp --silent "$DIAG_ROOT/metadata-before-rewritemeta.yml" "$home_vagrant/metadata/$APP_ID.yml"; then
-  cp -f "$home_vagrant/metadata/$APP_ID.yml" "$DIAG_ROOT/metadata-after-rewritemeta.yml"
+if ! cmp --silent "$DIAG_ROOT/metadata-before-rewritemeta.yml" "$FDROIDDATA_DIR/metadata/$APP_ID.yml"; then
+  cp -f "$FDROIDDATA_DIR/metadata/$APP_ID.yml" "$DIAG_ROOT/metadata-after-rewritemeta.yml"
   echo "[FAIL] Effective F-Droid metadata is not canonical according to fdroid rewritemeta." >&2
-  diff -u "$DIAG_ROOT/metadata-before-rewritemeta.yml" "$home_vagrant/metadata/$APP_ID.yml" || true
+  diff -u "$DIAG_ROOT/metadata-before-rewritemeta.yml" "$FDROIDDATA_DIR/metadata/$APP_ID.yml" || true
   exit 2
 fi
+popd >/dev/null
 
+pushd "$home_vagrant" >/dev/null
 fdroid_as_vagrant fetchsrclibs "$BUILD_SPEC" --verbose
 
 set +e
