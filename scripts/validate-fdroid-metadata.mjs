@@ -136,11 +136,13 @@ if (fs.existsSync(releaseWorkflowPath)) {
   const releaseWorkflow = fs.readFileSync(releaseWorkflowPath, 'utf8');
   expect(releaseWorkflow.includes("tags:\n      - 'v*.*.*'"), 'Android release workflow must run for immutable semantic-version tags');
   expect(releaseWorkflow.includes('release_tag:'), 'Android release workflow must support recovery from an existing immutable release tag');
-  expect(releaseWorkflow.includes("ref: ${{ inputs.release_tag || github.ref }}"), 'Android release workflow must check out the explicitly requested immutable tag during recovery');
+  expect(releaseWorkflow.includes("ref: ${{ inputs.release_tag && github.sha || github.ref }}"), 'Android release recovery must use current main harness tooling while F-Droid builds the immutable tag SHA');
   expect(releaseWorkflow.includes('build-tools;34.0.0'), 'Android release workflow must use apksigner from Android build-tools 34.0.0 for F-Droid signature-copy compatibility');
   expect(releaseWorkflow.includes('HomeLibrary-${HOMELIBRARY_RELEASE_VERSION}.apk'), 'Android release workflow must produce a versioned stable APK filename');
   expect(fdroidPinnedImage && releaseWorkflow.includes(fdroidPinnedImage), 'Android release workflow must use the image declared in scripts/fdroid/pins.env');
   expect(releaseWorkflow.includes('scripts/fdroid/run-source-build.sh'), 'Android release workflow must build unsigned APKs through the explicit source runner');
+  expect(releaseWorkflow.includes('FDROID_RELEASE_SOURCE_SHA'), 'Android release workflow must pass the resolved immutable source SHA into the source runner');
+  expect(releaseWorkflow.includes('git fetch --force origin "refs/tags/${RELEASE_TAG}:refs/tags/${RELEASE_TAG}"'), 'Android release recovery must resolve the immutable tag explicitly rather than running harness code from the old tag');
   expect(releaseWorkflow.includes('scripts/fdroid/run-release-verification.sh'), 'Android release workflow must verify published APKs through the explicit release runner');
   expect(!releaseWorkflow.includes('run-fdroid-buildserver-simulation.sh'), 'Android release workflow must not use the legacy mode-switching harness');
   expect(!releaseWorkflow.includes('FDROID_SIMULATION_'), 'Android release workflow must not use legacy mode-switching environment variables');
