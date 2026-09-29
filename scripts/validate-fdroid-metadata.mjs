@@ -22,6 +22,15 @@ const fdroidDerivePath = path.join(root, 'scripts', 'fdroid', 'derive-source-met
 const fdroidDeriveTestPath = path.join(root, 'scripts', 'fdroid', 'test-derive-source-metadata.py');
 const legacyBuildserverScriptPath = path.join(root, 'scripts', 'run-fdroid-buildserver-simulation.sh');
 const errors = [];
+let fdroidPinnedImage = null;
+let fdroidserverPin = null;
+let fdroiddataPin = null;
+if (fs.existsSync(fdroidPinsPath)) {
+  const pins = fs.readFileSync(fdroidPinsPath, 'utf8');
+  fdroidPinnedImage = pins.match(/^FDROID_BUILDSERVER_IMAGE="([^"]+)"$/m)?.[1] ?? null;
+  fdroidserverPin = pins.match(/^FDROIDSERVER_COMMIT="([0-9a-f]{40})"$/m)?.[1] ?? null;
+  fdroiddataPin = pins.match(/^FDROIDDATA_COMMIT="([0-9a-f]{40})"$/m)?.[1] ?? null;
+}
 const expect = (condition, message) => {
   if (!condition) errors.push(message);
 };
@@ -130,10 +139,11 @@ if (fs.existsSync(releaseWorkflowPath)) {
   expect(releaseWorkflow.includes("ref: ${{ inputs.release_tag || github.ref }}"), 'Android release workflow must check out the explicitly requested immutable tag during recovery');
   expect(releaseWorkflow.includes('build-tools;34.0.0'), 'Android release workflow must use apksigner from Android build-tools 34.0.0 for F-Droid signature-copy compatibility');
   expect(releaseWorkflow.includes('HomeLibrary-${HOMELIBRARY_RELEASE_VERSION}.apk'), 'Android release workflow must produce a versioned stable APK filename');
-  expect(releaseWorkflow.includes('@sha256:9cb68105642ca4e7b295f0ceab10f069f5b3247dc18fa7c36046e9d81aa469a8'), 'Android release workflow must pin the F-Droid buildserver image digest');
+  expect(fdroidPinnedImage && releaseWorkflow.includes(fdroidPinnedImage), 'Android release workflow must use the image declared in scripts/fdroid/pins.env');
   expect(releaseWorkflow.includes('scripts/fdroid/run-source-build.sh'), 'Android release workflow must build unsigned APKs through the explicit source runner');
   expect(releaseWorkflow.includes('scripts/fdroid/run-release-verification.sh'), 'Android release workflow must verify published APKs through the explicit release runner');
   expect(!releaseWorkflow.includes('run-fdroid-buildserver-simulation.sh'), 'Android release workflow must not use the legacy mode-switching harness');
+  expect(!releaseWorkflow.includes('FDROID_SIMULATION_'), 'Android release workflow must not use legacy mode-switching environment variables');
   expect(releaseWorkflow.includes('fdroid-buildserver-output/app-release-unsigned.apk'), 'Android release workflow must sign the APK produced by the F-Droid buildserver path');
   expect(releaseWorkflow.includes('verify-fdroid-release-parity'), 'Android release workflow must run F-Droid signed-reference parity verification');
   expect(releaseWorkflow.includes('inputs.release_tag && github.sha || needs.sign-and-publish.outputs.release_tag'), 'release recovery parity must use current main tooling while metadata targets the immutable tag');
@@ -144,9 +154,10 @@ if (fs.existsSync(releaseWorkflowPath)) {
 
 if (fs.existsSync(buildserverSimulationWorkflowPath)) {
   const workflow = fs.readFileSync(buildserverSimulationWorkflowPath, 'utf8');
-  expect(workflow.includes('@sha256:9cb68105642ca4e7b295f0ceab10f069f5b3247dc18fa7c36046e9d81aa469a8'), 'F-Droid simulation must pin the production buildserver image digest');
+  expect(fdroidPinnedImage && workflow.includes(fdroidPinnedImage), 'F-Droid simulation must use the image declared in scripts/fdroid/pins.env');
   expect(workflow.includes('scripts/fdroid/run-source-build.sh'), 'F-Droid simulation must call the explicit source-build runner');
   expect(!workflow.includes('run-fdroid-buildserver-simulation.sh'), 'F-Droid simulation must not call the legacy mode-switching harness');
+  expect(!workflow.includes('FDROID_SIMULATION_'), 'F-Droid simulation must not use legacy mode-switching environment variables');
   expect(workflow.includes('github.event.pull_request.head.sha || github.sha'), 'F-Droid simulation must build the PR head/source commit rather than the synthetic merge commit');
   expect(workflow.includes('matrix:\n        copy: [a, b]'), 'F-Droid simulation must run two independent buildserver copies');
   expect(workflow.includes('cmp --silent'), 'F-Droid simulation must byte-compare the independent buildserver APKs');
@@ -154,10 +165,9 @@ if (fs.existsSync(buildserverSimulationWorkflowPath)) {
 }
 
 if (fs.existsSync(fdroidPinsPath)) {
-  const pins = fs.readFileSync(fdroidPinsPath, 'utf8');
-  expect(pins.includes('FDROID_BUILDSERVER_IMAGE="registry.gitlab.com/fdroid/fdroidserver:buildserver-trixie@sha256:'), 'F-Droid buildserver image must be pinned by digest');
-  expect(/FDROIDSERVER_COMMIT="[0-9a-f]{40}"/.test(pins), 'fdroidserver must be pinned to a full commit SHA');
-  expect(/FDROIDDATA_COMMIT="[0-9a-f]{40}"/.test(pins), 'fdroiddata must be pinned to a full commit SHA');
+  expect(fdroidPinnedImage?.includes('@sha256:'), 'F-Droid buildserver image must be pinned by digest');
+  expect(Boolean(fdroidserverPin), 'fdroidserver must be pinned to a full commit SHA');
+  expect(Boolean(fdroiddataPin), 'fdroiddata must be pinned to a full commit SHA');
 }
 
 if (fs.existsSync(fdroidLibPath)) {
