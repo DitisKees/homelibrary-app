@@ -80,6 +80,12 @@
           ".*"
         ]
       }
+    },
+    "install": {
+      "exclude": [
+        "expo",
+        "expo-camera"
+      ]
     }
   }
 }

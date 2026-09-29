@@ -15,21 +15,85 @@ permissions:
   contents: write
 
 jobs:
-  build-and-sign:
+  build-fdroid-unsigned:
     runs-on: ubuntu-latest
-    timeout-minutes: 60
+    container:
+      image: registry.gitlab.com/fdroid/fdroidserver:buildserver-trixie
+    timeout-minutes: 90
+    env:
+      ANDROID_HOME: /opt/android-sdk
+      ANDROID_SDK_ROOT: /opt/android-sdk
+      FDROID_SIMULATION_MODE: source
+      FDROID_SIMULATION_EXPORT_APK: ${{ github.workspace }}/fdroid-buildserver-output/app-release-unsigned.apk
+
+    steps:
+      - name: Check out immutable release source
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ inputs.release_tag || github.ref }}
+
+      - name: Validate immutable release source
+        env:
+          REQUESTED_RELEASE_TAG: ${{ inputs.release_tag }}
+        run: |
+          set -euo pipefail
+          VERSION="$(python3 -c 'import json; print(json.load(open("app.json"))["expo"]["version"])')"
+          VERSION_CODE="$(python3 -c 'import json; print(json.load(open("app.json"))["expo"]["android"]["versionCode"])')"
+          RELEASE_TAG=""
+          if [ "${GITHUB_REF_TYPE}" = "tag" ]; then
+            RELEASE_TAG="${GITHUB_REF_NAME}"
+          elif [ -n "${REQUESTED_RELEASE_TAG:-}" ]; then
+            RELEASE_TAG="${REQUESTED_RELEASE_TAG}"
+          fi
+
+          if [ -n "${RELEASE_TAG}" ]; then
+            test "${RELEASE_TAG}" = "v${VERSION}"
+            TAG_SHA="$(git rev-list -n 1 "${RELEASE_TAG}")"
+            HEAD_SHA="$(git rev-parse HEAD)"
+            test "${TAG_SHA}" = "${HEAD_SHA}"
+          fi
+
+          echo "Release source: ${VERSION} (${VERSION_CODE}) at $(git rev-parse HEAD)"
+
+      - name: Build unsigned APK through F-Droid production buildserver path
+        run: |
+          set -euo pipefail
+          SOURCE_SHA="$(git rev-parse HEAD)"
+          bash scripts/run-fdroid-buildserver-simulation.sh "${SOURCE_SHA}" .fdroid.yml source
+
+      - name: Upload F-Droid buildserver unsigned APK
+        uses: actions/upload-artifact@v4
+        with:
+          name: homelibrary-fdroid-unsigned-${{ github.sha }}
+          path: fdroid-buildserver-output/app-release-unsigned.apk
+          if-no-files-found: error
+          retention-days: 30
+
+      - name: Upload buildserver diagnostics
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: homelibrary-fdroid-release-build-diagnostics-${{ github.sha }}
+          path: fdroid-buildserver-diagnostics/
+          if-no-files-found: warn
+          retention-days: 30
+
+  sign-and-publish:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    needs: build-fdroid-unsigned
+    outputs:
+      release_tag: ${{ steps.release-metadata.outputs.release_tag }}
+      release_version: ${{ steps.release-metadata.outputs.release_version }}
+      release_version_code: ${{ steps.release-metadata.outputs.release_version_code }}
     env:
       HOMELIBRARY_RELEASE_KEY_ALIAS: ${{ secrets.ANDROID_RELEASE_KEY_ALIAS }}
       HOMELIBRARY_RELEASE_KEYSTORE_PASSWORD: ${{ secrets.ANDROID_RELEASE_KEYSTORE_PASSWORD }}
       HOMELIBRARY_RELEASE_KEY_PASSWORD: ${{ secrets.ANDROID_RELEASE_KEY_PASSWORD }}
       HOMELIBRARY_RELEASE_CERT_SHA256: ${{ vars.ANDROID_RELEASE_CERT_SHA256 }}
-      # Keep recovery builds on the same proven Gradle/Kotlin memory model as
-      # Android reproducibility CI. These workflow-level settings still apply
-      # when the immutable release tag is checked out.
-      GRADLE_OPTS: -Dorg.gradle.jvmargs=-Xmx3g\ -XX:MaxMetaspaceSize=1g\ -Dfile.encoding=UTF-8 -Dorg.gradle.workers.max=2 -Dkotlin.compiler.execution.strategy=in-process
 
     steps:
-      - name: Check out repository
+      - name: Check out immutable release source
         uses: actions/checkout@v4
         with:
           ref: ${{ inputs.release_tag || github.ref }}
@@ -41,15 +105,13 @@ jobs:
           cache: npm
 
       - name: Resolve release metadata
+        id: release-metadata
         env:
           REQUESTED_RELEASE_TAG: ${{ inputs.release_tag }}
         run: |
           set -euo pipefail
           VERSION="$(node -p "require('./app.json').expo.version")"
           VERSION_CODE="$(node -p "require('./app.json').expo.android.versionCode")"
-          test -n "${VERSION}"
-          test -n "${VERSION_CODE}"
-
           RELEASE_TAG=""
           if [ "${GITHUB_REF_TYPE}" = "tag" ]; then
             RELEASE_TAG="${GITHUB_REF_NAME}"
@@ -63,7 +125,6 @@ jobs:
               echo "Release tag ${RELEASE_TAG} does not match app.json version ${EXPECTED_TAG}." >&2
               exit 1
             fi
-
             TAG_SHA="$(git rev-list -n 1 "${RELEASE_TAG}")"
             HEAD_SHA="$(git rev-parse HEAD)"
             if [ "${TAG_SHA}" != "${HEAD_SHA}" ]; then
@@ -72,9 +133,18 @@ jobs:
             fi
           fi
 
+          echo "release_version=${VERSION}" >> "${GITHUB_OUTPUT}"
+          echo "release_version_code=${VERSION_CODE}" >> "${GITHUB_OUTPUT}"
+          echo "release_tag=${RELEASE_TAG}" >> "${GITHUB_OUTPUT}"
           echo "HOMELIBRARY_RELEASE_VERSION=${VERSION}" >> "${GITHUB_ENV}"
           echo "HOMELIBRARY_RELEASE_VERSION_CODE=${VERSION_CODE}" >> "${GITHUB_ENV}"
           echo "HOMELIBRARY_RELEASE_TAG=${RELEASE_TAG}" >> "${GITHUB_ENV}"
+
+      - name: Download F-Droid buildserver unsigned APK
+        uses: actions/download-artifact@v4
+        with:
+          name: homelibrary-fdroid-unsigned-${{ github.sha }}
+          path: fdroid-buildserver-output
 
       - name: Set up Java
         uses: actions/setup-java@v4
@@ -87,16 +157,12 @@ jobs:
           set -euo pipefail
           SDK_ROOT="${ANDROID_SDK_ROOT:-${ANDROID_HOME:-}}"
           test -n "${SDK_ROOT}"
-
           SDKMANAGER="${SDK_ROOT}/cmdline-tools/latest/bin/sdkmanager"
           if [ ! -x "${SDKMANAGER}" ]; then
             SDKMANAGER="$(find "${SDK_ROOT}/cmdline-tools" -type f -path '*/bin/sdkmanager' -perm -111 2>/dev/null | sort -V | tail -n 1)"
           fi
-          if [ -z "${SDKMANAGER}" ] || [ ! -x "${SDKMANAGER}" ]; then
-            echo "Could not locate sdkmanager under ${SDK_ROOT}/cmdline-tools." >&2
-            exit 1
-          fi
-
+          test -n "${SDKMANAGER}"
+          test -x "${SDKMANAGER}"
           "${SDKMANAGER}" "build-tools;34.0.0" >/dev/null
           APKSIGNER="${SDK_ROOT}/build-tools/34.0.0/apksigner"
           test -x "${APKSIGNER}"
@@ -128,22 +194,17 @@ jobs:
           ACTUAL="$(keytool -list -v -keystore "${KEYSTORE}" -storepass "${HOMELIBRARY_RELEASE_KEYSTORE_PASSWORD}" -alias "${HOMELIBRARY_RELEASE_KEY_ALIAS}" | sed -n 's/.*SHA256: //p' | head -n 1 | tr -d ':[:space:]' | tr '[:lower:]' '[:upper:]')"
           EXPECTED="$(printf '%s' "${HOMELIBRARY_RELEASE_CERT_SHA256}" | tr -d ':[:space:]' | tr '[:lower:]' '[:upper:]')"
           test -n "${ACTUAL}"
-          if [ "${ACTUAL}" != "${EXPECTED}" ]; then
-            echo "Production keystore certificate fingerprint does not match ANDROID_RELEASE_CERT_SHA256." >&2
-            exit 1
-          fi
+          test "${ACTUAL}" = "${EXPECTED}"
 
-      - name: Build canonical unsigned F-Droid APK
-        run: bash scripts/build-fdroid-recipe-android.sh
-
-      - name: Sign reproducible APK
+      - name: Sign F-Droid buildserver APK
         run: |
           set -euo pipefail
-          UNSIGNED="${GITHUB_WORKSPACE}/android/app/build/outputs/apk/release/app-release-unsigned.apk"
+          UNSIGNED="${GITHUB_WORKSPACE}/fdroid-buildserver-output/app-release-unsigned.apk"
           OUT_DIR="${GITHUB_WORKSPACE}/release"
           SIGNED="${OUT_DIR}/HomeLibrary-${HOMELIBRARY_RELEASE_VERSION}.apk"
           mkdir -p "${OUT_DIR}"
           test -f "${UNSIGNED}"
+          sha256sum "${UNSIGNED}" | tee "${OUT_DIR}/unsigned-apk.sha256"
 
           "${HOMELIBRARY_APKSIGNER}" sign \
             --ks "${HOMELIBRARY_RELEASE_KEYSTORE_PATH}" \
@@ -157,10 +218,7 @@ jobs:
           ACTUAL="$(sed -n 's/^.*certificate SHA-256 digest: //p' "${OUT_DIR}/apksigner.txt" | head -n 1 | tr -d ':[:space:]' | tr '[:lower:]' '[:upper:]')"
           EXPECTED="$(printf '%s' "${HOMELIBRARY_RELEASE_CERT_SHA256}" | tr -d ':[:space:]' | tr '[:lower:]' '[:upper:]')"
           test -n "${ACTUAL}"
-          if [ "${ACTUAL}" != "${EXPECTED}" ]; then
-            echo "Signed APK certificate fingerprint does not match the pinned production certificate." >&2
-            exit 1
-          fi
+          test "${ACTUAL}" = "${EXPECTED}"
           sha256sum "${SIGNED}" | tee "${SIGNED}.sha256"
 
       - name: Upload signed release APK
@@ -170,6 +228,7 @@ jobs:
           path: |
             release/HomeLibrary-*.apk
             release/HomeLibrary-*.apk.sha256
+            release/unsigned-apk.sha256
             release/apksigner.txt
           if-no-files-found: error
           retention-days: 30
@@ -191,7 +250,63 @@ jobs:
               --generate-notes
           fi
 
-          gh release upload "${TAG}" \
-            "${APK}" \
-            "${CHECKSUM}" \
-            "release/apksigner.txt"
+          # Release APK assets are immutable just like release tags. On a recovery
+          # run, accept an existing asset only when it is byte-for-byte identical.
+          TMP="${RUNNER_TEMP}/existing-release-assets"
+          mkdir -p "${TMP}"
+          if gh release download "${TAG}" --pattern "HomeLibrary-${HOMELIBRARY_RELEASE_VERSION}.apk" --dir "${TMP}" >/dev/null 2>&1; then
+            EXISTING="${TMP}/HomeLibrary-${HOMELIBRARY_RELEASE_VERSION}.apk"
+            if ! cmp --silent "${APK}" "${EXISTING}"; then
+              echo "Published release APK already exists with different bytes. Refusing to overwrite an immutable release asset." >&2
+              sha256sum "${APK}" "${EXISTING}" >&2
+              exit 1
+            fi
+            echo "Published APK already exists and is byte-for-byte identical; keeping it unchanged."
+          else
+            gh release upload "${TAG}" "${APK}"
+          fi
+
+          for ASSET in "${CHECKSUM}" "release/unsigned-apk.sha256" "release/apksigner.txt"; do
+            NAME="$(basename "${ASSET}")"
+            rm -f "${TMP}/${NAME}"
+            if gh release download "${TAG}" --pattern "${NAME}" --dir "${TMP}" >/dev/null 2>&1; then
+              if ! cmp --silent "${ASSET}" "${TMP}/${NAME}"; then
+                echo "Published release asset ${NAME} exists with different bytes. Refusing to overwrite it." >&2
+                exit 1
+              fi
+            else
+              gh release upload "${TAG}" "${ASSET}"
+            fi
+          done
+
+  verify-fdroid-release-parity:
+    runs-on: ubuntu-latest
+    container:
+      image: registry.gitlab.com/fdroid/fdroidserver:buildserver-trixie
+    timeout-minutes: 90
+    needs: sign-and-publish
+    if: needs.sign-and-publish.outputs.release_tag != ''
+    env:
+      ANDROID_HOME: /opt/android-sdk
+      ANDROID_SDK_ROOT: /opt/android-sdk
+      FDROID_SIMULATION_MODE: release
+
+    steps:
+      - name: Check out immutable release source
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ needs.sign-and-publish.outputs.release_tag }}
+
+      - name: Verify signed release with F-Droid reference-binary path
+        run: |
+          set -euo pipefail
+          bash scripts/run-fdroid-buildserver-simulation.sh "" .fdroid.yml release
+
+      - name: Upload F-Droid release-parity diagnostics
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: homelibrary-fdroid-release-parity-${{ github.sha }}
+          path: fdroid-buildserver-diagnostics/
+          if-no-files-found: warn
+          retention-days: 30

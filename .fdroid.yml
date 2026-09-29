@@ -13,9 +13,9 @@ Binaries:
   https://github.com/DitisKees/homelibrary-app/releases/download/v%v/HomeLibrary-%v.apk
 
 Builds:
-  - versionName: 1.0.7
-    versionCode: 8
-    commit: v1.0.7
+  - versionName: 1.0.8
+    versionCode: 9
+    commit: v1.0.8
     sudo:
       - echo "deb https://deb.debian.org/debian forky main" > /etc/apt/sources.list.d/forky.list
       - apt-get update
@@ -23,10 +23,10 @@ Builds:
     init:
       - node --version
       - npm --version
+      - sed -i -e 's/"node":\ ">=22.13.0 <23"/"node":\ ">=22.13.0"/' package.json
       - npm ci
     output: android/app/build/outputs/apk/release/app-release-unsigned.apk
     prebuild:
-      - sed -i -e 's/"node":\ ">=22.13.0 <23"/"node":\ ">=22.13.0"/' package.json
       - find node_modules -type d -name local-maven-repo -prune -exec rm -rf {} +
       - sed -i '/jvmToolchain\|JavaVersion/s/17/21/' node_modules/@react-native/gradle-plugin/*/build.gradle.kts
         node_modules/@react-native/gradle-plugin/react-native-gradle-plugin/src/main/kotlin/com/facebook/react/utils/JdkConfiguratorUtils.kt
@@ -64,7 +64,9 @@ MaintainerNotes: |-
   the generated APK and the build command runs Gradle from android/app.
 
   Node.js/npm are installed from Debian forky as requested by the F-Droid
-  maintainer. The React Native Gradle plugin still declares a Java 17 toolchain,
+  maintainer. The conservative upstream Node <23 engine ceiling is relaxed
+  before npm ci because current forky supplies Node 24. The React Native Gradle
+  plugin still declares a Java 17 toolchain,
   while the current F-Droid build image supplies Java 21. The prebuild applies
   the same 17-to-21 toolchain adjustment used by F-Droid's React Native template.
 
@@ -87,18 +89,20 @@ MaintainerNotes: |-
   React Native 0.86 is built with the Expo SDK 57 NDK baseline, pinned here as
   Android NDK r27b.
 
-  Version 1.0.7 fixes a release-build regression where release Gradle settings
+  Version 1.0.7 fixed a release-build regression where release Gradle settings
   could be concatenated onto Expo Camera's generated
   expo.camera.barcode-scanner-enabled=false property. The recipe normalizes and
   validates that property, audits the release dependency graph, and rejects
   ML Kit/Barhopper artifacts in the built APK.
 
-  This upstream development copy uses the immutable v1.0.7 tag. The GitHub
-  F-Droid buildserver simulation rewrites only the commit field to the current
-  pull-request/source commit so scanner-mutated builds are tested before release.
+  Version 1.0.8 is a build-system release that makes the F-Droid buildserver
+  path authoritative for the unsigned production APK. Upstream CI builds the
+  candidate in the same buildserver image, verifies independent buildserver
+  reproducibility, and performs F-Droid's signed-reference comparison after
+  publication before fdroiddata is updated.
 
 AutoUpdateMode: Version
 UpdateCheckMode: Tags ^v[0-9]+\.[0-9]+\.[0-9]+$
 UpdateCheckData: app.json|"versionCode":\s*(\d+)|app.json|"version":\s*"([\d.]+)"
-CurrentVersion: 1.0.7
-CurrentVersionCode: 8
+CurrentVersion: 1.0.8
+CurrentVersionCode: 9

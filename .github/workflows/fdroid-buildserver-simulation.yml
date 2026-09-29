@@ -5,6 +5,7 @@ on:
   pull_request:
     paths:
       - '.github/workflows/fdroid-buildserver-simulation.yml'
+      - '.github/workflows/android-release.yml'
       - '.fdroid.yml'
       - 'app.json'
       - 'package.json'
@@ -17,6 +18,7 @@ on:
       - main
     paths:
       - '.github/workflows/fdroid-buildserver-simulation.yml'
+      - '.github/workflows/android-release.yml'
       - '.fdroid.yml'
       - 'app.json'
       - 'package.json'
@@ -30,27 +32,74 @@ permissions:
 
 jobs:
   fdroid-buildserver:
+    name: fdroid-buildserver-${{ matrix.copy }}
     runs-on: ubuntu-latest
     container:
       image: registry.gitlab.com/fdroid/fdroidserver:buildserver-trixie
     timeout-minutes: 90
+    strategy:
+      fail-fast: false
+      matrix:
+        copy: [a, b]
     env:
       ANDROID_HOME: /opt/android-sdk
       ANDROID_SDK_ROOT: /opt/android-sdk
       FDROID_SIMULATION_SOURCE_REF: ${{ github.event.pull_request.head.sha || github.sha }}
+      FDROID_SIMULATION_MODE: source
+      FDROID_SIMULATION_EXPORT_APK: ${{ github.workspace }}/fdroid-buildserver-output/app-release-unsigned.apk
 
     steps:
       - name: Check out HomeLibrary
         uses: actions/checkout@v4
 
       - name: Run F-Droid production-buildserver simulation
-        run: bash scripts/run-fdroid-buildserver-simulation.sh "$FDROID_SIMULATION_SOURCE_REF"
+        run: bash scripts/run-fdroid-buildserver-simulation.sh "$FDROID_SIMULATION_SOURCE_REF" .fdroid.yml source
+
+      - name: Upload unsigned buildserver APK
+        uses: actions/upload-artifact@v4
+        with:
+          name: fdroid-buildserver-unsigned-${{ matrix.copy }}
+          path: fdroid-buildserver-output/app-release-unsigned.apk
+          if-no-files-found: error
+          retention-days: 7
 
       - name: Upload buildserver diagnostics
         if: always()
         uses: actions/upload-artifact@v4
         with:
-          name: fdroid-buildserver-diagnostics-${{ github.sha }}
+          name: fdroid-buildserver-diagnostics-${{ matrix.copy }}-${{ github.sha }}
           path: fdroid-buildserver-diagnostics/
           if-no-files-found: warn
           retention-days: 7
+
+  compare-buildserver-apks:
+    name: compare F-Droid buildserver APKs
+    runs-on: ubuntu-latest
+    needs: fdroid-buildserver
+
+    steps:
+      - name: Download build A
+        uses: actions/download-artifact@v4
+        with:
+          name: fdroid-buildserver-unsigned-a
+          path: build-a
+
+      - name: Download build B
+        uses: actions/download-artifact@v4
+        with:
+          name: fdroid-buildserver-unsigned-b
+          path: build-b
+
+      - name: Compare unsigned APKs
+        run: |
+          set -euo pipefail
+          APK_A="build-a/app-release-unsigned.apk"
+          APK_B="build-b/app-release-unsigned.apk"
+          test -f "$APK_A"
+          test -f "$APK_B"
+          sha256sum "$APK_A" "$APK_B"
+          if ! cmp --silent "$APK_A" "$APK_B"; then
+            echo "Independent F-Droid buildserver APKs differ." >&2
+            exit 1
+          fi
+          echo "Independent F-Droid buildserver APKs are byte-for-byte identical."

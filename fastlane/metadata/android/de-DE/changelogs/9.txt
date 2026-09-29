@@ -1,0 +1,1 @@
+Build-System-Update: Android-Release-APKs werden nun über denselben F-Droid-Buildserver- und Scanner-Pfad wie bei der offiziellen Prüfung erstellt. Zusätzlich wird vor dem fdroiddata-Update die signierte Referenz geprüft.
