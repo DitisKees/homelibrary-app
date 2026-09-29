@@ -37,6 +37,7 @@ jobs:
           REQUESTED_RELEASE_TAG: ${{ inputs.release_tag }}
         run: |
           set -euo pipefail
+          git config --global --add safe.directory "$GITHUB_WORKSPACE"
           VERSION="$(python3 -c 'import json; print(json.load(open("app.json"))["expo"]["version"])')"
           VERSION_CODE="$(python3 -c 'import json; print(json.load(open("app.json"))["expo"]["android"]["versionCode"])')"
           RELEASE_TAG=""
@@ -58,6 +59,7 @@ jobs:
       - name: Build unsigned APK through F-Droid production buildserver path
         run: |
           set -euo pipefail
+          git config --global --add safe.directory "$GITHUB_WORKSPACE"
           SOURCE_SHA="$(git rev-parse HEAD)"
           bash scripts/run-fdroid-buildserver-simulation.sh "${SOURCE_SHA}" .fdroid.yml source
 
@@ -300,6 +302,7 @@ jobs:
       - name: Verify signed release with F-Droid reference-binary path
         run: |
           set -euo pipefail
+          git config --global --add safe.directory "$GITHUB_WORKSPACE"
           bash scripts/run-fdroid-buildserver-simulation.sh "" .fdroid.yml release
 
       - name: Upload F-Droid release-parity diagnostics
