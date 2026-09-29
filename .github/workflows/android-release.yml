@@ -26,10 +26,12 @@ jobs:
       FDROID_EXPORT_APK: fdroid-buildserver-output/app-release-unsigned.apk
 
     steps:
-      - name: Check out immutable release source
+      - name: Check out release harness
         uses: actions/checkout@v4
         with:
-          ref: ${{ inputs.release_tag || github.ref }}
+          # Recovery uses current main harness tooling. F-Droid itself is given
+          # the immutable tag SHA resolved below.
+          ref: ${{ inputs.release_tag && github.sha || github.ref }}
 
       - name: Validate immutable release source
         env:
@@ -37,9 +39,10 @@ jobs:
         run: |
           set -euo pipefail
           git config --global --add safe.directory "$GITHUB_WORKSPACE"
-          VERSION="$(python3 -c 'import json; print(json.load(open("app.json"))["expo"]["version"])')"
-          VERSION_CODE="$(python3 -c 'import json; print(json.load(open("app.json"))["expo"]["android"]["versionCode"])')"
+          HARNESS_VERSION="$(python3 -c 'import json; print(json.load(open("app.json"))["expo"]["version"])')"
+          HARNESS_VERSION_CODE="$(python3 -c 'import json; print(json.load(open("app.json"))["expo"]["android"]["versionCode"])')"
           RELEASE_TAG=""
+
           if [ "${GITHUB_REF_TYPE}" = "tag" ]; then
             RELEASE_TAG="${GITHUB_REF_NAME}"
           elif [ -n "${REQUESTED_RELEASE_TAG:-}" ]; then
@@ -47,20 +50,33 @@ jobs:
           fi
 
           if [ -n "${RELEASE_TAG}" ]; then
-            test "${RELEASE_TAG}" = "v${VERSION}"
-            TAG_SHA="$(git rev-list -n 1 "${RELEASE_TAG}")"
-            HEAD_SHA="$(git rev-parse HEAD)"
-            test "${TAG_SHA}" = "${HEAD_SHA}"
+            git fetch --force origin "refs/tags/${RELEASE_TAG}:refs/tags/${RELEASE_TAG}"
+            SOURCE_SHA="$(git rev-list -n 1 "${RELEASE_TAG}")"
+            TAG_APP_JSON="$(git show "${RELEASE_TAG}:app.json")"
+            TAG_VERSION="$(printf '%s' "${TAG_APP_JSON}" | python3 -c 'import json,sys; print(json.load(sys.stdin)["expo"]["version"])')"
+            TAG_VERSION_CODE="$(printf '%s' "${TAG_APP_JSON}" | python3 -c 'import json,sys; print(json.load(sys.stdin)["expo"]["android"]["versionCode"])')"
+
+            test "${RELEASE_TAG}" = "v${TAG_VERSION}"
+            test "${HARNESS_VERSION}" = "${TAG_VERSION}"
+            test "${HARNESS_VERSION_CODE}" = "${TAG_VERSION_CODE}"
+
+            if [ "${GITHUB_REF_TYPE}" = "tag" ]; then
+              test "$(git rev-parse HEAD)" = "${SOURCE_SHA}"
+            fi
+          else
+            SOURCE_SHA="$(git rev-parse HEAD)"
+            TAG_VERSION="${HARNESS_VERSION}"
+            TAG_VERSION_CODE="${HARNESS_VERSION_CODE}"
           fi
 
-          echo "Release source: ${VERSION} (${VERSION_CODE}) at $(git rev-parse HEAD)"
-
+          echo "FDROID_RELEASE_SOURCE_SHA=${SOURCE_SHA}" >> "${GITHUB_ENV}"
+          echo "Release source: ${TAG_VERSION} (${TAG_VERSION_CODE}) at ${SOURCE_SHA}"
       - name: Build unsigned APK through F-Droid production buildserver path
         run: |
           set -euo pipefail
           git config --global --add safe.directory "$GITHUB_WORKSPACE"
-          SOURCE_SHA="$(git rev-parse HEAD)"
-          bash scripts/fdroid/run-source-build.sh "${SOURCE_SHA}" .fdroid.yml
+          test -n "${FDROID_RELEASE_SOURCE_SHA:-}"
+          bash scripts/fdroid/run-source-build.sh "${FDROID_RELEASE_SOURCE_SHA}" .fdroid.yml
 
       - name: Upload F-Droid buildserver unsigned APK
         uses: actions/upload-artifact@v4
