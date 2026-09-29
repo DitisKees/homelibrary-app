@@ -1,0 +1,1 @@
+Buildsysteemupdate: Android-release-APK's worden nu gebouwd via hetzelfde F-Droid-buildserver- en scannerpad als de officiële verificatie, met extra controle van de gesigneerde referentie vóór fdroiddata wordt bijgewerkt.
