@@ -88,7 +88,7 @@ if (fs.existsSync(fdroidPath)) {
   expect(fdroid.includes('AuthorName: Kees van \'t Slot'), '.fdroid.yml must declare the upstream author');
   expect(fdroid.includes('RepoType: git'), '.fdroid.yml must declare RepoType: git');
   expect(fdroid.includes('https://github.com/DitisKees/homelibrary-app'), '.fdroid.yml must reference the public upstream repository');
-  expect(fdroid.includes('https://github.com/DitisKees/homelibrary-app/releases/download/v%v/HomeLibrary-%v.apk'), '.fdroid.yml must point reproducible verification at the immutable versioned GitHub Release APK');
+  expect(fdroid.includes('Binaries: \n  https://github.com/DitisKees/homelibrary-app/releases/download/v%v/HomeLibrary-%v.apk'), '.fdroid.yml must use fdroid rewritemeta canonical Binaries formatting');
   expect(!/^\s*subdir:/m.test(fdroid), '.fdroid.yml must not declare subdir because Expo generates android/ after checkout');
   expect(fdroid.includes('output: android/app/build/outputs/apk/release/app-release-unsigned.apk'), '.fdroid.yml must declare the generated unsigned APK output');
   expect(fdroid.includes('cd android/app'), '.fdroid.yml must build from the generated Android app directory');
@@ -124,6 +124,7 @@ if (fs.existsSync(releaseWorkflowPath)) {
   expect(releaseWorkflow.includes('fdroid-buildserver-output/app-release-unsigned.apk'), 'Android release workflow must sign the APK produced by the F-Droid buildserver path');
   expect((releaseWorkflow.match(/git config --global --add safe\.directory "\$GITHUB_WORKSPACE"/g) ?? []).length >= 3, 'Android release container jobs must restore Git safe.directory before workspace Git commands');
   expect(releaseWorkflow.includes('verify-fdroid-release-parity'), 'Android release workflow must run F-Droid signed-reference parity verification');
+  expect(releaseWorkflow.includes('inputs.release_tag && github.sha || needs.sign-and-publish.outputs.release_tag'), 'release recovery parity must use current main tooling while metadata targets the immutable tag');
   expect(releaseWorkflow.includes('.fdroid.yml release'), 'Android release parity must retain Binaries and AllowedAPKSigningKeys');
   expect(releaseWorkflow.includes('gh release upload'), 'Android release workflow must publish the signed APK to the GitHub Release for the immutable tag');
   expect(!releaseWorkflow.includes('--clobber'), 'Android release workflow must never overwrite immutable release assets');
@@ -151,6 +152,7 @@ if (fs.existsSync(buildserverSimulationScriptPath)) {
   expect(script.includes('a35fdfddd9c66823987a410566a6101186e39c84'), 'F-Droid simulation must use the same fdroidserver trust root as fdroiddata CI');
   expect(script.includes('MODE='), 'F-Droid simulation must support explicit source/release modes');
   expect(script.includes('release mode requires Binaries and AllowedAPKSigningKeys'), 'release parity mode must require F-Droid binary/signing metadata');
+  expect(script.includes('source mode must remove Binaries and AllowedAPKSigningKeys together'), 'source simulation must never leave Binaries/signing-key metadata inconsistent');
   expect(script.includes('FDROID_SIMULATION_EXPORT_APK'), 'F-Droid simulation must export the exact unsigned buildserver APK for signing/comparison');
   expect(script.includes('fdroid_as_vagrant lint'), 'F-Droid simulation must run fdroid lint on the effective metadata');
   expect(script.includes('fdroid_as_vagrant rewritemeta'), 'F-Droid simulation must require canonical fdroid rewritemeta output');

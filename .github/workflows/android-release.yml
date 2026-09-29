@@ -294,10 +294,12 @@ jobs:
       FDROID_SIMULATION_MODE: release
 
     steps:
-      - name: Check out immutable release source
+      - name: Check out parity tooling and canonical metadata
         uses: actions/checkout@v4
         with:
-          ref: ${{ needs.sign-and-publish.outputs.release_tag }}
+          # Recovery runs must use the fixed workflow/tooling from main while
+          # .fdroid.yml still points F-Droid at the immutable release tag.
+          ref: ${{ inputs.release_tag && github.sha || needs.sign-and-publish.outputs.release_tag }}
 
       - name: Verify signed release with F-Droid reference-binary path
         run: |
