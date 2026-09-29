@@ -2,7 +2,7 @@
 
 HomeLibrary is a cross-platform client for managing a shared, self-hosted household book collection backed by PocketBase.
 
-> **F-Droid status:** The official `fdroid/fdroiddata!48673` submission is open. HomeLibrary **1.0.7 / versionCode 8** is published upstream with the ML Kit packaging regression fixed. The remaining work is to get the official F-Droid buildserver recipe green; GitHub CI now includes a production-buildserver simulation so scanner/buildserver failures are caught before updating fdroiddata.
+> **F-Droid status:** The official `fdroid/fdroiddata!48673` submission is open. HomeLibrary **1.0.8 / versionCode 9** is being prepared as a build-parity release: its unsigned APK will be produced through the same F-Droid buildserver/scanner path used for official verification, and the published signed APK must pass F-Droid's own reference-binary comparison before fdroiddata is updated.
 
 ## Features
 
@@ -99,7 +99,7 @@ For the canonical source-only Android release path:
 npm run build:fdroid-android
 ```
 
-CI runs these checks, verifies all committed PocketBase migrations against PocketBase 0.40.1, validates the Docker self-hosting path when deployment-related files change, and runs a separate F-Droid production-buildserver simulation in `registry.gitlab.com/fdroid/fdroidserver:buildserver-trixie` for F-Droid-relevant changes.
+CI runs these checks, verifies all committed PocketBase migrations against PocketBase 0.40.1, validates Docker self-hosting when relevant, and runs two independent F-Droid production-buildserver simulations in `registry.gitlab.com/fdroid/fdroidserver:buildserver-trixie`, requiring their unsigned APKs to match byte-for-byte.
 
 ## Authentication storage
 
@@ -139,9 +139,10 @@ The initial official F-Droid submission is open as `fdroid/fdroiddata!48673`.
 4. ~~add Fastlane metadata, screenshots, changelogs, permanent signing, and reproducible GitHub Release APKs~~ — completed;
 5. ~~publish and verify reproducible upstream 1.0.7~~ — completed;
 6. ~~fix the Gradle-properties append regression and add dependency/APK guards against ML Kit/Barhopper~~ — completed in 1.0.7;
-7. run the F-Droid production-buildserver image and live scanner in GitHub CI before fdroiddata changes are submitted;
-8. keep the checked-in `.fdroid.yml` aligned with the actual fdroiddata recipe, including reviewed scanner exceptions;
-9. obtain a successful official F-Droid buildserver verification and acceptance.
+7. ~~run the F-Droid production-buildserver image and live scanner in GitHub CI~~ — completed;
+8. require two independent F-Droid buildserver APKs to be byte-for-byte identical before release;
+9. sign the exact APK produced by the F-Droid buildserver path and require F-Droid signed-reference parity after publication;
+10. only then update fdroiddata and obtain official buildserver verification and acceptance.
 
 See [`docs/fdroid.md`](docs/fdroid.md) and [`docs/fdroid-release.md`](docs/fdroid-release.md) for details.
 
