@@ -51,6 +51,8 @@ jobs:
     steps:
       - name: Check out HomeLibrary
         uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.pull_request.head.sha || github.sha }}
 
       - name: Verify container checkout Git access
         run: |
