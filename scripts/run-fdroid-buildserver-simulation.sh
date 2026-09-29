@@ -162,8 +162,8 @@ mode = sys.argv[4]
 
 if mode == "source":
     source = re.sub(r"(?m)^(    commit:)\s+.*$", rf"\1 {ref}", source, count=1)
-    source = re.sub(r"(?m)^Binaries:[ \\t]*\\n(?:[ \\t]+https://[^\\n]+\\n)+\\n?", "", source, count=1)
-    source = re.sub(r"(?m)^AllowedAPKSigningKeys:[^\\n]*\\n\\n?", "", source, count=1)
+    source = re.sub(r"(?m)^Binaries:[ \t]*\n(?:[ \t]+https://[^\n]+\n)+\n?", "", source, count=1)
+    source = re.sub(r"(?m)^AllowedAPKSigningKeys:[^\n]*\n\n?", "", source, count=1)
     if "Binaries:" in source or "AllowedAPKSigningKeys:" in source:
         raise SystemExit("source mode must remove Binaries and AllowedAPKSigningKeys together")
 else:
