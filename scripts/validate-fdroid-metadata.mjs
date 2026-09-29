@@ -122,6 +122,7 @@ if (fs.existsSync(releaseWorkflowPath)) {
   expect(releaseWorkflow.includes('registry.gitlab.com/fdroid/fdroidserver:buildserver-trixie'), 'Android release workflow must build the unsigned APK in F-Droid\'s buildserver image');
   expect(releaseWorkflow.includes('run-fdroid-buildserver-simulation.sh'), 'Android release workflow must build through the checked-in F-Droid simulation path');
   expect(releaseWorkflow.includes('fdroid-buildserver-output/app-release-unsigned.apk'), 'Android release workflow must sign the APK produced by the F-Droid buildserver path');
+  expect((releaseWorkflow.match(/git config --global --add safe\.directory "\$GITHUB_WORKSPACE"/g) ?? []).length >= 3, 'Android release container jobs must restore Git safe.directory before workspace Git commands');
   expect(releaseWorkflow.includes('verify-fdroid-release-parity'), 'Android release workflow must run F-Droid signed-reference parity verification');
   expect(releaseWorkflow.includes('.fdroid.yml release'), 'Android release parity must retain Binaries and AllowedAPKSigningKeys');
   expect(releaseWorkflow.includes('gh release upload'), 'Android release workflow must publish the signed APK to the GitHub Release for the immutable tag');
@@ -136,6 +137,8 @@ if (fs.existsSync(buildserverSimulationWorkflowPath)) {
   expect(workflow.includes('github.event.pull_request.head.sha || github.sha'), 'F-Droid simulation must build the PR head/source commit rather than the synthetic merge commit');
   expect(workflow.includes('matrix:\n        copy: [a, b]'), 'F-Droid simulation must run two independent buildserver copies');
   expect(workflow.includes('cmp --silent'), 'F-Droid simulation must byte-compare the independent buildserver APKs');
+  expect(workflow.includes('Verify container checkout Git access'), 'F-Droid simulation must regression-test Git workspace ownership inside the buildserver container');
+  expect(workflow.includes('git config --global --add safe.directory "$GITHUB_WORKSPACE"'), 'F-Droid simulation must restore Git safe.directory after checkout');
 }
 
 if (fs.existsSync(buildserverSimulationScriptPath)) {

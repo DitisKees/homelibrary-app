@@ -51,6 +51,14 @@ jobs:
     steps:
       - name: Check out HomeLibrary
         uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.pull_request.head.sha || github.sha }}
+
+      - name: Verify container checkout Git access
+        run: |
+          set -euo pipefail
+          git config --global --add safe.directory "$GITHUB_WORKSPACE"
+          test "$(git rev-parse HEAD)" = "$FDROID_SIMULATION_SOURCE_REF"
 
       - name: Run F-Droid production-buildserver simulation
         run: bash scripts/run-fdroid-buildserver-simulation.sh "$FDROID_SIMULATION_SOURCE_REF" .fdroid.yml source
