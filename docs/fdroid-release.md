@@ -1,5 +1,7 @@
 # F-Droid release procedure
 
+The harness architecture and maintenance constraints are defined in [`fdroid-harness.md`](./fdroid-harness.md). That document is normative for how F-Droid tooling is pinned, how metadata may be transformed, and how remote-only failures are handled.
+
 This document describes the release path for HomeLibrary's upstream-signed reproducible F-Droid publication. The current candidate is Android `1.0.8` / versionCode `9`, with intended immutable tag `v1.0.8`.
 
 `v1.0.7` / versionCode 8 is already published and remains immutable. F-Droid can build its source successfully, but the resulting unsigned APK differs from the published 1.0.7 APK because the upstream release and F-Droid buildserver used different Java/native build paths. Version 1.0.8 fixes the process by making the F-Droid buildserver output the authoritative unsigned release artifact.
@@ -130,16 +132,16 @@ The official metadata must retain the already verified `AllowedAPKSigningKeys` v
 
 ## Test with fdroidserver
 
-The preferred pre-submission test is the GitHub `F-Droid buildserver simulation` workflow. It runs the same public buildserver image used by fdroiddata CI, uses the live F-Droid source scanner, rewrites only the metadata `commit` field to the pull-request/source SHA, and runs:
+The preferred pre-submission test is the GitHub `F-Droid buildserver simulation` workflow. It runs a pinned buildserver image digest with pinned fdroidserver/fdroiddata revisions, uses the live F-Droid source scanner, and derives temporary source metadata structurally through fdroidserver's parser/writer. The canonical `.fdroid.yml` is never edited as text. The source path runs:
 
 ```text
 fdroid fetchsrclibs <appid>:<versionCode> --verbose
 fdroid build --verbose --test --refresh-scanner --on-server --no-tarball <appid>:<versionCode>
 ```
 
-The PR simulation intentionally omits `Binaries`/signing-key comparison so it can run before a release exists, but it now runs twice and byte-compares the two buildserver APKs. After publication, the release workflow runs the same buildserver script in `release` mode with `Binaries` and `AllowedAPKSigningKeys` intact, exercising the same final comparison as fdroiddata. On failure it uploads the build log, effective metadata, generated Android files, and scanner-sensitive React Native Gradle files.
+The source simulation intentionally omits `Binaries`/signing-key comparison so it can run before a release exists, but it runs twice and byte-compares the two buildserver APKs. It uses `scripts/fdroid/run-source-build.sh`. After publication, the release workflow uses the separate `scripts/fdroid/run-release-verification.sh` entry point with canonical `.fdroid.yml` unchanged, retaining `Binaries` and `AllowedAPKSigningKeys` for F-Droid's final signed-reference comparison. On failure both paths upload build logs, effective metadata, generated Android files, scanner-sensitive React Native Gradle files, and pinned toolchain diagnostics.
 
-Only after that workflow is green should the fdroiddata branch be updated.
+Only after that workflow is green should the fdroiddata branch be updated. If the remote fdroiddata pipeline still fails, compare its F-Droid environment against `scripts/fdroid/pins.env` and reproduce the difference in a dedicated toolchain-maintenance PR; do not patch metadata ad hoc from the remote log.
 
 For manual fdroidserver testing, resolve the source commit as before:
 
