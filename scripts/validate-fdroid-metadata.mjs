@@ -152,6 +152,8 @@ if (fs.existsSync(buildserverSimulationScriptPath)) {
   expect(script.includes('a35fdfddd9c66823987a410566a6101186e39c84'), 'F-Droid simulation must use the same fdroidserver trust root as fdroiddata CI');
   expect(script.includes('MODE='), 'F-Droid simulation must support explicit source/release modes');
   expect(script.includes('release mode requires Binaries and AllowedAPKSigningKeys'), 'release parity mode must require F-Droid binary/signing metadata');
+  expect(script.includes('source mode must remove Binaries and AllowedAPKSigningKeys together'), 'source simulation must never leave Binaries/signing-key metadata inconsistent');
+  expect(script.includes('^Binaries:\\\\s*\\\\n'), 'source simulation must strip both canonical and non-canonical Binaries formatting');
   expect(script.includes('FDROID_SIMULATION_EXPORT_APK'), 'F-Droid simulation must export the exact unsigned buildserver APK for signing/comparison');
   expect(script.includes('fdroid_as_vagrant lint'), 'F-Droid simulation must run fdroid lint on the effective metadata');
   expect(script.includes('fdroid_as_vagrant rewritemeta'), 'F-Droid simulation must require canonical fdroid rewritemeta output');
