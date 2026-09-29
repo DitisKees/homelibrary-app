@@ -2,7 +2,7 @@
 
 This document describes the release path for HomeLibrary's upstream-signed reproducible F-Droid publication. The current candidate is Android `1.0.8` / versionCode `9`, with intended immutable tag `v1.0.8`.
 
-`v1.0.8` / versionCode 9 is already published and remains immutable. F-Droid can build its source successfully, but the resulting unsigned APK differs from the published 1.0.8 APK because the upstream release and F-Droid buildserver used different Java/native build paths. Version 1.0.8 fixes the process by making the F-Droid buildserver output the authoritative unsigned release artifact.
+`v1.0.7` / versionCode 8 is already published and remains immutable. F-Droid can build its source successfully, but the resulting unsigned APK differs from the published 1.0.7 APK because the upstream release and F-Droid buildserver used different Java/native build paths. Version 1.0.8 fixes the process by making the F-Droid buildserver output the authoritative unsigned release artifact.
 
 ## Version source of truth
 
@@ -84,7 +84,7 @@ Expected version output:
 
 ```text
 1.0.8
-8
+9
 ```
 
 Never move, delete/recreate, or reuse a published tag. If correction is needed after tagging, create a new version/versionCode.
@@ -156,7 +156,7 @@ fdroid readmeta
 fdroid rewritemeta io.github.ditiskees.homelibrary
 fdroid checkupdates --allow-dirty io.github.ditiskees.homelibrary
 fdroid lint io.github.ditiskees.homelibrary
-fdroid build -v -l io.github.ditiskees.homelibrary:8
+fdroid build -v -l io.github.ditiskees.homelibrary:9
 ```
 
 Review `rewritemeta` output rather than blindly committing it.
@@ -170,7 +170,7 @@ The F-Droid parent build environment observed during review supplied Node 20.19.
 Confirm that:
 
 - package is `io.github.ditiskees.homelibrary`;
-- versionName is 1.0.8 and versionCode is 8;
+- versionName is 1.0.8 and versionCode is 9;
 - target SDK remains 36;
 - no Google Play Services, Firebase, ML Kit, or Play SDK dependency appears;
 - `expo.camera.barcode-scanner-enabled=false` remains an exact generated Gradle property after release-only settings are appended;
@@ -185,7 +185,7 @@ Confirm that:
 
 Do not open a second app-submission MR. Update the existing `fdroid/fdroiddata!48673` branch after `v1.0.8` and its GitHub Release APK exist:
 
-1. set `CurrentVersion: 1.0.8` and `CurrentVersionCode: 8`;
+1. set `CurrentVersion: 1.0.8` and `CurrentVersionCode: 9`;
 2. add/update the build entry for versionCode 9 with the full `v1.0.8` commit SHA;
 3. use the shared canonical build path;
 4. add `Binaries: https://github.com/DitisKees/homelibrary-app/releases/download/v%v/HomeLibrary-%v.apk`;
