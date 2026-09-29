@@ -244,7 +244,7 @@ fi
 if [[ "$MODE" == "release" ]]; then
   # Mirror the parent checkupdates job once the immutable tag exists. --allow-dirty
   # prevents the check from rejecting our temporary effective metadata.
-  pushd "$home_vagrant" >/dev/null
+  pushd "$FDROIDDATA_DIR" >/dev/null
   fdroid_as_vagrant checkupdates --allow-dirty -v "$APP_ID"
   popd >/dev/null
 fi
