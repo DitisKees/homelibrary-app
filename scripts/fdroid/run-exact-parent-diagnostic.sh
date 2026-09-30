@@ -55,12 +55,15 @@ git -C "$home_vagrant/gradlew-fdroid" pull
 
 curl --fail --silent --show-error   https://gitlab.com/fdroid/fdroid-bootstrap-buildserver/-/raw/master/roles/production_hardening/files/gitconfig   > /builds/fdroid/.gitconfig
 
+pushd "$CI_ROOT" >/dev/null
 for d in logs tmp unsigned "$home_vagrant/.android" "$home_vagrant/.gradle" "$home_vagrant/metadata"; do
   test -d "$d" || mkdir -p "$d"
   chown -R vagrant "$d"
 done
+popd >/dev/null
 
-rm -f "$CI_ROOT/.gradle" "$home_vagrant/tmp" "$home_vagrant/srclibs" 2>/dev/null || true
+rm -f "$CI_ROOT/.gradle" 2>/dev/null || true
+rm -rf "$home_vagrant/tmp" "$home_vagrant/srclibs"
 ln -s "$home_vagrant/.gradle" "$CI_ROOT/.gradle"
 ln -s "$CI_ROOT/tmp" "$home_vagrant/tmp"
 mkdir -p "$CI_ROOT/srclibs"
