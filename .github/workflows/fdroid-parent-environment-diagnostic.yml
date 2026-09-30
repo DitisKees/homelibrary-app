@@ -1,0 +1,95 @@
+name: F-Droid parent environment diagnostic
+
+on:
+  pull_request:
+    paths:
+      - '.github/workflows/fdroid-parent-environment-diagnostic.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  parent-environment:
+    runs-on: ubuntu-latest
+    container:
+      image: registry.gitlab.com/fdroid/fdroidserver:buildserver-trixie@sha256:9cb68105642ca4e7b295f0ceab10f069f5b3247dc18fa7c36046e9d81aa469a8
+    timeout-minutes: 90
+    env:
+      ANDROID_HOME: /opt/android-sdk
+      ANDROID_SDK_ROOT: /opt/android-sdk
+      TERM: dumb
+      RELEASE_SOURCE_SHA: f5a6762bc092c3f9295658354aeaa76315fa84ec
+      FDROID_EXPORT_APK: fdroid-parent-diagnostic/app-release-unsigned.apk
+      UPSTREAM_GREEN_SHA256: c1e9a6f4f4d0c246b14d069ffa7833f364e2ce6c751e71e6bb6e63d5bc557969
+      PARENT_FAILED_SHA256: 31343023a1e0d7e3741c8fadbfcce7a27b21cc775c7e333021f6593f3f5e6f4f
+
+    steps:
+      - name: Check out current diagnostic harness
+        uses: actions/checkout@v4
+
+      - name: Verify diagnostic source
+        run: |
+          set -euo pipefail
+          git config --global --add safe.directory "$GITHUB_WORKSPACE"
+          test -f scripts/fdroid/run-source-build.sh
+          test "$RELEASE_SOURCE_SHA" = "f5a6762bc092c3f9295658354aeaa76315fa84ec"
+
+      - name: Apply fdroiddata parent CI wrapper environment
+        run: |
+          set -euo pipefail
+          export DEBIAN_FRONTEND=noninteractive
+          apt-get update
+          apt-get -y dist-upgrade
+
+          # Match the parent fdroiddata build job's Java setup.
+          apt-get install -y sudo openjdk-21-jdk-headless
+          update-alternatives --set java /usr/lib/jvm/java-21-openjdk-amd64/bin/java
+
+          # Parent CI updates the buildserver wrapper before invoking fdroid.
+          git -C /home/vagrant/gradlew-fdroid pull
+
+          echo "Parent-wrapper package versions:"
+          dpkg-query -W -f='${Package}=${Version}\n'             rsync androguard openssl libssl3t64 libpcre2-8-0 2>/dev/null || true
+          java -version
+          git -C /home/vagrant/gradlew-fdroid rev-parse HEAD
+
+      - name: Build immutable v1.0.8 through source runner
+        run: |
+          set -euo pipefail
+          bash scripts/fdroid/run-source-build.sh "$RELEASE_SOURCE_SHA" .fdroid.yml
+
+      - name: Classify unsigned APK hash
+        run: |
+          set -euo pipefail
+          APK="$FDROID_EXPORT_APK"
+          test -f "$APK"
+          ACTUAL="$(sha256sum "$APK" | awk '{print $1}')"
+          echo "actual=$ACTUAL"
+          echo "upstream_green=$UPSTREAM_GREEN_SHA256"
+          echo "parent_failed=$PARENT_FAILED_SHA256"
+
+          if [ "$ACTUAL" = "$PARENT_FAILED_SHA256" ]; then
+            echo "RESULT: parent CI wrapper reproduces the fdroiddata parent APK exactly."
+          elif [ "$ACTUAL" = "$UPSTREAM_GREEN_SHA256" ]; then
+            echo "RESULT: parent CI wrapper still produces the upstream green APK; dist-upgrade/setup is not the cause."
+          else
+            echo "RESULT: parent CI wrapper produced a third APK variant; further environment isolation is required."
+          fi
+
+      - name: Upload diagnostic APK
+        uses: actions/upload-artifact@v4
+        with:
+          name: fdroid-parent-environment-unsigned
+          path: fdroid-parent-diagnostic/app-release-unsigned.apk
+          if-no-files-found: error
+          retention-days: 7
+
+      - name: Upload diagnostic details
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: fdroid-parent-environment-diagnostics
+          path: fdroid-buildserver-diagnostics/
+          if-no-files-found: warn
+          retention-days: 7
