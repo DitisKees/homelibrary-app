@@ -117,6 +117,24 @@ if [[ "$DETERMINISTIC_AGP_WORKAROUNDS" == "1" || "$FULL_BUILD_DIAGNOSTIC" == "1"
   export ANDROID_SDK_ROOT=/opt/android-sdk
   export GRADLE_USER_HOME=/home/vagrant/.gradle
   mkdir -p "$GRADLE_USER_HOME"
+
+  if [[ "$AGP_OVERRIDE" == "8.13.2" ]]; then
+    echo "=== ensure clean CMake 3.22.1 for AGP 8.13.2 ==="
+    rm -rf /opt/android-sdk/cmake/3.22.1 /opt/android-sdk/.temp /root/.android/cache /home/vagrant/.android/cache || true
+    for attempt in 1 2 3; do
+      echo "cmake_install_attempt=$attempt"
+      if yes | sdkmanager "cmake;3.22.1"; then
+        break
+      fi
+      rm -rf /opt/android-sdk/cmake/3.22.1 /opt/android-sdk/.temp /root/.android/cache /home/vagrant/.android/cache || true
+      if [[ "$attempt" == "3" ]]; then
+        echo "[FAIL] Unable to install CMake 3.22.1 cleanly." >&2
+        exit 8
+      fi
+    done
+    test -x /opt/android-sdk/cmake/3.22.1/bin/cmake
+    /opt/android-sdk/cmake/3.22.1/bin/cmake --version
+  fi
   chown -R vagrant:vagrant "$GRADLE_USER_HOME"
 
   run_as_vagrant "export ANDROID_HOME=/opt/android-sdk ANDROID_SDK_ROOT=/opt/android-sdk GRADLE_USER_HOME=/home/vagrant/.gradle; cd '$SOURCE_DIR/android/app' && gradle assembleRelease --no-daemon"
