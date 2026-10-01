@@ -7,6 +7,7 @@ SOURCE_DIR="/home/vagrant/build/$APP_ID"
 OUT_DIR="${GITHUB_WORKSPACE:-$PWD}/diagnostic-output"
 AGP_OVERRIDE="${AGP_OVERRIDE:-}"
 DETERMINISTIC_AGP_WORKAROUNDS="${DETERMINISTIC_AGP_WORKAROUNDS:-0}"
+FULL_BUILD_DIAGNOSTIC="${FULL_BUILD_DIAGNOSTIC:-0}"
 
 mkdir -p "$OUT_DIR"
 rm -rf "$SOURCE_DIR"
@@ -107,8 +108,8 @@ sha256sum "$OUT_DIR/prebuild-stable-manifest.txt" | tee "$OUT_DIR/prebuild-stabl
 echo "=== stable prebuild manifest ==="
 cat "$OUT_DIR/prebuild-stable-manifest.txt"
 
-if [[ "$DETERMINISTIC_AGP_WORKAROUNDS" == "1" ]]; then
-  echo "=== deterministic full-build workaround checkpoint ==="
+if [[ "$DETERMINISTIC_AGP_WORKAROUNDS" == "1" || "$FULL_BUILD_DIAGNOSTIC" == "1" ]]; then
+  echo "=== full-build APK entry checkpoint ==="
   DEBIAN_FRONTEND=noninteractive apt-get install -y sudo openjdk-21-jdk-headless unzip
   update-alternatives --set java /usr/lib/jvm/java-21-openjdk-amd64/bin/java
   source /etc/profile.d/bsenv.sh
