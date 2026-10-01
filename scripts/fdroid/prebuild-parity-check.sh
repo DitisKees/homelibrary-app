@@ -152,3 +152,49 @@ if find "$SOURCE_DIR/android/app/build" -type f \( -name '*.dex' -o -name 'class
   exit 3
 fi
 echo "predex_no_dex_output=true"
+
+
+snapshot_dex() {
+  local label="$1"
+  local outfile="$OUT_DIR/${label}-dex-manifest.txt"
+  python3 - "$SOURCE_DIR/android/app/build" "$outfile" <<'PY'
+from pathlib import Path
+import hashlib
+import sys
+
+build = Path(sys.argv[1])
+out = Path(sys.argv[2])
+
+rows = []
+for path in sorted(build.rglob("*"), key=lambda p: p.as_posix()):
+    if not path.is_file():
+        continue
+    rel = path.relative_to(build).as_posix()
+    if path.suffix != ".dex" and "/dex" not in f"/{rel.lower()}":
+        continue
+    h = hashlib.sha256()
+    with path.open("rb") as fh:
+        for chunk in iter(lambda: fh.read(1024 * 1024), b""):
+            h.update(chunk)
+    rows.append(f"{h.hexdigest()}  {rel}")
+
+out.write_text("\n".join(rows) + "\n")
+print(f"dex_manifest_files={len(rows)}")
+print(f"dex_manifest_sha256={hashlib.sha256(out.read_bytes()).hexdigest()}")
+for row in rows:
+    print(row)
+PY
+  sha256sum "$outfile"
+}
+
+echo "=== D8 project checkpoint ==="
+run_as_vagrant "export ANDROID_HOME=/opt/android-sdk ANDROID_SDK_ROOT=/opt/android-sdk GRADLE_USER_HOME=/home/vagrant/.gradle; cd '$SOURCE_DIR/android/app' && gradle dexBuilderRelease --no-daemon"
+snapshot_dex "project"
+if ! find "$SOURCE_DIR/android/app/build" -type f -name '*.dex' -print -quit | grep -q .; then
+  echo "[FAIL] dexBuilderRelease produced no DEX files." >&2
+  exit 4
+fi
+
+echo "=== D8 external dependency checkpoint ==="
+run_as_vagrant "export ANDROID_HOME=/opt/android-sdk ANDROID_SDK_ROOT=/opt/android-sdk GRADLE_USER_HOME=/home/vagrant/.gradle; cd '$SOURCE_DIR/android/app' && gradle mergeExtDexRelease --no-daemon"
+snapshot_dex "project-plus-ext"
