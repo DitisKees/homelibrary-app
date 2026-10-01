@@ -120,19 +120,21 @@ if [[ "$DETERMINISTIC_AGP_WORKAROUNDS" == "1" || "$FULL_BUILD_DIAGNOSTIC" == "1"
 
   if [[ "$AGP_OVERRIDE" == "8.13.2" ]]; then
     echo "=== ensure clean CMake 3.22.1 for AGP 8.13.2 ==="
-    rm -rf /opt/android-sdk/cmake/3.22.1 /opt/android-sdk/.temp /root/.android/cache /home/vagrant/.android/cache || true
+    rm -rf /opt/android-sdk/cmake/3.22.1 /opt/android-sdk/.temp /root/.android/cache /home/vagrant/.android/cache /github/home/.cache/sdkmanager || true
     for attempt in 1 2 3; do
       echo "cmake_install_attempt=$attempt"
-      if yes | sdkmanager "cmake;3.22.1"; then
+      rm -f /github/home/.cache/sdkmanager/cmake-3.22.1-linux.zip || true
+      yes | sdkmanager "cmake;3.22.1" || true
+      if [[ -x /opt/android-sdk/cmake/3.22.1/bin/cmake ]]; then
+        echo "cmake_install_verified=true"
         break
       fi
-      rm -rf /opt/android-sdk/cmake/3.22.1 /opt/android-sdk/.temp /root/.android/cache /home/vagrant/.android/cache || true
+      rm -rf /opt/android-sdk/cmake/3.22.1 /opt/android-sdk/.temp /github/home/.cache/sdkmanager/cmake-3.22.1-linux.zip || true
       if [[ "$attempt" == "3" ]]; then
         echo "[FAIL] Unable to install CMake 3.22.1 cleanly." >&2
         exit 8
       fi
     done
-    test -x /opt/android-sdk/cmake/3.22.1/bin/cmake
     /opt/android-sdk/cmake/3.22.1/bin/cmake --version
   fi
   chown -R vagrant:vagrant "$GRADLE_USER_HOME"
