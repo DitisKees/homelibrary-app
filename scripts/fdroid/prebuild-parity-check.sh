@@ -38,7 +38,7 @@ if [[ -n "$AGP_OVERRIDE" ]]; then
   echo "=== AGP override: 8.12.0 -> $AGP_OVERRIDE ==="
   run_as_vagrant "cd '$SOURCE_DIR' && grep -RIl '8\\.12\\.0' node_modules/@react-native node_modules/react-native | sort -u | tee /tmp/homelibrary-agp-files"
   test -s /tmp/homelibrary-agp-files
-  run_as_vagrant "cd '$SOURCE_DIR' && xargs -r sed -i -e 's/8\\.12\\.0/$AGP_OVERRIDE/g' < /tmp/homelibrary-agp-files && grep -RIn '$AGP_OVERRIDE' $(cat /tmp/homelibrary-agp-files)"
+  run_as_vagrant "cd '$SOURCE_DIR' && xargs -r sed -i -e 's/8\\.12\\.0/$AGP_OVERRIDE/g' < /tmp/homelibrary-agp-files && xargs -r grep -nH '$AGP_OVERRIDE' < /tmp/homelibrary-agp-files"
 fi
 
 run_as_vagrant "cd '$SOURCE_DIR' && find node_modules -type d -name local-maven-repo -prune -exec rm -rf {} +"
