@@ -187,7 +187,7 @@ If `rewritemeta` changes a file:
 4. exports both unsigned APKs;
 5. requires byte-for-byte equality.
 
-This gate proves that the source candidate is buildable through the F-Droid path and deterministic under the pinned harness.
+This gate proves that the source candidate is buildable through the pinned F-Droid container/tooling path and deterministic on the GitHub-hosted runner. It does **not** prove parity with F-Droid's GitLab SaaS runner. During the 2026 reproducibility investigation, the same container digest, fdroidserver revision, recipe, JDK, locale, and Gradle command produced different APK bytes on GitHub and GitLab runners.
 
 ### Release gate
 
@@ -297,10 +297,56 @@ Do not update fdroiddata. Diagnose exact unsigned/signed artifact differences fi
 
 If all local gates are green but fdroiddata fails:
 
-1. capture the remote image/fdroidserver/fdroiddata revisions;
+1. capture the remote image/fdroidserver/fdroiddata revisions and the runner class;
 2. compare them with `scripts/fdroid/pins.env`;
-3. reproduce the remote toolchain difference in a dedicated pin-update PR;
-4. do not patch the production recipe blindly from the remote log.
+3. distinguish **container/toolchain parity** from **host-runner parity**;
+4. reproduce the remote runner behavior in a disposable diagnostic branch before changing the production recipe;
+5. prefer artifact-only or environment-only probes over repeated full Android builds when GitLab CI minutes are limited;
+6. do not patch the production recipe blindly from the remote log.
+
+### 2026 remote reproducibility investigation
+
+The fdroiddata build for versionCode 9 exposed a host-runner-dependent APK difference. The GitHub harness produced unsigned APK SHA-256
+`c1e9a6f4f4d0c246b14d069ffa7833f364e2ce6c751e71e6bb6e63d5bc557969`, while the F-Droid/GitLab runner produced
+`31343023a1e0d7e3741c8fadbfcce7a27b21cc775c7e333021f6593f3f5e6f4f`.
+
+The build itself succeeds on both runners. F-Droid's signed-reference comparison reports differences only in:
+
+- `assets/dexopt/baseline.prof`;
+- `classes.dex`;
+- `resources.arsc`.
+
+The following causes have been tested and **ruled out**:
+
+- source revision mismatch: both builds use source SHA `f5a6762bc092c3f9295658354aeaa76315fa84ec`;
+- fdroidserver revision mismatch: both use `a35fdfddd9c66823987a410566a6101186e39c84`;
+- buildserver image mismatch: both use digest `sha256:9cb68105642ca4e7b295f0ceab10f069f5b3247dc18fa7c36046e9d81aa469a8`;
+- fdroiddata build-job logic: the relevant build job is equivalent between the tested target and MR revisions;
+- metadata/recipe mismatch: upstream `.fdroid.yml` and fdroiddata metadata are build-equivalent apart from tag versus resolved SHA;
+- `CI=true`: both real and simulated build paths explicitly unset `CI` for `fdroid build`;
+- `apt-get dist-upgrade` and the observed rsync/OpenSSL/androguard package updates;
+- `gradlew-fdroid` update state;
+- JDK mismatch: GitLab uses Debian OpenJDK 21.0.12.1, matching the simulated path;
+- locale/timezone mismatch: GitLab uses `C.UTF-8` and UTC;
+- ordinary Gradle CPU parallelism: pinning the entire Gradle process to one CPU still produced the exact GitLab/F-Droid hash `31343023...`;
+- simple filesystem directory-entry ordering: deliberately sorted and deliberately reversed directory insertion orders on GitHub both produced the same good hash `c1e9a6f4...`;
+- R8 minification/optimizer behavior: the release task graph does not run `minifyReleaseWithR8`; the differing DEX is produced through D8/DEX merge tasks instead.
+
+Also observed:
+
+- GitLab's failing runner class is `saas-linux-medium-amd64`;
+- the probed host used Linux 5.15.154 and an Intel Xeon Platinum 8581C with four visible CPUs;
+- `/home/vagrant` is overlayfs on GitLab, so a simple host-filesystem-type mismatch there is not supported by the probe;
+- GitLab exposes many `CI_*` and `GITLAB_*` variables even when the single `CI` variable is unset before `fdroid build`.
+
+Still open:
+
+- another host/kernel/CPU-sensitive Android/Expo/Gradle input not covered by single-CPU execution;
+- GitLab-specific environment variables influencing Expo prebuild, Gradle, D8, AAPT2, or generated Android sources/resources;
+- generated Android source/resource differences before Gradle packaging;
+- lower-level D8/AAPT2 behavior that depends on runner/host characteristics.
+
+Do **not** re-run any ruled-out experiment unless the relevant toolchain/source changes. Add new evidence to this section instead.
 
 ## Desired end state
 
@@ -313,7 +359,7 @@ canonical .fdroid.yml
         |
         +--> immutable release --> sign exact F-Droid APK --> canonical release verification
         |
-        +--> fdroiddata update --> remote build confirms what already passed
+        +--> fdroiddata update --> remote runner parity must still be confirmed
 ```
 
-If the remote build is routinely teaching us something the local gates could have known, improve the gates rather than adding another remote-only workaround.
+If the remote build is routinely teaching us something the local gates could have known, improve the gates rather than adding another remote-only workaround. A green GitHub buildserver simulation must not be described as proof of GitLab/F-Droid runner parity until that parity has actually been demonstrated.
