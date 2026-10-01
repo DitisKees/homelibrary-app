@@ -50,7 +50,7 @@ npm run build:web
 npm run build:fdroid-android
 ```
 
-The pinned repository `expo-doctor` version must be used; do not use `@latest` in release validation. GitHub CI, the two-clean-checkout reproducibility workflow, and the `F-Droid buildserver simulation` workflow must all be green before tagging or updating fdroiddata.
+The pinned repository `expo-doctor` version must be used; do not use `@latest` in release validation. GitHub CI, the two-clean-checkout reproducibility workflow, and the `F-Droid buildserver simulation` workflow must all be green before tagging. A green GitHub buildserver simulation proves determinism only on the pinned GitHub-hosted harness; it does **not** by itself prove parity with F-Droid's GitLab runner. Do not update fdroiddata until the remote-runner parity investigation described in `fdroid-harness.md` is resolved.
 
 ## Store metadata
 
@@ -141,7 +141,7 @@ fdroid build --verbose --test --refresh-scanner --on-server --no-tarball <appid>
 
 The source simulation intentionally omits `Binaries`/signing-key comparison so it can run before a release exists, but it runs twice and byte-compares the two buildserver APKs. It uses `scripts/fdroid/run-source-build.sh`. After publication, the release workflow uses the separate `scripts/fdroid/run-release-verification.sh` entry point with canonical `.fdroid.yml` unchanged, retaining `Binaries` and `AllowedAPKSigningKeys` for F-Droid's final signed-reference comparison. On failure both paths upload build logs, effective metadata, generated Android files, scanner-sensitive React Native Gradle files, and pinned toolchain diagnostics.
 
-Only after that workflow is green should the fdroiddata branch be updated. If the remote fdroiddata pipeline still fails, compare its F-Droid environment against `scripts/fdroid/pins.env` and reproduce the difference in a dedicated toolchain-maintenance PR; do not patch metadata ad hoc from the remote log.
+Only after that workflow is green **and** remote-runner parity has been demonstrated should the fdroiddata branch be updated. If the remote fdroiddata pipeline still fails, first consult the ruled-out/open-cause record in `fdroid-harness.md`. Do not repeat already disproven experiments, and do not patch metadata ad hoc from the remote log. Prefer environment- and artifact-level diagnostics before another full Android build.
 
 For manual fdroidserver testing, resolve the source commit as before:
 
@@ -164,6 +164,8 @@ fdroid build -v -l io.github.ditiskees.homelibrary:9
 Review `rewritemeta` output rather than blindly committing it.
 
 The open fdroiddata MR uses the reviewer-requested React Native recipe shape with Debian forky Node/npm, Expo prebuild, and direct Gradle assembly. Per maintainer review, `externalNativeBuild` is configured by the checked-in Expo config plugin and APK build-ID normalization is called from the checked-in Python helper; the metadata must not embed either Python implementation.
+
+The current remote reproducibility failure is **not** a build failure: F-Droid completes the Android build, but its rebuilt APK differs from the published reference in `classes.dex`, `resources.arsc`, and `assets/dexopt/baseline.prof`. The GitHub harness produces `c1e9a6f4...`; the GitLab/F-Droid runner reproducibly produces `31343023...`. See `fdroid-harness.md` for the exact ruled-out causes and the remaining hypotheses.
 
 The F-Droid parent build environment observed during review supplied Node 20.19.2, while the current React Native/Expo toolchain requires a newer supported Node baseline. The fdroiddata recipe should keep the reviewer-approved Debian packaging approach where possible, but the final build-tool solution must satisfy the actual React Native/Expo engine requirement and should be discussed transparently in the MR rather than hidden with disabled checks.
 
