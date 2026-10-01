@@ -66,7 +66,27 @@ for path in sorted(root.rglob("*"), key=lambda p: p.relative_to(root).as_posix()
 out.write_text("\n".join(rows) + "\n")
 print(f"manifest_files={sum(1 for row in rows if not row.startswith('SYMLINK '))}")
 print(f"manifest_sha256={hashlib.sha256(out.read_bytes()).hexdigest()}")
+
+stable = []
+for row in rows:
+    if row.startswith("SYMLINK "):
+        path_text = row.split(" ", 1)[1].split(" -> ", 1)[0]
+    else:
+        path_text = row.split("  ", 1)[1]
+    if path_text.startswith(".gradle/"):
+        continue
+    if path_text.startswith("build/reports/"):
+        continue
+    stable.append(row)
+
+stable_path = out.with_name("prebuild-stable-manifest.txt")
+stable_path.write_text("\n".join(stable) + "\n")
+print(f"stable_manifest_files={len(stable)}")
+print(f"stable_manifest_sha256={hashlib.sha256(stable_path.read_bytes()).hexdigest()}")
 PY
 
-grep -E '(^|/)(build.gradle|build.gradle.kts|settings.gradle|settings.gradle.kts|gradle.properties|libs.versions.toml)$' "$OUT_DIR/prebuild-manifest.txt" > "$OUT_DIR/prebuild-gradle-files.txt" || true
+grep -E '(^|/)(build.gradle|build.gradle.kts|settings.gradle|settings.gradle.kts|gradle.properties|libs.versions.toml) "$OUT_DIR/prebuild-manifest.txt" > "$OUT_DIR/prebuild-gradle-files.txt" || true
 sha256sum "$OUT_DIR/prebuild-manifest.txt" | tee "$OUT_DIR/prebuild-manifest.sha256"
+sha256sum "$OUT_DIR/prebuild-stable-manifest.txt" | tee "$OUT_DIR/prebuild-stable-manifest.sha256"
+echo "=== stable prebuild manifest ==="
+cat "$OUT_DIR/prebuild-stable-manifest.txt"
