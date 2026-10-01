@@ -251,6 +251,34 @@ for row in rows:
 PY
 
 sha256sum "$OUT_DIR/predex-manifest.txt" | tee "$OUT_DIR/predex-manifest.sha256"
+
+echo "=== linked resource archive checkpoint ==="
+python3 - "$SOURCE_DIR/android/app/build/intermediates/linked_resources_binary_format/release/processReleaseResources/linked-resources-binary-format-release.ap_" "$OUT_DIR/linked-resource-archive-manifest.txt" <<'PY'
+from pathlib import Path
+import hashlib
+import sys
+import zipfile
+
+archive = Path(sys.argv[1])
+out = Path(sys.argv[2])
+rows = []
+with zipfile.ZipFile(archive) as zf:
+    for i, info in enumerate(zf.infolist()):
+        data = zf.read(info.filename)
+        rows.append(
+            f"{i:06d}\t{info.filename}\t{info.file_size}\t{info.compress_type}\t"
+            f"{hashlib.sha256(data).hexdigest()}"
+        )
+
+out.write_text("\n".join(rows) + "\n")
+print(f"linked_resource_archive_sha256={hashlib.sha256(archive.read_bytes()).hexdigest()}")
+print(f"linked_resource_entry_count={len(rows)}")
+print(f"linked_resource_manifest_sha256={hashlib.sha256(out.read_bytes()).hexdigest()}")
+for row in rows:
+    print(row)
+PY
+sha256sum "$OUT_DIR/linked-resource-archive-manifest.txt"
+
 echo "=== ensure DEX has not run ==="
 if find "$SOURCE_DIR/android/app/build" -type f \( -name '*.dex' -o -name 'classes*.dex' \) -print -quit | grep -q .; then
   echo "[FAIL] DEX output already exists at pre-DEX checkpoint." >&2
@@ -304,6 +332,65 @@ fi
 echo "=== D8 external dependency checkpoint ==="
 run_as_vagrant "export ANDROID_HOME=/opt/android-sdk ANDROID_SDK_ROOT=/opt/android-sdk GRADLE_USER_HOME=/home/vagrant/.gradle; cd '$SOURCE_DIR/android/app' && gradle mergeExtDexRelease --no-daemon"
 snapshot_dex "project-plus-ext"
+
+echo "=== native filesystem DEX enumeration checkpoint ==="
+python3 - "$SOURCE_DIR" "$OUT_DIR/dex-native-enumeration-manifest.txt" <<'PY'
+from pathlib import Path
+import hashlib
+import os
+import sys
+
+root = Path(sys.argv[1])
+out = Path(sys.argv[2])
+
+roots = [
+    root / "android/app/build/intermediates/project_dex_archive/release/dexBuilderRelease/out",
+    root / "android/app/build/intermediates/mixed_scope_dex_archive/release/dexBuilderRelease/out",
+    root / "android/app/build/intermediates/external_libs_dex/release/mergeExtDexRelease",
+]
+
+for base in [
+    root / "node_modules",
+    root / "modules",
+]:
+    if not base.exists():
+        continue
+    for dirpath, dirnames, filenames in os.walk(base):
+        p = Path(dirpath)
+        if p.name == "bundleLibRuntimeToDirRelease_dex":
+            roots.append(p)
+            dirnames[:] = []
+
+rows = []
+for root_index, dex_root in enumerate(roots):
+    if not dex_root.exists():
+        continue
+    rows.append(f"ROOT\t{root_index:03d}\t{dex_root.relative_to(root).as_posix()}")
+    stack = [(dex_root, "")]
+    while stack:
+        current, relprefix = stack.pop()
+        entries = list(os.scandir(current))
+        for idx, entry in enumerate(entries):
+            rel = f"{relprefix}/{entry.name}".lstrip("/")
+            p = Path(entry.path)
+            if entry.is_file(follow_symlinks=False):
+                h = hashlib.sha256(p.read_bytes()).hexdigest()
+                rows.append(f"FILE\t{root_index:03d}\t{idx:06d}\t{rel}\t{p.stat().st_size}\t{h}")
+            elif entry.is_dir(follow_symlinks=False):
+                rows.append(f"DIR\t{root_index:03d}\t{idx:06d}\t{rel}")
+        for entry in reversed(entries):
+            if entry.is_dir(follow_symlinks=False):
+                rel = f"{relprefix}/{entry.name}".lstrip("/")
+                stack.append((Path(entry.path), rel))
+
+out.write_text("\n".join(rows) + "\n")
+print(f"dex_native_enumeration_rows={len(rows)}")
+print(f"dex_native_enumeration_sha256={hashlib.sha256(out.read_bytes()).hexdigest()}")
+for row in rows:
+    print(row)
+PY
+sha256sum "$OUT_DIR/dex-native-enumeration-manifest.txt"
+
 
 
 snapshot_matching_files() {
