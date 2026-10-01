@@ -31,9 +31,9 @@ target = sys.argv[2]
 text = path.read_text()
 needle = "      - npm ci\n"
 injected = """      - npm ci
-      - grep -RIl '8\\.12\\.2' node_modules/@react-native node_modules/react-native node_modules/expo-modules-autolinking 2>/dev/null | sort -u | tee /tmp/homelibrary-agp-files
+      - grep -RIl '8\\.12\\.0' node_modules/@react-native node_modules/react-native node_modules/expo-modules-autolinking 2>/dev/null | sort -u | tee /tmp/homelibrary-agp-files
       - test -s /tmp/homelibrary-agp-files
-      - xargs -r sed -i -e 's/8\\.12\\.2/TARGET_AGP/g' < /tmp/homelibrary-agp-files
+      - xargs -r sed -i -e 's/8\\.12\\.0/TARGET_AGP/g' < /tmp/homelibrary-agp-files
       - echo "AGP override files:"
       - cat /tmp/homelibrary-agp-files
       - grep -RIn 'TARGET_AGP' $(cat /tmp/homelibrary-agp-files)
