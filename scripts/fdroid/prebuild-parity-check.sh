@@ -198,3 +198,53 @@ fi
 echo "=== D8 external dependency checkpoint ==="
 run_as_vagrant "export ANDROID_HOME=/opt/android-sdk ANDROID_SDK_ROOT=/opt/android-sdk GRADLE_USER_HOME=/home/vagrant/.gradle; cd '$SOURCE_DIR/android/app' && gradle mergeExtDexRelease --no-daemon"
 snapshot_dex "project-plus-ext"
+
+
+snapshot_matching_files() {
+  local label="$1"
+  shift
+  local outfile="$OUT_DIR/${label}-manifest.txt"
+  python3 - "$SOURCE_DIR/android/app/build" "$outfile" "$@" <<'PY'
+from pathlib import Path
+import hashlib
+import sys
+
+build = Path(sys.argv[1])
+out = Path(sys.argv[2])
+needles = [x.lower() for x in sys.argv[3:]]
+
+rows = []
+for path in sorted(build.rglob("*"), key=lambda p: p.as_posix()):
+    if not path.is_file():
+        continue
+    rel = path.relative_to(build).as_posix()
+    low = rel.lower()
+    if not any(n in low for n in needles):
+        continue
+    h = hashlib.sha256()
+    with path.open("rb") as fh:
+        for chunk in iter(lambda: fh.read(1024 * 1024), b""):
+            h.update(chunk)
+    rows.append(f"{h.hexdigest()}  {rel}")
+
+out.write_text("\n".join(rows) + "\n")
+print(f"checkpoint_label={out.stem}")
+print(f"checkpoint_files={len(rows)}")
+print(f"checkpoint_sha256={hashlib.sha256(out.read_bytes()).hexdigest()}")
+for row in rows:
+    print(row)
+PY
+  sha256sum "$outfile"
+}
+
+echo "=== final DEX merge checkpoint ==="
+run_as_vagrant "export ANDROID_HOME=/opt/android-sdk ANDROID_SDK_ROOT=/opt/android-sdk GRADLE_USER_HOME=/home/vagrant/.gradle; cd '$SOURCE_DIR/android/app' && gradle mergeDexRelease --no-daemon"
+snapshot_matching_files "merged-dex" "/merged_dex/" "/merged_dex/" "/merged_dex" "/mergeddex" "/merged_dex"
+
+echo "=== ART profile merge checkpoint ==="
+run_as_vagrant "export ANDROID_HOME=/opt/android-sdk ANDROID_SDK_ROOT=/opt/android-sdk GRADLE_USER_HOME=/home/vagrant/.gradle; cd '$SOURCE_DIR/android/app' && gradle mergeReleaseArtProfile compileReleaseArtProfile --no-daemon"
+snapshot_matching_files "art-profile" "art_profile" "artprofile" "baseline.prof" "baseline.profm"
+
+echo "=== optimized resources checkpoint ==="
+run_as_vagrant "export ANDROID_HOME=/opt/android-sdk ANDROID_SDK_ROOT=/opt/android-sdk GRADLE_USER_HOME=/home/vagrant/.gradle; cd '$SOURCE_DIR/android/app' && gradle optimizeReleaseResources --no-daemon"
+snapshot_matching_files "optimized-resources" "optimized_processed_res" "optimizereleaseresources" "resources-release-optimize" "processed_res/release"
