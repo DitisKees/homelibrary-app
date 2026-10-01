@@ -54,6 +54,8 @@ out = Path(sys.argv[2])
 rows = []
 for path in sorted(root.rglob("*"), key=lambda p: p.relative_to(root).as_posix()):
     rel = path.relative_to(root).as_posix()
+    if rel.startswith(".gradle/") or rel.startswith("build/reports/"):
+        continue
     if path.is_symlink():
         rows.append(f"SYMLINK {rel} -> {os.readlink(path)}")
     elif path.is_file():
