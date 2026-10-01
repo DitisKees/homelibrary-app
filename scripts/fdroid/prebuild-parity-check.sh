@@ -54,6 +54,28 @@ if [[ "$DETERMINISTIC_AGP_WORKAROUNDS" == "1" ]]; then
   run_as_vagrant "cd '$SOURCE_DIR' && printf '%s\\n' 'android.enableResourceOptimizations=false' 'android.useFullClasspathForDexingTransform=true' >> android/gradle.properties"
   run_as_vagrant "cd '$SOURCE_DIR' && tail -n 10 android/gradle.properties"
 fi
+if [[ "$AGP_OVERRIDE" == "8.13.2" ]]; then
+  echo "=== preinstall NDK 27.1.12297006 for AGP 8.13.2 ==="
+  source /etc/profile.d/bsenv.sh
+  export ANDROID_HOME=/opt/android-sdk
+  export ANDROID_SDK_ROOT=/opt/android-sdk
+  rm -rf /opt/android-sdk/ndk/27.1.12297006 /github/home/.cache/sdkmanager/ndk-27.1.12297006* || true
+  for attempt in 1 2 3; do
+    echo "ndk_install_attempt=$attempt"
+    rm -f /github/home/.cache/sdkmanager/ndk-27.1.12297006* || true
+    yes | sdkmanager "ndk;27.1.12297006" || true
+    if [[ -x /opt/android-sdk/ndk/27.1.12297006/ndk-build ]]; then
+      echo "ndk_install_verified=true"
+      break
+    fi
+    rm -rf /opt/android-sdk/ndk/27.1.12297006 /github/home/.cache/sdkmanager/ndk-27.1.12297006* || true
+    if [[ "$attempt" == "3" ]]; then
+      echo "[FAIL] Unable to install NDK 27.1.12297006 cleanly." >&2
+      exit 9
+    fi
+  done
+  /opt/android-sdk/ndk/27.1.12297006/ndk-build --version | head -n 1 || true
+fi
 run_as_vagrant "cd '$SOURCE_DIR' && bash scripts/check-fdroid-android-dependencies.sh"
 run_as_vagrant "cd '$SOURCE_DIR' && sed -i -e '/signingConfig /d' android/app/build.gradle"
 
