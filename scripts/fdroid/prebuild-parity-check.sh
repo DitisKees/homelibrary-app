@@ -87,8 +87,74 @@ print(f"stable_manifest_files={len(stable)}")
 print(f"stable_manifest_sha256={hashlib.sha256(stable_path.read_bytes()).hexdigest()}")
 PY
 
-grep -E '(^|/)(build.gradle|build.gradle.kts|settings.gradle|settings.gradle.kts|gradle.properties|libs.versions.toml) "$OUT_DIR/prebuild-manifest.txt" > "$OUT_DIR/prebuild-gradle-files.txt" || true
+grep -E '(^|/)(build\.gradle|build\.gradle\.kts|settings\.gradle|settings\.gradle\.kts|gradle\.properties|libs\.versions\.toml)
 sha256sum "$OUT_DIR/prebuild-manifest.txt" | tee "$OUT_DIR/prebuild-manifest.sha256"
 sha256sum "$OUT_DIR/prebuild-stable-manifest.txt" | tee "$OUT_DIR/prebuild-stable-manifest.sha256"
 echo "=== stable prebuild manifest ==="
 cat "$OUT_DIR/prebuild-stable-manifest.txt"
+ "$OUT_DIR/prebuild-manifest.txt" > "$OUT_DIR/prebuild-gradle-files.txt" || true
+sha256sum "$OUT_DIR/prebuild-manifest.txt" | tee "$OUT_DIR/prebuild-manifest.sha256"
+sha256sum "$OUT_DIR/prebuild-stable-manifest.txt" | tee "$OUT_DIR/prebuild-stable-manifest.sha256"
+echo "=== stable prebuild manifest ==="
+cat "$OUT_DIR/prebuild-stable-manifest.txt"
+
+
+echo "=== Gradle pre-DEX checkpoint ==="
+DEBIAN_FRONTEND=noninteractive apt-get install -y sudo openjdk-21-jdk-headless
+update-alternatives --set java /usr/lib/jvm/java-21-openjdk-amd64/bin/java
+source /etc/profile.d/bsenv.sh
+export ANDROID_HOME=/opt/android-sdk
+export ANDROID_SDK_ROOT=/opt/android-sdk
+export GRADLE_USER_HOME=/home/vagrant/.gradle
+mkdir -p "$GRADLE_USER_HOME"
+chown -R vagrant:vagrant "$GRADLE_USER_HOME"
+
+run_as_vagrant "export ANDROID_HOME=/opt/android-sdk ANDROID_SDK_ROOT=/opt/android-sdk GRADLE_USER_HOME=/home/vagrant/.gradle; cd '$SOURCE_DIR/android/app' && gradle processReleaseResources compileReleaseKotlin compileReleaseJavaWithJavac --no-daemon"
+
+python3 - "$SOURCE_DIR/android/app/build" "$OUT_DIR/predex-manifest.txt" <<'PY'
+from pathlib import Path
+import hashlib
+import sys
+
+build = Path(sys.argv[1])
+out = Path(sys.argv[2])
+
+roots = [
+    build / "generated/source/buildConfig/release",
+    build / "intermediates/processed_res/release",
+    build / "intermediates/runtime_symbol_list/release",
+    build / "intermediates/local_only_symbol_list/release",
+    build / "intermediates/compile_and_runtime_not_namespaced_r_class_jar/release",
+    build / "intermediates/javac/release/compileReleaseJavaWithJavac/classes",
+    build / "tmp/kotlin-classes/release",
+]
+
+rows = []
+for root in roots:
+    if not root.exists():
+        continue
+    for path in sorted(root.rglob("*"), key=lambda p: p.as_posix()):
+        if not path.is_file():
+            continue
+        rel = path.relative_to(build).as_posix()
+        h = hashlib.sha256()
+        with path.open("rb") as fh:
+            for chunk in iter(lambda: fh.read(1024 * 1024), b""):
+                h.update(chunk)
+        rows.append(f"{h.hexdigest()}  {rel}")
+
+out.write_text("\n".join(rows) + "\n")
+print(f"predex_manifest_files={len(rows)}")
+print(f"predex_manifest_sha256={hashlib.sha256(out.read_bytes()).hexdigest()}")
+for row in rows:
+    print(row)
+PY
+
+sha256sum "$OUT_DIR/predex-manifest.txt" | tee "$OUT_DIR/predex-manifest.sha256"
+echo "=== ensure DEX has not run ==="
+if find "$SOURCE_DIR/android/app/build" -type f \( -name '*.dex' -o -name 'classes*.dex' \) -print -quit | grep -q .; then
+  echo "[FAIL] DEX output already exists at pre-DEX checkpoint." >&2
+  find "$SOURCE_DIR/android/app/build" -type f \( -name '*.dex' -o -name 'classes*.dex' \) -print >&2
+  exit 3
+fi
+echo "predex_no_dex_output=true"
