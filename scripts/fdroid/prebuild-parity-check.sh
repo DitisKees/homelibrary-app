@@ -8,6 +8,7 @@ OUT_DIR="${GITHUB_WORKSPACE:-$PWD}/diagnostic-output"
 AGP_OVERRIDE="${AGP_OVERRIDE:-}"
 DETERMINISTIC_AGP_WORKAROUNDS="${DETERMINISTIC_AGP_WORKAROUNDS:-0}"
 FULL_BUILD_DIAGNOSTIC="${FULL_BUILD_DIAGNOSTIC:-0}"
+ORDER_TRACE="${ORDER_TRACE:-0}"
 
 mkdir -p "$OUT_DIR"
 rm -rf "$SOURCE_DIR"
@@ -342,8 +343,84 @@ PY
   sha256sum "$outfile"
 }
 
+TRACE_GRADLE_ARGS=""
+if [[ "$ORDER_TRACE" == "1" ]]; then
+  echo "=== task input/order tracing enabled ==="
+  cat > /tmp/homelibrary-task-input-trace.init.gradle <<'GROOVY'
+import java.security.MessageDigest
+import org.gradle.api.file.FileCollection
+import org.gradle.api.file.FileSystemLocation
+import org.gradle.api.provider.Provider
+
+def sha256 = { File f ->
+  if (!f.isFile()) return "-"
+  def md = MessageDigest.getInstance("SHA-256")
+  f.withInputStream { input ->
+    byte[] buf = new byte[1024 * 1024]
+    int n
+    while ((n = input.read(buf)) > 0) md.update(buf, 0, n)
+  }
+  md.digest().encodeHex().toString()
+}
+
+gradle.allprojects { p ->
+  p.tasks.configureEach { t ->
+    if (!(t.name in ["mergeDexRelease", "optimizeReleaseResources"])) return
+    t.doFirst {
+      def outDir = new File(System.getenv("ORDER_TRACE_DIR"))
+      outDir.mkdirs()
+      def out = new File(outDir, t.name + "-task-inputs.txt")
+      out.withPrintWriter("UTF-8") { pw ->
+        pw.println("task=" + t.path)
+        pw.println("class=" + t.class.name)
+        pw.println("projectDir=" + t.project.projectDir)
+        pw.println("=== inputs.files iteration order ===")
+        int i = 0
+        t.inputs.files.each { File f ->
+          pw.println(String.format("%06d\t%s\t%d\t%s", i++, f.absolutePath, f.isFile() ? f.length() : -1L, sha256(f)))
+        }
+        pw.println("=== inputs.properties ===")
+        t.inputs.properties.keySet().toList().sort().each { k ->
+          try { pw.println(k + "=" + String.valueOf(t.inputs.properties[k])) }
+          catch (Throwable e) { pw.println(k + "=<error:" + e.class.name + ">") }
+        }
+        pw.println("=== task FileCollection-like properties ===")
+        t.properties.keySet().toList().sort().each { k ->
+          try {
+            def v = t.properties[k]
+            if (v instanceof FileCollection) {
+              pw.println("PROPERTY " + k + " " + v.class.name)
+              int j = 0
+              v.each { File f ->
+                pw.println(String.format("  %06d\t%s\t%d\t%s", j++, f.absolutePath, f.isFile() ? f.length() : -1L, sha256(f)))
+              }
+            } else if (v instanceof Provider) {
+              def q = v.orNull
+              if (q instanceof FileSystemLocation) {
+                def f = q.asFile
+                pw.println("PROPERTY " + k + " Provider<FileSystemLocation> " + f.absolutePath + "\t" + (f.isFile() ? f.length() : -1L) + "\t" + sha256(f))
+              }
+            }
+          } catch (Throwable e) {
+            pw.println("PROPERTY " + k + " <error:" + e.class.name + ">")
+          }
+        }
+      }
+      println("ORDER_TRACE " + t.path + " -> " + out.absolutePath)
+    }
+  }
+}
+GROOVY
+  chmod 0644 /tmp/homelibrary-task-input-trace.init.gradle
+  TRACE_GRADLE_ARGS="-I /tmp/homelibrary-task-input-trace.init.gradle"
+fi
+
 echo "=== final DEX merge checkpoint ==="
-run_as_vagrant "export ANDROID_HOME=/opt/android-sdk ANDROID_SDK_ROOT=/opt/android-sdk GRADLE_USER_HOME=/home/vagrant/.gradle; cd '$SOURCE_DIR/android/app' && gradle mergeDexRelease --no-daemon"
+if [[ "$ORDER_TRACE" == "1" ]]; then
+  run_as_vagrant "export ANDROID_HOME=/opt/android-sdk ANDROID_SDK_ROOT=/opt/android-sdk GRADLE_USER_HOME=/home/vagrant/.gradle ORDER_TRACE_DIR='$OUT_DIR'; cd '$SOURCE_DIR/android/app' && gradle mergeDexRelease --no-daemon $TRACE_GRADLE_ARGS --info" | tee "$OUT_DIR/mergeDexRelease-info.log"
+else
+  run_as_vagrant "export ANDROID_HOME=/opt/android-sdk ANDROID_SDK_ROOT=/opt/android-sdk GRADLE_USER_HOME=/home/vagrant/.gradle; cd '$SOURCE_DIR/android/app' && gradle mergeDexRelease --no-daemon"
+fi
 python3 - "$SOURCE_DIR/android/app/build" "$OUT_DIR/merged-dex-manifest.txt" <<'PY'
 from pathlib import Path
 import hashlib
@@ -371,5 +448,9 @@ run_as_vagrant "export ANDROID_HOME=/opt/android-sdk ANDROID_SDK_ROOT=/opt/andro
 snapshot_matching_files "art-profile" "art_profile" "artprofile" "baseline.prof" "baseline.profm"
 
 echo "=== optimized resources checkpoint ==="
-run_as_vagrant "export ANDROID_HOME=/opt/android-sdk ANDROID_SDK_ROOT=/opt/android-sdk GRADLE_USER_HOME=/home/vagrant/.gradle; cd '$SOURCE_DIR/android/app' && gradle optimizeReleaseResources --no-daemon"
+if [[ "$ORDER_TRACE" == "1" ]]; then
+  run_as_vagrant "export ANDROID_HOME=/opt/android-sdk ANDROID_SDK_ROOT=/opt/android-sdk GRADLE_USER_HOME=/home/vagrant/.gradle ORDER_TRACE_DIR='$OUT_DIR'; cd '$SOURCE_DIR/android/app' && gradle optimizeReleaseResources --no-daemon $TRACE_GRADLE_ARGS --info" | tee "$OUT_DIR/optimizeReleaseResources-info.log"
+else
+  run_as_vagrant "export ANDROID_HOME=/opt/android-sdk ANDROID_SDK_ROOT=/opt/android-sdk GRADLE_USER_HOME=/home/vagrant/.gradle; cd '$SOURCE_DIR/android/app' && gradle optimizeReleaseResources --no-daemon"
+fi
 snapshot_matching_files "optimized-resources" "optimized_processed_res" "optimizereleaseresources" "resources-release-optimize" "processed_res/release"
