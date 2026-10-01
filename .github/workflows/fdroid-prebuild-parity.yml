@@ -1,0 +1,34 @@
+name: F-Droid prebuild parity diagnostic
+
+on:
+  push:
+    branches:
+      - diagnose/fdroid-prebuild-parity
+    paths:
+      - '.github/workflows/fdroid-prebuild-parity.yml'
+      - 'scripts/fdroid/prebuild-parity-check.sh'
+
+permissions:
+  contents: read
+
+jobs:
+  prebuild-parity:
+    runs-on: ubuntu-latest
+    container:
+      image: registry.gitlab.com/fdroid/fdroidserver:buildserver-trixie@sha256:9cb68105642ca4e7b295f0ceab10f069f5b3247dc18fa7c36046e9d81aa469a8
+    timeout-minutes: 30
+    steps:
+      - name: Check out diagnostic branch
+        uses: actions/checkout@v4
+
+      - name: Generate prebuild manifest
+        run: bash scripts/fdroid/prebuild-parity-check.sh
+
+      - name: Upload prebuild manifest
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: fdroid-prebuild-parity-github
+          path: diagnostic-output/
+          if-no-files-found: error
+          retention-days: 7
