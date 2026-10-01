@@ -21,6 +21,72 @@ git -C "$CI_ROOT" checkout -q --detach FETCH_HEAD
 cp "$ROOT/.fdroid.yml" "$CI_ROOT/metadata/$APP_ID.yml"
 sed -i "s/^    commit: v1.0.8$/    commit: $SOURCE_SHA/" "$CI_ROOT/metadata/$APP_ID.yml"
 
+if [[ -n "${DIRENT_ORDER:-}" ]]; then
+  case "$DIRENT_ORDER" in
+    sorted|reversed) ;;
+    *)
+      echo "[FAIL] Unsupported DIRENT_ORDER: $DIRENT_ORDER" >&2
+      exit 2
+      ;;
+  esac
+
+  cat > /tmp/reorder-dirents.py <<'PY'
+#!/usr/bin/env python3
+import os
+import sys
+
+order = sys.argv[1]
+root = os.path.abspath(sys.argv[2])
+reverse = order == "reversed"
+marker = ".fdroid-dirent-reorder-tmp"
+processed = 0
+
+for current, _dirs, _files in os.walk(root, topdown=False):
+    names = [name for name in os.listdir(current) if name != marker]
+    if len(names) < 2:
+        continue
+
+    tmp = os.path.join(current, marker)
+    os.mkdir(tmp)
+    try:
+        for name in names:
+            os.rename(os.path.join(current, name), os.path.join(tmp, name))
+        for name in sorted(names, reverse=reverse):
+            os.rename(os.path.join(tmp, name), os.path.join(current, name))
+    finally:
+        if os.path.isdir(tmp):
+            leftovers = os.listdir(tmp)
+            for name in leftovers:
+                os.rename(os.path.join(tmp, name), os.path.join(current, name))
+            os.rmdir(tmp)
+    processed += 1
+
+print(f"[INFO] Reordered directory entries in {processed} directories: {order}")
+PY
+  chmod 0755 /tmp/reorder-dirents.py
+
+  python3 - "$CI_ROOT/metadata/$APP_ID.yml" "$DIRENT_ORDER" <<'PY'
+from pathlib import Path
+import sys
+
+path = Path(sys.argv[1])
+order = sys.argv[2]
+text = path.read_text()
+needle = "    build:\n      - cd android/app\n"
+replacement = (
+    "    build:\n"
+    f"      - python3 /tmp/reorder-dirents.py {order} .\n"
+    "      - cd android/app\n"
+)
+if text.count(needle) != 1:
+    raise SystemExit("[FAIL] Expected exactly one build block insertion point")
+path.write_text(text.replace(needle, replacement))
+PY
+
+  echo "=== controlled directory-order build block ==="
+  grep -A4 '^    build:' "$CI_ROOT/metadata/$APP_ID.yml"
+fi
+
 export CI_PROJECT_DIR="$CI_ROOT"
 export CI_PROJECT_PATH="fdroid/fdroiddata"
 export CI_PIPELINE_SOURCE="merge_request_event"
