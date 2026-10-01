@@ -412,12 +412,17 @@ gradle.allprojects { p ->
 }
 GROOVY
   chmod 0644 /tmp/homelibrary-task-input-trace.init.gradle
+  TRACE_OUT_DIR="/tmp/homelibrary-order-trace"
+  rm -rf "$TRACE_OUT_DIR"
+  mkdir -p "$TRACE_OUT_DIR"
+  chown -R vagrant:vagrant "$TRACE_OUT_DIR"
   TRACE_GRADLE_ARGS="-I /tmp/homelibrary-task-input-trace.init.gradle"
 fi
 
 echo "=== final DEX merge checkpoint ==="
 if [[ "$ORDER_TRACE" == "1" ]]; then
-  run_as_vagrant "export ANDROID_HOME=/opt/android-sdk ANDROID_SDK_ROOT=/opt/android-sdk GRADLE_USER_HOME=/home/vagrant/.gradle ORDER_TRACE_DIR='$OUT_DIR'; cd '$SOURCE_DIR/android/app' && gradle mergeDexRelease --no-daemon $TRACE_GRADLE_ARGS --info" | tee "$OUT_DIR/mergeDexRelease-info.log"
+  run_as_vagrant "export ANDROID_HOME=/opt/android-sdk ANDROID_SDK_ROOT=/opt/android-sdk GRADLE_USER_HOME=/home/vagrant/.gradle ORDER_TRACE_DIR='$TRACE_OUT_DIR'; cd '$SOURCE_DIR/android/app' && gradle mergeDexRelease --no-daemon $TRACE_GRADLE_ARGS --info" | tee "$OUT_DIR/mergeDexRelease-info.log"
+  cp "$TRACE_OUT_DIR/mergeDexRelease-task-inputs.txt" "$OUT_DIR/"
 else
   run_as_vagrant "export ANDROID_HOME=/opt/android-sdk ANDROID_SDK_ROOT=/opt/android-sdk GRADLE_USER_HOME=/home/vagrant/.gradle; cd '$SOURCE_DIR/android/app' && gradle mergeDexRelease --no-daemon"
 fi
@@ -449,7 +454,8 @@ snapshot_matching_files "art-profile" "art_profile" "artprofile" "baseline.prof"
 
 echo "=== optimized resources checkpoint ==="
 if [[ "$ORDER_TRACE" == "1" ]]; then
-  run_as_vagrant "export ANDROID_HOME=/opt/android-sdk ANDROID_SDK_ROOT=/opt/android-sdk GRADLE_USER_HOME=/home/vagrant/.gradle ORDER_TRACE_DIR='$OUT_DIR'; cd '$SOURCE_DIR/android/app' && gradle optimizeReleaseResources --no-daemon $TRACE_GRADLE_ARGS --info" | tee "$OUT_DIR/optimizeReleaseResources-info.log"
+  run_as_vagrant "export ANDROID_HOME=/opt/android-sdk ANDROID_SDK_ROOT=/opt/android-sdk GRADLE_USER_HOME=/home/vagrant/.gradle ORDER_TRACE_DIR='$TRACE_OUT_DIR'; cd '$SOURCE_DIR/android/app' && gradle optimizeReleaseResources --no-daemon $TRACE_GRADLE_ARGS --info" | tee "$OUT_DIR/optimizeReleaseResources-info.log"
+  cp "$TRACE_OUT_DIR/optimizeReleaseResources-task-inputs.txt" "$OUT_DIR/"
 else
   run_as_vagrant "export ANDROID_HOME=/opt/android-sdk ANDROID_SDK_ROOT=/opt/android-sdk GRADLE_USER_HOME=/home/vagrant/.gradle; cd '$SOURCE_DIR/android/app' && gradle optimizeReleaseResources --no-daemon"
 fi
