@@ -21,40 +21,9 @@ jobs:
       - name: Check out diagnostic branch
         uses: actions/checkout@v4
 
-      - name: Probe deterministic filesystem support
-        id: disorderfs
-        shell: bash
-        run: |
-          set -euo pipefail
-          echo "=== FUSE device/capabilities ==="
-          ls -l /dev/fuse || true
-          grep '^CapEff:' /proc/self/status || true
-
-          apt-get update -qq
-          DEBIAN_FRONTEND=noninteractive apt-get install -y -qq disorderfs fuse3
-
-          rm -rf /tmp/disorderfs-under /tmp/disorderfs-view
-          mkdir -p /tmp/disorderfs-under /tmp/disorderfs-view
-          printf 'c\n' > /tmp/disorderfs-under/c
-          printf 'a\n' > /tmp/disorderfs-under/a
-          printf 'b\n' > /tmp/disorderfs-under/b
-
-          if disorderfs --sort-dirents=yes --reverse-dirents=no /tmp/disorderfs-under /tmp/disorderfs-view; then
-            echo "mounted=true" >> "$GITHUB_OUTPUT"
-            python3 - <<'PY'
-          import os
-          print("dirents=" + ",".join(os.listdir("/tmp/disorderfs-view")))
-          PY
-            (fusermount3 -u /tmp/disorderfs-view || fusermount -u /tmp/disorderfs-view || umount /tmp/disorderfs-view)
-          else
-            echo "mounted=false" >> "$GITHUB_OUTPUT"
-            echo "[INFO] disorderfs mount is unavailable in this GitHub container."
-          fi
-
-      - name: Generate prebuild manifest
-        if: steps.disorderfs.outputs.mounted == 'true'
+      - name: Generate deterministic workaround diagnostic
         env:
-          USE_DISORDERFS: "1"
+          DETERMINISTIC_AGP_WORKAROUNDS: "1"
           AGP_OVERRIDE: ""
         run: bash scripts/fdroid/prebuild-parity-check.sh
 
