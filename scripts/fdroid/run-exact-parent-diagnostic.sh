@@ -21,6 +21,32 @@ git -C "$CI_ROOT" checkout -q --detach FETCH_HEAD
 cp "$ROOT/.fdroid.yml" "$CI_ROOT/metadata/$APP_ID.yml"
 sed -i "s/^    commit: v1.0.8$/    commit: $SOURCE_SHA/" "$CI_ROOT/metadata/$APP_ID.yml"
 
+if [[ -n "${AGP_OVERRIDE:-}" ]]; then
+  python3 - "$CI_ROOT/metadata/$APP_ID.yml" "$AGP_OVERRIDE" <<'PY'
+from pathlib import Path
+import sys
+
+path = Path(sys.argv[1])
+target = sys.argv[2]
+text = path.read_text()
+needle = "      - npm ci\n"
+injected = """      - npm ci
+      - grep -RIl '8\\.12\\.2' node_modules/@react-native node_modules/react-native node_modules/expo-modules-autolinking 2>/dev/null | sort -u | tee /tmp/homelibrary-agp-files
+      - test -s /tmp/homelibrary-agp-files
+      - xargs -r sed -i -e 's/8\\.12\\.2/TARGET_AGP/g' < /tmp/homelibrary-agp-files
+      - echo "AGP override files:"
+      - cat /tmp/homelibrary-agp-files
+      - grep -RIn 'TARGET_AGP' $(cat /tmp/homelibrary-agp-files)
+""".replace("TARGET_AGP", target)
+if text.count(needle) != 1:
+    raise SystemExit("[FAIL] Expected exactly one npm ci insertion point")
+path.write_text(text.replace(needle, injected))
+PY
+
+  echo "=== AGP override metadata ==="
+  grep -A12 '^    init:' "$CI_ROOT/metadata/$APP_ID.yml"
+fi
+
 if [[ -n "${DIRENT_ORDER:-}" ]]; then
   case "$DIRENT_ORDER" in
     sorted|reversed) ;;
