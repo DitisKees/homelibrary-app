@@ -21,7 +21,7 @@ HomeLibrary is a cross-platform client for managing a shared, self-hosted househ
 
 ## Development status
 
-HomeLibrary is early-stage software, but the current source is functional and the Android release path is reproducible and prepared for F-Droid review. See `docs/fdroid.md` and the open `fdroid/fdroiddata!48673` submission for the remaining publication work.
+HomeLibrary is early-stage software, but the current source is functional and the Android release path is deterministic on the pinned GitHub F-Droid harness. Cross-runner parity with F-Droid's GitLab build runner is still under investigation. See `docs/fdroid.md`, `docs/fdroid-harness.md`, and the open `fdroid/fdroiddata!48673` submission for the remaining publication work.
 
 The permanent Android application ID is:
 
@@ -140,9 +140,10 @@ The initial official F-Droid submission is open as `fdroid/fdroiddata!48673`.
 5. ~~publish and verify reproducible upstream 1.0.7~~ — completed;
 6. ~~fix the Gradle-properties append regression and add dependency/APK guards against ML Kit/Barhopper~~ — completed in 1.0.7;
 7. ~~run the F-Droid production-buildserver image and live scanner in GitHub CI~~ — completed;
-8. require two independent F-Droid buildserver APKs to be byte-for-byte identical before release;
-9. sign the exact APK produced by the F-Droid buildserver path and require F-Droid signed-reference parity after publication;
-10. only then update fdroiddata and obtain official buildserver verification and acceptance.
+8. ~~require two independent GitHub-hosted F-Droid buildserver APKs to be byte-for-byte identical~~ — completed;
+9. ~~sign the exact APK produced by the pinned upstream F-Droid buildserver path~~ — completed;
+10. resolve the remaining GitHub-versus-GitLab runner reproducibility delta and require F-Droid signed-reference parity on the actual remote runner;
+11. only then obtain official buildserver verification and acceptance.
 
 See [`docs/fdroid.md`](docs/fdroid.md), [`docs/fdroid-release.md`](docs/fdroid-release.md), and [`docs/fdroid-harness.md`](docs/fdroid-harness.md) for details. The harness document records the architectural rules that prevent ad-hoc metadata rewriting and moving F-Droid toolchains from creeping back into CI.
 
