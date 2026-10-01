@@ -34,7 +34,7 @@ npm run build:fdroid-android
 
 The script stages source-controlled inputs at the fixed `/tmp/homelibrary-fdroid-source` path, installs pinned npm dependencies, runs the FLOSS/native dependency guards, performs Expo prebuild, builds the unsigned release APK, and verifies package metadata. The fixed path removes checkout-location differences from native ELF objects.
 
-Upstream CI retains the existing two-clean-checkout Android reproducibility check and also runs two independent F-Droid buildserver source builds. The harness pins the buildserver image by digest plus exact fdroidserver/fdroiddata commits, derives source-test metadata structurally with fdroidserver itself, runs the live scanner and `fdroid build --refresh-scanner --on-server`, and requires both unsigned APKs to be byte-for-byte identical before release. Release verification is a separate path that uses canonical `.fdroid.yml` unchanged.
+Upstream CI retains the existing two-clean-checkout Android reproducibility check and also runs two independent F-Droid buildserver source builds. The harness pins the buildserver image by digest plus exact fdroidserver/fdroiddata commits, derives source-test metadata structurally with fdroidserver itself, runs the live scanner and `fdroid build --refresh-scanner --on-server`, and requires both unsigned APKs to be byte-for-byte identical before release. Release verification is a separate path that uses canonical `.fdroid.yml` unchanged. These checks prove determinism on the GitHub-hosted harness, not automatic parity with F-Droid's GitLab SaaS runner.
 
 ## Production signing and reproducible verification
 
@@ -105,10 +105,11 @@ The official fdroiddata submission is already open as `fdroid/fdroiddata!48673`.
 - [x] Merge the 1.0.7 regression-fix PR with all checks green
 - [x] Create immutable `v1.0.7` and publish/verify the signed APK
 - [x] Update fdroiddata !48673 to versionCode 8/full source SHA
-- [ ] Require two independent F-Droid buildserver APKs to match for 1.0.8
-- [ ] Publish 1.0.8 by signing the exact F-Droid-buildserver unsigned APK
-- [ ] Require post-publication F-Droid signed-reference parity to pass
-- [ ] Only then update fdroiddata !48673 and obtain official acceptance
+- [x] Require two independent GitHub-hosted F-Droid buildserver APKs to match
+- [x] Publish the signed APK from the pinned upstream F-Droid buildserver path
+- [ ] Resolve the GitHub-versus-GitLab runner reproducibility delta (`classes.dex`, `resources.arsc`, `baseline.prof`)
+- [ ] Require post-publication F-Droid signed-reference parity to pass on the actual remote runner
+- [ ] Only then obtain official acceptance
 
 ## Release discipline
 
