@@ -5,7 +5,8 @@ APP_ID="io.github.ditiskees.homelibrary"
 SOURCE_SHA="f5a6762bc092c3f9295658354aeaa76315fa84ec"
 SOURCE_DIR="/home/vagrant/build/$APP_ID"
 OUT_DIR="${GITHUB_WORKSPACE:-$PWD}/diagnostic-output"
-AGP_OVERRIDE="${AGP_OVERRIDE:-8.11.1}"
+AGP_OVERRIDE="${AGP_OVERRIDE:-}"
+DETERMINISTIC_AGP_WORKAROUNDS="${DETERMINISTIC_AGP_WORKAROUNDS:-0}"
 
 mkdir -p "$OUT_DIR"
 rm -rf "$SOURCE_DIR"
@@ -47,6 +48,11 @@ run_as_vagrant "cd '$SOURCE_DIR' && npx expo prebuild -p android --clean"
 run_as_vagrant "cd '$SOURCE_DIR' && bash scripts/prepare-android-gradle-properties.sh"
 run_as_vagrant "cd '$SOURCE_DIR' && printf '%s\n' 'org.gradle.jvmargs=-Xmx3g -XX:MaxMetaspaceSize=1g -Dfile.encoding=UTF-8' 'org.gradle.workers.max=2' 'kotlin.compiler.execution.strategy=in-process' >> android/gradle.properties"
 run_as_vagrant "cd '$SOURCE_DIR' && bash scripts/prepare-android-gradle-properties.sh"
+if [[ "$DETERMINISTIC_AGP_WORKAROUNDS" == "1" ]]; then
+  echo "=== deterministic AGP workarounds ==="
+  run_as_vagrant "cd '$SOURCE_DIR' && printf '%s\\n' 'android.enableResourceOptimizations=false' 'android.useFullClasspathForDexingTransform=true' >> android/gradle.properties"
+  run_as_vagrant "cd '$SOURCE_DIR' && tail -n 10 android/gradle.properties"
+fi
 run_as_vagrant "cd '$SOURCE_DIR' && bash scripts/check-fdroid-android-dependencies.sh"
 run_as_vagrant "cd '$SOURCE_DIR' && sed -i -e '/signingConfig /d' android/app/build.gradle"
 
@@ -100,6 +106,54 @@ sha256sum "$OUT_DIR/prebuild-manifest.txt" | tee "$OUT_DIR/prebuild-manifest.sha
 sha256sum "$OUT_DIR/prebuild-stable-manifest.txt" | tee "$OUT_DIR/prebuild-stable-manifest.sha256"
 echo "=== stable prebuild manifest ==="
 cat "$OUT_DIR/prebuild-stable-manifest.txt"
+
+if [[ "$DETERMINISTIC_AGP_WORKAROUNDS" == "1" ]]; then
+  echo "=== deterministic full-build workaround checkpoint ==="
+  DEBIAN_FRONTEND=noninteractive apt-get install -y sudo openjdk-21-jdk-headless unzip
+  update-alternatives --set java /usr/lib/jvm/java-21-openjdk-amd64/bin/java
+  source /etc/profile.d/bsenv.sh
+  export ANDROID_HOME=/opt/android-sdk
+  export ANDROID_SDK_ROOT=/opt/android-sdk
+  export GRADLE_USER_HOME=/home/vagrant/.gradle
+  mkdir -p "$GRADLE_USER_HOME"
+  chown -R vagrant:vagrant "$GRADLE_USER_HOME"
+
+  run_as_vagrant "export ANDROID_HOME=/opt/android-sdk ANDROID_SDK_ROOT=/opt/android-sdk GRADLE_USER_HOME=/home/vagrant/.gradle; cd '$SOURCE_DIR/android/app' && gradle assembleRelease --no-daemon"
+
+  APK="$SOURCE_DIR/android/app/build/outputs/apk/release/app-release-unsigned.apk"
+  test -f "$APK"
+  python3 - "$APK" "$OUT_DIR/final-apk-entry-manifest.txt" <<'PY'
+from pathlib import Path
+import hashlib
+import sys
+import zipfile
+
+apk = Path(sys.argv[1])
+out = Path(sys.argv[2])
+wanted = [
+    "classes.dex",
+    "classes2.dex",
+    "classes3.dex",
+    "assets/dexopt/baseline.prof",
+    "assets/dexopt/baseline.profm",
+    "resources.arsc",
+]
+rows = []
+with zipfile.ZipFile(apk) as zf:
+    names = set(zf.namelist())
+    for name in wanted:
+        if name not in names:
+            continue
+        data = zf.read(name)
+        rows.append(f"{hashlib.sha256(data).hexdigest()}  {name}")
+out.write_text("\n".join(rows) + "\n")
+print(f"final_apk_sha256={hashlib.sha256(apk.read_bytes()).hexdigest()}")
+print(f"final_entry_manifest_sha256={hashlib.sha256(out.read_bytes()).hexdigest()}")
+for row in rows:
+    print(row)
+PY
+  exit 0
+fi
 
 echo "=== Gradle pre-DEX checkpoint ==="
 DEBIAN_FRONTEND=noninteractive apt-get install -y sudo openjdk-21-jdk-headless
