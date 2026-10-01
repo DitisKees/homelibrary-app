@@ -239,7 +239,27 @@ PY
 
 echo "=== final DEX merge checkpoint ==="
 run_as_vagrant "export ANDROID_HOME=/opt/android-sdk ANDROID_SDK_ROOT=/opt/android-sdk GRADLE_USER_HOME=/home/vagrant/.gradle; cd '$SOURCE_DIR/android/app' && gradle mergeDexRelease --no-daemon"
-snapshot_matching_files "merged-dex" "/merged_dex/" "/merged_dex/" "/merged_dex" "/mergeddex" "/merged_dex"
+python3 - "$SOURCE_DIR/android/app/build" "$OUT_DIR/merged-dex-manifest.txt" <<'PY'
+from pathlib import Path
+import hashlib
+import sys
+
+build = Path(sys.argv[1])
+out = Path(sys.argv[2])
+
+rows = []
+for path in sorted(build.rglob("*.dex"), key=lambda p: p.as_posix()):
+    rel = path.relative_to(build).as_posix()
+    h = hashlib.sha256(path.read_bytes()).hexdigest()
+    rows.append(f"{h}  {rel}")
+
+out.write_text("\n".join(rows) + "\n")
+print(f"merged_dex_files={len(rows)}")
+print(f"merged_dex_manifest_sha256={hashlib.sha256(out.read_bytes()).hexdigest()}")
+for row in rows:
+    print(row)
+PY
+sha256sum "$OUT_DIR/merged-dex-manifest.txt"
 
 echo "=== ART profile merge checkpoint ==="
 run_as_vagrant "export ANDROID_HOME=/opt/android-sdk ANDROID_SDK_ROOT=/opt/android-sdk GRADLE_USER_HOME=/home/vagrant/.gradle; cd '$SOURCE_DIR/android/app' && gradle mergeReleaseArtProfile compileReleaseArtProfile --no-daemon"
