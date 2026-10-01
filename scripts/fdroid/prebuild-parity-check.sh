@@ -87,17 +87,11 @@ print(f"stable_manifest_files={len(stable)}")
 print(f"stable_manifest_sha256={hashlib.sha256(stable_path.read_bytes()).hexdigest()}")
 PY
 
-grep -E '(^|/)(build\.gradle|build\.gradle\.kts|settings\.gradle|settings\.gradle\.kts|gradle\.properties|libs\.versions\.toml)
+grep -E '(^|/)(build\.gradle|build\.gradle\.kts|settings\.gradle|settings\.gradle\.kts|gradle\.properties|libs\.versions\.toml)$' "$OUT_DIR/prebuild-manifest.txt" > "$OUT_DIR/prebuild-gradle-files.txt" || true
 sha256sum "$OUT_DIR/prebuild-manifest.txt" | tee "$OUT_DIR/prebuild-manifest.sha256"
 sha256sum "$OUT_DIR/prebuild-stable-manifest.txt" | tee "$OUT_DIR/prebuild-stable-manifest.sha256"
 echo "=== stable prebuild manifest ==="
 cat "$OUT_DIR/prebuild-stable-manifest.txt"
- "$OUT_DIR/prebuild-manifest.txt" > "$OUT_DIR/prebuild-gradle-files.txt" || true
-sha256sum "$OUT_DIR/prebuild-manifest.txt" | tee "$OUT_DIR/prebuild-manifest.sha256"
-sha256sum "$OUT_DIR/prebuild-stable-manifest.txt" | tee "$OUT_DIR/prebuild-stable-manifest.sha256"
-echo "=== stable prebuild manifest ==="
-cat "$OUT_DIR/prebuild-stable-manifest.txt"
-
 
 echo "=== Gradle pre-DEX checkpoint ==="
 DEBIAN_FRONTEND=noninteractive apt-get install -y sudo openjdk-21-jdk-headless
