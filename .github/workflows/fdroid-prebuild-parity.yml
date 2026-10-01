@@ -21,10 +21,10 @@ jobs:
       - name: Check out diagnostic branch
         uses: actions/checkout@v4
 
-      - name: Generate AGP 8.13.2 full-build diagnostic
+      - name: Generate AGP 8.13.2 staged diagnostic
         env:
           DETERMINISTIC_AGP_WORKAROUNDS: "0"
-          FULL_BUILD_DIAGNOSTIC: "1"
+          FULL_BUILD_DIAGNOSTIC: "0"
           AGP_OVERRIDE: "8.13.2"
         run: bash scripts/fdroid/prebuild-parity-check.sh
 
