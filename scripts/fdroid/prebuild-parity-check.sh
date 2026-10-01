@@ -5,6 +5,7 @@ APP_ID="io.github.ditiskees.homelibrary"
 SOURCE_SHA="f5a6762bc092c3f9295658354aeaa76315fa84ec"
 SOURCE_DIR="/home/vagrant/build/$APP_ID"
 OUT_DIR="${GITHUB_WORKSPACE:-$PWD}/diagnostic-output"
+AGP_OVERRIDE="${AGP_OVERRIDE:-8.11.1}"
 
 mkdir -p "$OUT_DIR"
 rm -rf "$SOURCE_DIR"
@@ -32,6 +33,13 @@ run_as_vagrant() {
 run_as_vagrant "cd '$SOURCE_DIR' && node --version && npm --version" | tee "$OUT_DIR/node-toolchain.txt"
 
 run_as_vagrant "cd '$SOURCE_DIR' && sed -i -e 's/\"node\":\ \">=22.13.0 <23\"/\"node\":\ \">=22.13.0\"/' package.json && npm ci"
+
+if [[ -n "$AGP_OVERRIDE" ]]; then
+  echo "=== AGP override: 8.12.0 -> $AGP_OVERRIDE ==="
+  run_as_vagrant "cd '$SOURCE_DIR' && grep -RIl '8\\.12\\.0' node_modules/@react-native node_modules/react-native | sort -u | tee /tmp/homelibrary-agp-files"
+  test -s /tmp/homelibrary-agp-files
+  run_as_vagrant "cd '$SOURCE_DIR' && xargs -r sed -i -e 's/8\\.12\\.0/$AGP_OVERRIDE/g' < /tmp/homelibrary-agp-files && grep -RIn '$AGP_OVERRIDE' $(cat /tmp/homelibrary-agp-files)"
+fi
 
 run_as_vagrant "cd '$SOURCE_DIR' && find node_modules -type d -name local-maven-repo -prune -exec rm -rf {} +"
 run_as_vagrant "cd '$SOURCE_DIR' && sed -i '/jvmToolchain\|JavaVersion/s/17/21/' node_modules/@react-native/gradle-plugin/*/build.gradle.kts node_modules/@react-native/gradle-plugin/react-native-gradle-plugin/src/main/kotlin/com/facebook/react/utils/JdkConfiguratorUtils.kt"
