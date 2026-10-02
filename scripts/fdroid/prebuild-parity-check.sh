@@ -48,8 +48,19 @@ run_as_vagrant "cd '$SOURCE_DIR' && node --version && npm --version" | tee "$OUT
 
 run_as_vagrant "cd '$SOURCE_DIR' && sed -i -e 's/\"node\":\ \">=22.13.0 <23\"/\"node\":\ \">=22.13.0\"/' package.json && npm ci"
 if [[ "${GLIDE_REPRO_PROOF:-0}" == "1" ]]; then
-  echo "=== Glide reproducibility proof: 5.0.5 -> 5.0.9 ==="
-  run_as_vagrant "cd '$SOURCE_DIR' && test -f node_modules/expo-image/android/build.gradle && grep -q 'def GLIDE_VERSION = \"5.0.5\"' node_modules/expo-image/android/build.gradle && sed -i 's/def GLIDE_VERSION = \"5.0.5\"/def GLIDE_VERSION = \"5.0.9\"/' node_modules/expo-image/android/build.gradle && grep 'GLIDE_VERSION' node_modules/expo-image/android/build.gradle"
+  echo "=== Glide 5.0.5 KSP deterministic-order proof ==="
+  mkdir -p "$SOURCE_DIR/glide-proof"
+  curl -fsSL https://github.com/bumptech/glide/archive/refs/tags/v5.0.5.tar.gz | tar -xz -C "$SOURCE_DIR/glide-proof" --strip-components=1
+  GLIDE_KSP_FILE="$SOURCE_DIR/glide-proof/annotation/ksp/src/main/kotlin/com/bumptech/glide/annotation/ksp/LibraryGlideModules.kt"
+  grep -q 'associateBy { it.name }.values.toList()' "$GLIDE_KSP_FILE"
+  sed -i 's/associateBy { it.name }.values.toList()/associateBy { it.name }.values.sortedBy { it.name.qualifiedName }/' "$GLIDE_KSP_FILE"
+  grep 'uniqueLibraryGlideModules = ' "$GLIDE_KSP_FILE"
+  run_as_vagrant "cd '$SOURCE_DIR/glide-proof' && ./gradlew :annotation:ksp:publishToMavenLocal --no-daemon"
+  mkdir -p "$SOURCE_DIR/android"
+  cat >> "$SOURCE_DIR/android/settings.gradle" <<'GRADLE'
+pluginManagement { repositories { mavenLocal(); google(); mavenCentral(); gradlePluginPortal() } }
+dependencyResolutionManagement { repositoriesMode.set(RepositoriesMode.PREFER_SETTINGS); repositories { mavenLocal(); google(); mavenCentral() } }
+GRADLE
 fi
 
 if [[ -n "$AGP_OVERRIDE" ]]; then
