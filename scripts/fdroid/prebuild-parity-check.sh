@@ -8,6 +8,7 @@ OUT_DIR="${GITHUB_WORKSPACE:-$PWD}/diagnostic-output"
 AGP_OVERRIDE="${AGP_OVERRIDE:-}"
 DETERMINISTIC_AGP_WORKAROUNDS="${DETERMINISTIC_AGP_WORKAROUNDS:-0}"
 FULL_BUILD_DIAGNOSTIC="${FULL_BUILD_DIAGNOSTIC:-0}"
+DEX_ONLY_DIAGNOSTIC="${DEX_ONLY_DIAGNOSTIC:-0}"
 ORDER_TRACE="${ORDER_TRACE:-0}"
 SORT_DIRENTS_PRELOAD="${SORT_DIRENTS_PRELOAD:-0}"
 RESOURCE_TASK_TRACE="${RESOURCE_TASK_TRACE:-0}"
@@ -396,6 +397,58 @@ sha256sum "$OUT_DIR/prebuild-manifest.txt" | tee "$OUT_DIR/prebuild-manifest.sha
 sha256sum "$OUT_DIR/prebuild-stable-manifest.txt" | tee "$OUT_DIR/prebuild-stable-manifest.sha256"
 echo "=== stable prebuild manifest ==="
 cat "$OUT_DIR/prebuild-stable-manifest.txt"
+
+if [[ "$DEX_ONLY_DIAGNOSTIC" == "1" ]]; then
+  echo "=== DEX/profile diagnostic checkpoint ==="
+  DEBIAN_FRONTEND=noninteractive apt-get install -y sudo openjdk-21-jdk-headless
+  update-alternatives --set java /usr/lib/jvm/java-21-openjdk-amd64/bin/java
+  source /etc/profile.d/bsenv.sh
+  export ANDROID_HOME=/opt/android-sdk
+  export ANDROID_SDK_ROOT=/opt/android-sdk
+  export GRADLE_USER_HOME=/home/vagrant/.gradle
+  mkdir -p "$GRADLE_USER_HOME"
+  chown -R vagrant:vagrant "$GRADLE_USER_HOME"
+
+  run_as_vagrant "export ANDROID_HOME=/opt/android-sdk ANDROID_SDK_ROOT=/opt/android-sdk GRADLE_USER_HOME=/home/vagrant/.gradle; cd '$SOURCE_DIR/android/app' && gradle mergeDexRelease compileReleaseArtProfile --no-daemon"
+
+  python3 - "$SOURCE_DIR/android/app/build" "$OUT_DIR/dex-profile-manifest.txt" <<'PY'
+from pathlib import Path
+import hashlib
+import sys
+
+build = Path(sys.argv[1])
+out = Path(sys.argv[2])
+patterns = [
+    "intermediates/dex/release/mergeDexRelease/classes*.dex",
+    "intermediates/art_profile/release/compileReleaseArtProfile/**",
+]
+files = []
+for pattern in patterns:
+    files.extend(p for p in build.glob(pattern) if p.is_file())
+files = sorted(set(files), key=lambda p: p.relative_to(build).as_posix())
+rows = []
+for p in files:
+    data = p.read_bytes()
+    rows.append(f"{hashlib.sha256(data).hexdigest()}  {p.relative_to(build).as_posix()}")
+out.write_text("\n".join(rows) + "\n")
+print(f"dex_profile_files={len(rows)}")
+for row in rows:
+    print(row)
+PY
+
+  # dexdump comes from Android build-tools and gives us class descriptor membership
+  # without requiring APK packaging.
+  DEXDUMP="$(find /opt/android-sdk/build-tools -type f -name dexdump | sort -V | tail -n1)"
+  test -x "$DEXDUMP"
+  for dex in "$SOURCE_DIR"/android/app/build/intermediates/dex/release/mergeDexRelease/classes*.dex; do
+    test -f "$dex" || continue
+    name="$(basename "$dex" .dex)"
+    "$DEXDUMP" -f "$dex" | sed -n "s/.*Class descriptor  : '\(.*\)'/\1/p" | LC_ALL=C sort > "$OUT_DIR/$name-class-descriptors.txt"
+    echo "$(sha256sum "$OUT_DIR/$name-class-descriptors.txt" | cut -d' ' -f1)  $name-class-descriptors.txt"
+    echo "$name-class-count=$(wc -l < "$OUT_DIR/$name-class-descriptors.txt")"
+  done
+  exit 0
+fi
 
 if [[ "$DETERMINISTIC_AGP_WORKAROUNDS" == "1" || "$FULL_BUILD_DIAGNOSTIC" == "1" ]]; then
   echo "=== full-build APK entry checkpoint ==="
