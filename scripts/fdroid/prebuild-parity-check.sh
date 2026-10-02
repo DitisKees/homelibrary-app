@@ -11,6 +11,7 @@ FULL_BUILD_DIAGNOSTIC="${FULL_BUILD_DIAGNOSTIC:-0}"
 DEX_ONLY_DIAGNOSTIC="${DEX_ONLY_DIAGNOSTIC:-0}"
 DEX_INPUT_DIAGNOSTIC="${DEX_INPUT_DIAGNOSTIC:-0}"
 MERGE_DEX_TRACE="${MERGE_DEX_TRACE:-0}"
+MERGE_DEX_TRACE="${MERGE_DEX_TRACE:-0}"
 ORDER_TRACE="${ORDER_TRACE:-0}"
 SORT_DIRENTS_PRELOAD="${SORT_DIRENTS_PRELOAD:-0}"
 RESOURCE_TASK_TRACE="${RESOURCE_TASK_TRACE:-0}"
@@ -497,6 +498,49 @@ for p in sorted(root.rglob("*.dex"), key=lambda x:x.relative_to(root).as_posix()
 out.write_text("\n".join(rows)+"\n")
 for row in rows: print(row)
 PY
+  exit 0
+fi
+
+if [[ "$MERGE_DEX_TRACE" == "1" ]]; then
+  echo "=== mergeDexRelease ordered-input trace ==="
+  DEBIAN_FRONTEND=noninteractive apt-get install -y sudo openjdk-21-jdk-headless
+  update-alternatives --set java /usr/lib/jvm/java-21-openjdk-amd64/bin/java
+  source /etc/profile.d/bsenv.sh
+  export ANDROID_HOME=/opt/android-sdk ANDROID_SDK_ROOT=/opt/android-sdk GRADLE_USER_HOME=/home/vagrant/.gradle
+  mkdir -p "$GRADLE_USER_HOME" /tmp/homelibrary-merge-dex-trace
+  chown -R vagrant:vagrant "$GRADLE_USER_HOME" /tmp/homelibrary-merge-dex-trace
+  cat > /tmp/merge-dex-trace.init.gradle <<'GROOVY'
+import java.security.MessageDigest
+def hashFile = { File f ->
+  if (!f.isFile()) return "-"
+  def md = MessageDigest.getInstance("SHA-256")
+  f.eachByte(1024 * 1024) { b, n -> md.update(b, 0, n) }
+  md.digest().encodeHex().toString()
+}
+gradle.allprojects { p ->
+  p.tasks.configureEach { t ->
+    if (t.name == "mergeDexRelease") {
+      t.doFirst {
+        def out = new File(System.getenv("MERGE_DEX_TRACE_DIR"), "mergeDexRelease-task-inputs.txt")
+        out.withPrintWriter("UTF-8") { pw ->
+          pw.println("task=" + t.path)
+          pw.println("class=" + t.class.name)
+          int i = 0
+          t.inputs.files.each { f ->
+            pw.println(String.format("%06d\t%s\t%d\t%s", i++, f.absolutePath, f.isFile() ? f.length() : -1L, hashFile(f)))
+          }
+          pw.println("=== properties ===")
+          t.inputs.properties.keySet().toList().sort().each { k -> pw.println(k + "=" + String.valueOf(t.inputs.properties[k])) }
+        }
+      }
+    }
+  }
+}
+GROOVY
+  chmod 0644 /tmp/merge-dex-trace.init.gradle
+  run_as_vagrant "export ANDROID_HOME=/opt/android-sdk ANDROID_SDK_ROOT=/opt/android-sdk GRADLE_USER_HOME=/home/vagrant/.gradle MERGE_DEX_TRACE_DIR=/tmp/homelibrary-merge-dex-trace; cd '$SOURCE_DIR/android/app' && gradle mergeDexRelease --no-daemon -I /tmp/merge-dex-trace.init.gradle"
+  cp /tmp/homelibrary-merge-dex-trace/mergeDexRelease-task-inputs.txt "$OUT_DIR/"
+  sha256sum "$OUT_DIR/mergeDexRelease-task-inputs.txt"
   exit 0
 fi
 
