@@ -12,6 +12,7 @@ ORDER_TRACE="${ORDER_TRACE:-0}"
 SORT_DIRENTS_PRELOAD="${SORT_DIRENTS_PRELOAD:-0}"
 RESOURCE_TASK_TRACE="${RESOURCE_TASK_TRACE:-0}"
 RESOURCE_ONLY_DIAGNOSTIC="${RESOURCE_ONLY_DIAGNOSTIC:-0}"
+RESOURCE_MAX_WORKERS="${RESOURCE_MAX_WORKERS:-2}"
 
 mkdir -p "$OUT_DIR"
 rm -rf "$SOURCE_DIR"
@@ -55,7 +56,7 @@ run_as_vagrant "cd '$SOURCE_DIR' && find node_modules -type d -name local-maven-
 run_as_vagrant "cd '$SOURCE_DIR' && sed -i '/jvmToolchain\|JavaVersion/s/17/21/' node_modules/@react-native/gradle-plugin/*/build.gradle.kts node_modules/@react-native/gradle-plugin/react-native-gradle-plugin/src/main/kotlin/com/facebook/react/utils/JdkConfiguratorUtils.kt"
 run_as_vagrant "cd '$SOURCE_DIR' && npx expo prebuild -p android --clean"
 run_as_vagrant "cd '$SOURCE_DIR' && bash scripts/prepare-android-gradle-properties.sh"
-run_as_vagrant "cd '$SOURCE_DIR' && printf '%s\n' 'org.gradle.jvmargs=-Xmx3g -XX:MaxMetaspaceSize=1g -Dfile.encoding=UTF-8' 'org.gradle.workers.max=2' 'kotlin.compiler.execution.strategy=in-process' >> android/gradle.properties"
+run_as_vagrant "cd '$SOURCE_DIR' && printf '%s\n' 'org.gradle.jvmargs=-Xmx3g -XX:MaxMetaspaceSize=1g -Dfile.encoding=UTF-8' 'org.gradle.workers.max=$RESOURCE_MAX_WORKERS' 'kotlin.compiler.execution.strategy=in-process' >> android/gradle.properties"
 run_as_vagrant "cd '$SOURCE_DIR' && bash scripts/prepare-android-gradle-properties.sh"
 
 if [[ "$SORT_DIRENTS_PRELOAD" == "1" ]]; then
