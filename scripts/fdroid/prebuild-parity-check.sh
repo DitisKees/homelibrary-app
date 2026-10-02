@@ -445,6 +445,7 @@ GROOVY
   PRIMARY_DEX="$SOURCE_DIR/android/app/build/intermediates/dex/release/mergeDexRelease/classes.dex"
   "$DEXDUMP" -f "$PRIMARY_DEX" | sed -n "s/.*Class descriptor  : '\\(.*\\)'/\\1/p" | LC_ALL=C sort > "$OUT_DIR/primary-dex-classes.txt"
   echo "primary_dex_class_count=$(wc -l < "$OUT_DIR/primary-dex-classes.txt")"
+  sed -n "1,80p" "$OUT_DIR/primary-dex-classes.txt"
   sha256sum "$OUT_DIR/primary-dex-classes.txt"
   find "$SOURCE_DIR/android/app/build/intermediates" -type f \( -iname '*main*dex*' -o -iname '*startup*' -o -iname '*profile*' \) -print0 | sort -z | while IFS= read -r -d '' p; do
     printf '%s  %s\n' "$(sha256sum "$p" | cut -d' ' -f1)" "${p#"$SOURCE_DIR/android/app/build/"}"
