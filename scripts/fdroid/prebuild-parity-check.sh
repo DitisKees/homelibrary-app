@@ -656,6 +656,44 @@ grep '^      ' "$OUT_DIR/aapt2-resources-dump.ids-normalized.txt" | LC_ALL=C sor
 echo "aapt2_resource_values_sha256=$(sha256sum "$OUT_DIR/aapt2-resource-values.sorted.txt" | awk '{print $1}')"
 echo "aapt2_resource_values_lines=$(wc -l < "$OUT_DIR/aapt2-resource-values.sorted.txt")"
 
+python3 - "$OUT_DIR/aapt2-resources-dump.ids-normalized.txt" "$OUT_DIR/aapt2-per-resource-values.txt" <<'PY'
+from pathlib import Path
+import hashlib
+import sys
+
+src = Path(sys.argv[1])
+out = Path(sys.argv[2])
+
+current = None
+values = []
+rows = []
+
+def flush():
+    global current, values
+    if current is None:
+        return
+    normalized = sorted(values)
+    payload = ("\n".join(normalized) + ("\n" if normalized else "")).encode()
+    digest = hashlib.sha256(payload).hexdigest()
+    rows.append((current, len(normalized), digest))
+
+for line in src.read_text(encoding="utf-8").splitlines():
+    if line.startswith("    resource "):
+        flush()
+        parts = line.split()
+        current = parts[-1]
+        values = []
+    elif current is not None and line.startswith("      "):
+        values.append(line.strip())
+
+flush()
+out.write_text("\n".join(f"{name}\t{count}\t{digest}" for name, count, digest in rows) + "\n", encoding="utf-8")
+print(f"aapt2_per_resource_count={len(rows)}")
+print(f"aapt2_per_resource_manifest_sha256={hashlib.sha256(out.read_bytes()).hexdigest()}")
+for name, count, digest in rows:
+    print(f"AAPT2_RESOURCE_VALUE_HASH\t{name}\t{count}\t{digest}")
+PY
+
 if [[ "$RESOURCE_ONLY_DIAGNOSTIC" == "1" ]]; then
   echo "resource_only_diagnostic_complete=true"
   exit 0
