@@ -37,6 +37,7 @@ jobs:
           DEX_ONLY_DIAGNOSTIC: "0"
           DEX_INPUT_DIAGNOSTIC: "0"
           MERGE_DEX_TRACE: "1"
+          GLIDE_REPRO_PROOF: "1"
           SOURCE_SHA: "182da53ec162df7ff1874e9ddbbba41464a118a2"
           RESOURCE_MAX_WORKERS: "1"
         run: bash scripts/fdroid/prebuild-parity-check.sh
