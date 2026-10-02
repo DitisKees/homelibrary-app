@@ -10,6 +10,8 @@ DETERMINISTIC_AGP_WORKAROUNDS="${DETERMINISTIC_AGP_WORKAROUNDS:-0}"
 FULL_BUILD_DIAGNOSTIC="${FULL_BUILD_DIAGNOSTIC:-0}"
 ORDER_TRACE="${ORDER_TRACE:-0}"
 SORT_DIRENTS_PRELOAD="${SORT_DIRENTS_PRELOAD:-0}"
+RESOURCE_TASK_TRACE="${RESOURCE_TASK_TRACE:-0}"
+RESOURCE_ONLY_DIAGNOSTIC="${RESOURCE_ONLY_DIAGNOSTIC:-0}"
 
 mkdir -p "$OUT_DIR"
 rm -rf "$SOURCE_DIR"
@@ -472,7 +474,88 @@ export GRADLE_USER_HOME=/home/vagrant/.gradle
 mkdir -p "$GRADLE_USER_HOME"
 chown -R vagrant:vagrant "$GRADLE_USER_HOME"
 
-run_as_vagrant "export ANDROID_HOME=/opt/android-sdk ANDROID_SDK_ROOT=/opt/android-sdk GRADLE_USER_HOME=/home/vagrant/.gradle; cd '$SOURCE_DIR/android/app' && gradle processReleaseResources compileReleaseKotlin compileReleaseJavaWithJavac --no-daemon"
+RESOURCE_TRACE_ARGS=""
+if [[ "$RESOURCE_TASK_TRACE" == "1" ]]; then
+  echo "=== processReleaseResources input tracing ==="
+  cat > /tmp/homelibrary-resource-task-trace.init.gradle <<'GROOVY'
+import java.security.MessageDigest
+import org.gradle.api.file.FileCollection
+import org.gradle.api.file.FileSystemLocation
+import org.gradle.api.provider.Provider
+
+def sha256 = { File f ->
+  if (!f.isFile()) return "-"
+  def md = MessageDigest.getInstance("SHA-256")
+  f.withInputStream { input ->
+    byte[] buf = new byte[1024 * 1024]
+    int n
+    while ((n = input.read(buf)) > 0) md.update(buf, 0, n)
+  }
+  md.digest().encodeHex().toString()
+}
+
+gradle.allprojects { p ->
+  p.tasks.configureEach { t ->
+    if (t.name != "processReleaseResources") return
+    t.doFirst {
+      def outDir = new File(System.getenv("RESOURCE_TRACE_DIR"))
+      outDir.mkdirs()
+      def out = new File(outDir, "processReleaseResources-task-inputs.txt")
+      out.withPrintWriter("UTF-8") { pw ->
+        pw.println("task=" + t.path)
+        pw.println("class=" + t.class.name)
+        pw.println("projectDir=" + t.project.projectDir)
+        pw.println("=== inputs.files iteration order ===")
+        int i = 0
+        t.inputs.files.each { File f ->
+          pw.println(String.format("%06d\t%s\t%d\t%s", i++, f.absolutePath, f.isFile() ? f.length() : -1L, sha256(f)))
+        }
+        pw.println("=== inputs.properties ===")
+        t.inputs.properties.keySet().toList().sort().each { k ->
+          try { pw.println(k + "=" + String.valueOf(t.inputs.properties[k])) }
+          catch (Throwable e) { pw.println(k + "=<error:" + e.class.name + ">") }
+        }
+        pw.println("=== task FileCollection-like properties ===")
+        t.properties.keySet().toList().sort().each { k ->
+          try {
+            def v = t.properties[k]
+            if (v instanceof FileCollection) {
+              pw.println("PROPERTY " + k + " " + v.class.name)
+              int j = 0
+              v.each { File f ->
+                pw.println(String.format("  %06d\t%s\t%d\t%s", j++, f.absolutePath, f.isFile() ? f.length() : -1L, sha256(f)))
+              }
+            } else if (v instanceof Provider) {
+              def q = v.orNull
+              if (q instanceof FileSystemLocation) {
+                def f = q.asFile
+                pw.println("PROPERTY " + k + " Provider<FileSystemLocation> " + f.absolutePath + "\t" + (f.isFile() ? f.length() : -1L) + "\t" + sha256(f))
+              }
+            }
+          } catch (Throwable e) {
+            pw.println("PROPERTY " + k + " <error:" + e.class.name + ">")
+          }
+        }
+      }
+      println("RESOURCE_TRACE " + t.path + " -> " + out.absolutePath)
+    }
+  }
+}
+GROOVY
+  RESOURCE_TRACE_DIR="/tmp/homelibrary-resource-trace"
+  rm -rf "$RESOURCE_TRACE_DIR"
+  mkdir -p "$RESOURCE_TRACE_DIR"
+  chown -R vagrant:vagrant "$RESOURCE_TRACE_DIR"
+  chmod 0644 /tmp/homelibrary-resource-task-trace.init.gradle
+  RESOURCE_TRACE_ARGS="-I /tmp/homelibrary-resource-task-trace.init.gradle"
+fi
+
+if [[ "$RESOURCE_TASK_TRACE" == "1" ]]; then
+  run_as_vagrant "export ANDROID_HOME=/opt/android-sdk ANDROID_SDK_ROOT=/opt/android-sdk GRADLE_USER_HOME=/home/vagrant/.gradle RESOURCE_TRACE_DIR='$RESOURCE_TRACE_DIR'; cd '$SOURCE_DIR/android/app' && gradle processReleaseResources compileReleaseKotlin compileReleaseJavaWithJavac --no-daemon $RESOURCE_TRACE_ARGS --info" | tee "$OUT_DIR/processReleaseResources-info.log"
+  cp "$RESOURCE_TRACE_DIR/processReleaseResources-task-inputs.txt" "$OUT_DIR/"
+else
+  run_as_vagrant "export ANDROID_HOME=/opt/android-sdk ANDROID_SDK_ROOT=/opt/android-sdk GRADLE_USER_HOME=/home/vagrant/.gradle; cd '$SOURCE_DIR/android/app' && gradle processReleaseResources compileReleaseKotlin compileReleaseJavaWithJavac --no-daemon"
+fi
 
 python3 - "$SOURCE_DIR/android/app/build" "$OUT_DIR/predex-manifest.txt" <<'PY'
 from pathlib import Path
@@ -541,6 +624,10 @@ for row in rows:
     print(row)
 PY
 sha256sum "$OUT_DIR/linked-resource-archive-manifest.txt"
+if [[ "$RESOURCE_ONLY_DIAGNOSTIC" == "1" ]]; then
+  echo "resource_only_diagnostic_complete=true"
+  exit 0
+fi
 
 echo "=== ensure DEX has not run ==="
 if find "$SOURCE_DIR/android/app/build" -type f \( -name '*.dex' -o -name 'classes*.dex' \) -print -quit | grep -q .; then
