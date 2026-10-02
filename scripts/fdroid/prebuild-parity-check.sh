@@ -47,33 +47,8 @@ run_as_vagrant() {
 run_as_vagrant "cd '$SOURCE_DIR' && node --version && npm --version" | tee "$OUT_DIR/node-toolchain.txt"
 
 run_as_vagrant "cd '$SOURCE_DIR' && sed -i -e 's/\"node\":\ \">=22.13.0 <23\"/\"node\":\ \">=22.13.0\"/' package.json && npm ci"
-if [[ "${GLIDE_REPRO_PROOF:-0}" == "1" ]]; then
-  echo "=== Glide 5.0.5 KSP deterministic-order proof ==="
-  mkdir -p "$SOURCE_DIR/glide-proof"
-  curl -fsSL https://github.com/bumptech/glide/archive/refs/tags/v5.0.5.tar.gz | tar -xz -C "$SOURCE_DIR/glide-proof" --strip-components=1
-  GLIDE_KSP_FILE="$SOURCE_DIR/glide-proof/annotation/ksp/src/main/kotlin/com/bumptech/glide/annotation/ksp/LibraryGlideModules.kt"
-  grep -q 'associateBy { it.name }.values.toList()' "$GLIDE_KSP_FILE"
-  sed -i 's/associateBy { it.name }.values.toList()/associateBy { it.name }.values.sortedBy { it.name.qualifiedName }/' "$GLIDE_KSP_FILE"
-  grep 'uniqueLibraryGlideModules = ' "$GLIDE_KSP_FILE"
-  chown -R vagrant:vagrant "$SOURCE_DIR/glide-proof"
-  apt-get update -qq
-  apt-get install -y openjdk-11-jdk-headless
-  run_as_vagrant "cd '$SOURCE_DIR/glide-proof' && JAVA_HOME=/usr/lib/jvm/java-11-openjdk-amd64 ./gradlew :annotation:ksp:publishToMavenLocal --no-daemon"
-  PATCHED_KSP_POM="/home/vagrant/.m2/repository/com/github/bumptech/glide/ksp/5.0.5/ksp-5.0.5.pom"
-  PATCHED_KSP_JAR="/home/vagrant/.m2/repository/com/github/bumptech/glide/ksp/5.0.5/ksp-5.0.5.jar"
-  test -s "$PATCHED_KSP_POM"
-  test -s "$PATCHED_KSP_JAR"
-  echo "patched_ksp_sha256=$(sha256sum "$PATCHED_KSP_JAR" | cut -d' ' -f1)"
-  mkdir -p /home/vagrant/.gradle
-  cat > /home/vagrant/.gradle/init.gradle <<'GRADLE'
-allprojects {
-  repositories {
-    mavenLocal()
-  }
-}
-GRADLE
-  chown vagrant:vagrant /home/vagrant/.gradle/init.gradle
-fi
+echo "=== Glide 5.0.9 reproducibility upgrade ==="
+run_as_vagrant "cd '$SOURCE_DIR' && test -f node_modules/expo-image/android/build.gradle && sed -i 's/def GLIDE_VERSION = \"5.0.5\"/def GLIDE_VERSION = \"5.0.9\"/' node_modules/expo-image/android/build.gradle && grep 'GLIDE_VERSION' node_modules/expo-image/android/build.gradle"
 
 if [[ -n "$AGP_OVERRIDE" ]]; then
   echo "=== AGP override: 8.12.0 -> $AGP_OVERRIDE ==="
