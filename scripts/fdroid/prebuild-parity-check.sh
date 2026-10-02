@@ -9,6 +9,7 @@ AGP_OVERRIDE="${AGP_OVERRIDE:-}"
 DETERMINISTIC_AGP_WORKAROUNDS="${DETERMINISTIC_AGP_WORKAROUNDS:-0}"
 FULL_BUILD_DIAGNOSTIC="${FULL_BUILD_DIAGNOSTIC:-0}"
 DEX_ONLY_DIAGNOSTIC="${DEX_ONLY_DIAGNOSTIC:-0}"
+DEX_INPUT_DIAGNOSTIC="${DEX_INPUT_DIAGNOSTIC:-0}"
 ORDER_TRACE="${ORDER_TRACE:-0}"
 SORT_DIRENTS_PRELOAD="${SORT_DIRENTS_PRELOAD:-0}"
 RESOURCE_TASK_TRACE="${RESOURCE_TASK_TRACE:-0}"
@@ -397,6 +398,60 @@ sha256sum "$OUT_DIR/prebuild-manifest.txt" | tee "$OUT_DIR/prebuild-manifest.sha
 sha256sum "$OUT_DIR/prebuild-stable-manifest.txt" | tee "$OUT_DIR/prebuild-stable-manifest.sha256"
 echo "=== stable prebuild manifest ==="
 cat "$OUT_DIR/prebuild-stable-manifest.txt"
+
+if [[ "$DEX_INPUT_DIAGNOSTIC" == "1" ]]; then
+  echo "=== pre-merge DEX input diagnostic checkpoint ==="
+  DEBIAN_FRONTEND=noninteractive apt-get install -y sudo openjdk-21-jdk-headless
+  update-alternatives --set java /usr/lib/jvm/java-21-openjdk-amd64/bin/java
+  source /etc/profile.d/bsenv.sh
+  export ANDROID_HOME=/opt/android-sdk
+  export ANDROID_SDK_ROOT=/opt/android-sdk
+  export GRADLE_USER_HOME=/home/vagrant/.gradle
+  mkdir -p "$GRADLE_USER_HOME"
+  chown -R vagrant:vagrant "$GRADLE_USER_HOME"
+
+  run_as_vagrant "export ANDROID_HOME=/opt/android-sdk ANDROID_SDK_ROOT=/opt/android-sdk GRADLE_USER_HOME=/home/vagrant/.gradle; cd '$SOURCE_DIR/android/app' && gradle dexBuilderRelease mergeExtDexRelease --no-daemon"
+
+  DEXDUMP="$(find /opt/android-sdk/build-tools -type f -name dexdump | sort -V | tail -n1)"
+  test -x "$DEXDUMP"
+  python3 - "$SOURCE_DIR/android/app/build" "$OUT_DIR/predex-input-manifest.txt" <<'PY'
+from pathlib import Path
+import hashlib
+import sys
+
+build = Path(sys.argv[1])
+out = Path(sys.argv[2])
+roots = [
+    build / "intermediates/project_dex_archive/release/dexBuilderRelease",
+    build / "intermediates/external_libs_dex/release/mergeExtDexRelease",
+]
+rows = []
+for root in roots:
+    if not root.exists():
+        continue
+    for p in sorted(root.rglob("*"), key=lambda x: x.relative_to(build).as_posix()):
+        if not p.is_file():
+            continue
+        rel = p.relative_to(build).as_posix()
+        data = p.read_bytes()
+        rows.append(f"{hashlib.sha256(data).hexdigest()}\t{len(data)}\t{rel}")
+out.write_text("\n".join(rows) + "\n")
+print(f"predex_input_files={len(rows)}")
+print(f"predex_input_manifest_sha256={hashlib.sha256(out.read_bytes()).hexdigest()}")
+for row in rows:
+    print(row)
+PY
+
+  : > "$OUT_DIR/predex-class-membership.txt"
+  while IFS= read -r -d '' dex; do
+    rel="${dex#"$SOURCE_DIR/android/app/build/"}"
+    desc="$OUT_DIR/$(printf '%s' "$rel" | tr '/ ' '__').classes.txt"
+    "$DEXDUMP" -f "$dex" | sed -n "s/.*Class descriptor  : '\(.*\)'/\1/p" | LC_ALL=C sort > "$desc"
+    printf '%s\t%s\t%s\t%s\n' "$(sha256sum "$dex" | cut -d' ' -f1)" "$(sha256sum "$desc" | cut -d' ' -f1)" "$(wc -l < "$desc")" "$rel" >> "$OUT_DIR/predex-class-membership.txt"
+  done < <(find "$SOURCE_DIR/android/app/build/intermediates/project_dex_archive/release/dexBuilderRelease" "$SOURCE_DIR/android/app/build/intermediates/external_libs_dex/release/mergeExtDexRelease" -type f -name '*.dex' -print0 2>/dev/null | sort -z)
+  cat "$OUT_DIR/predex-class-membership.txt"
+  exit 0
+fi
 
 if [[ "$DEX_ONLY_DIAGNOSTIC" == "1" ]]; then
   echo "=== DEX/profile diagnostic checkpoint ==="
