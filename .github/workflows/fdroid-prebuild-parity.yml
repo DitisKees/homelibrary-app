@@ -21,15 +21,18 @@ jobs:
       - name: Check out diagnostic branch
         uses: actions/checkout@v4
 
-      - name: Trace processReleaseResources inputs
+      - name: Trace pre-merge DEX inputs
         env:
           DETERMINISTIC_AGP_WORKAROUNDS: "0"
           FULL_BUILD_DIAGNOSTIC: "0"
           AGP_OVERRIDE: ""
           ORDER_TRACE: "0"
           SORT_DIRENTS_PRELOAD: "0"
-          RESOURCE_TASK_TRACE: "1"
-          RESOURCE_ONLY_DIAGNOSTIC: "1"
+          RESOURCE_TASK_TRACE: "0"
+          RESOURCE_ONLY_DIAGNOSTIC: "0"
+          DEX_ONLY_DIAGNOSTIC: "0"
+          DEX_INPUT_DIAGNOSTIC: "1"
+          SOURCE_SHA: "182da53ec162df7ff1874e9ddbbba41464a118a2"
           RESOURCE_MAX_WORKERS: "1"
         run: bash scripts/fdroid/prebuild-parity-check.sh
 
