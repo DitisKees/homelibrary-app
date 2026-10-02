@@ -30,6 +30,7 @@ jobs:
           SORT_DIRENTS_PRELOAD: "0"
           RESOURCE_TASK_TRACE: "1"
           RESOURCE_ONLY_DIAGNOSTIC: "1"
+          RESOURCE_MAX_WORKERS: "1"
         run: bash scripts/fdroid/prebuild-parity-check.sh
 
       - name: Upload prebuild manifest
