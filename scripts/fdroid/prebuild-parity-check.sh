@@ -56,11 +56,15 @@ if [[ "${GLIDE_REPRO_PROOF:-0}" == "1" ]]; then
   sed -i 's/associateBy { it.name }.values.toList()/associateBy { it.name }.values.sortedBy { it.name.qualifiedName }/' "$GLIDE_KSP_FILE"
   grep 'uniqueLibraryGlideModules = ' "$GLIDE_KSP_FILE"
   run_as_vagrant "cd '$SOURCE_DIR/glide-proof' && ./gradlew :annotation:ksp:publishToMavenLocal --no-daemon"
-  mkdir -p "$SOURCE_DIR/android"
-  cat >> "$SOURCE_DIR/android/settings.gradle" <<'GRADLE'
-pluginManagement { repositories { mavenLocal(); google(); mavenCentral(); gradlePluginPortal() } }
-dependencyResolutionManagement { repositoriesMode.set(RepositoriesMode.PREFER_SETTINGS); repositories { mavenLocal(); google(); mavenCentral() } }
+  mkdir -p /home/vagrant/.gradle
+  cat > /home/vagrant/.gradle/init.gradle <<'GRADLE'
+allprojects {
+  repositories {
+    mavenLocal()
+  }
+}
 GRADLE
+  chown vagrant:vagrant /home/vagrant/.gradle/init.gradle
 fi
 
 if [[ -n "$AGP_OVERRIDE" ]]; then
