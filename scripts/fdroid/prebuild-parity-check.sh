@@ -11,7 +11,6 @@ FULL_BUILD_DIAGNOSTIC="${FULL_BUILD_DIAGNOSTIC:-0}"
 DEX_ONLY_DIAGNOSTIC="${DEX_ONLY_DIAGNOSTIC:-0}"
 DEX_INPUT_DIAGNOSTIC="${DEX_INPUT_DIAGNOSTIC:-0}"
 MERGE_DEX_TRACE="${MERGE_DEX_TRACE:-0}"
-MERGE_DEX_TRACE="${MERGE_DEX_TRACE:-0}"
 ORDER_TRACE="${ORDER_TRACE:-0}"
 SORT_DIRENTS_PRELOAD="${SORT_DIRENTS_PRELOAD:-0}"
 RESOURCE_TASK_TRACE="${RESOURCE_TASK_TRACE:-0}"
@@ -400,106 +399,6 @@ sha256sum "$OUT_DIR/prebuild-manifest.txt" | tee "$OUT_DIR/prebuild-manifest.sha
 sha256sum "$OUT_DIR/prebuild-stable-manifest.txt" | tee "$OUT_DIR/prebuild-stable-manifest.sha256"
 echo "=== stable prebuild manifest ==="
 cat "$OUT_DIR/prebuild-stable-manifest.txt"
-
-if [[ "$MERGE_DEX_TRACE" == "1" ]]; then
-  echo "=== mergeDexRelease ordered-input trace ==="
-  DEBIAN_FRONTEND=noninteractive apt-get install -y sudo openjdk-21-jdk-headless
-  update-alternatives --set java /usr/lib/jvm/java-21-openjdk-amd64/bin/java
-  source /etc/profile.d/bsenv.sh
-  export ANDROID_HOME=/opt/android-sdk
-  export ANDROID_SDK_ROOT=/opt/android-sdk
-  export GRADLE_USER_HOME=/home/vagrant/.gradle
-  mkdir -p "$GRADLE_USER_HOME"
-  chown -R vagrant:vagrant "$GRADLE_USER_HOME"
-
-  cat > /tmp/homelibrary-merge-dex-trace.init.gradle <<'GROOVY'
-import java.security.MessageDigest
-import org.gradle.api.file.FileCollection
-import org.gradle.api.file.FileSystemLocation
-import org.gradle.api.provider.Provider
-
-def sha256 = { File f ->
-  if (!f.isFile()) return "-"
-  def md = MessageDigest.getInstance("SHA-256")
-  f.withInputStream { input ->
-    byte[] buf = new byte[1024 * 1024]
-    int n
-    while ((n = input.read(buf)) > 0) md.update(buf, 0, n)
-  }
-  md.digest().encodeHex().toString()
-}
-
-gradle.allprojects { p ->
-  p.tasks.configureEach { t ->
-    if (t.name != "mergeDexRelease") return
-    t.doFirst {
-      def outDir = new File(System.getenv("MERGE_DEX_TRACE_DIR"))
-      outDir.mkdirs()
-      def out = new File(outDir, "mergeDexRelease-task-inputs.txt")
-      out.withPrintWriter("UTF-8") { pw ->
-        pw.println("task=" + t.path)
-        pw.println("class=" + t.class.name)
-        pw.println("projectDir=" + t.project.projectDir)
-        pw.println("=== inputs.files iteration order ===")
-        int i = 0
-        t.inputs.files.each { File f ->
-          pw.println(String.format("%06d\t%s\t%d\t%s", i++, f.absolutePath, f.isFile() ? f.length() : -1L, sha256(f)))
-        }
-        pw.println("=== inputs.properties ===")
-        t.inputs.properties.keySet().toList().sort().each { k ->
-          try { pw.println(k + "=" + String.valueOf(t.inputs.properties[k])) }
-          catch (Throwable e) { pw.println(k + "=<error:" + e.class.name + ">") }
-        }
-        pw.println("=== task FileCollection-like properties ===")
-        t.properties.keySet().toList().sort().each { k ->
-          try {
-            def v = t.properties[k]
-            if (v instanceof FileCollection) {
-              pw.println("PROPERTY " + k + " " + v.class.name)
-              int j = 0
-              v.each { File f ->
-                pw.println(String.format("  %06d\t%s\t%d\t%s", j++, f.absolutePath, f.isFile() ? f.length() : -1L, sha256(f)))
-              }
-            } else if (v instanceof Provider) {
-              def q = v.orNull
-              if (q instanceof FileSystemLocation) {
-                def ff = q.asFile
-                pw.println("PROPERTY " + k + " Provider<FileSystemLocation> " + ff.absolutePath + "\t" + (ff.isFile() ? ff.length() : -1L) + "\t" + sha256(ff))
-              }
-            }
-          } catch (Throwable e) {
-            pw.println("PROPERTY " + k + " <error:" + e.class.name + ">")
-          }
-        }
-      }
-      println("MERGE_DEX_TRACE " + t.path + " -> " + out.absolutePath)
-    }
-  }
-}
-GROOVY
-
-  TRACE_DIR="/tmp/homelibrary-merge-dex-trace"
-  rm -rf "$TRACE_DIR"
-  mkdir -p "$TRACE_DIR"
-  chown -R vagrant:vagrant "$TRACE_DIR"
-  chmod 0644 /tmp/homelibrary-merge-dex-trace.init.gradle
-  run_as_vagrant "export ANDROID_HOME=/opt/android-sdk ANDROID_SDK_ROOT=/opt/android-sdk GRADLE_USER_HOME=/home/vagrant/.gradle MERGE_DEX_TRACE_DIR='$TRACE_DIR'; cd '$SOURCE_DIR/android/app' && gradle mergeDexRelease --no-daemon -I /tmp/homelibrary-merge-dex-trace.init.gradle"
-  cp "$TRACE_DIR/mergeDexRelease-task-inputs.txt" "$OUT_DIR/"
-  sha256sum "$OUT_DIR/mergeDexRelease-task-inputs.txt" | tee "$OUT_DIR/mergeDexRelease-task-inputs.sha256"
-
-  python3 - "$SOURCE_DIR/android/app/build/intermediates/dex/release/mergeDexRelease" "$OUT_DIR/mergeDexRelease-output-manifest.txt" <<'PY'
-from pathlib import Path
-import hashlib, sys
-root, out = Path(sys.argv[1]), Path(sys.argv[2])
-rows=[]
-for p in sorted(root.rglob("*.dex"), key=lambda x:x.relative_to(root).as_posix()):
-    data=p.read_bytes()
-    rows.append(f"{hashlib.sha256(data).hexdigest()}\t{len(data)}\t{p.relative_to(root).as_posix()}")
-out.write_text("\n".join(rows)+"\n")
-for row in rows: print(row)
-PY
-  exit 0
-fi
 
 if [[ "$MERGE_DEX_TRACE" == "1" ]]; then
   echo "=== mergeDexRelease ordered-input trace ==="
