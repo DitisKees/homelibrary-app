@@ -440,6 +440,7 @@ GROOVY
   run_as_vagrant "export ANDROID_HOME=/opt/android-sdk ANDROID_SDK_ROOT=/opt/android-sdk GRADLE_USER_HOME=/home/vagrant/.gradle MERGE_DEX_TRACE_DIR=/tmp/homelibrary-merge-dex-trace; cd '$SOURCE_DIR/android/app' && gradle mergeDexRelease --no-daemon --max-workers="${MERGE_DEX_MAX_WORKERS:-1}" -I /tmp/merge-dex-trace.init.gradle"
   cp /tmp/homelibrary-merge-dex-trace/mergeDexRelease-task-inputs.txt "$OUT_DIR/"
   sha256sum "$OUT_DIR/mergeDexRelease-task-inputs.txt"
+  find "$SOURCE_DIR/android/app/build/intermediates/dex/release/mergeDexRelease" -type f -name "classes*.dex" -print0 | sort -z | xargs -0 sha256sum | tee "$OUT_DIR/mergeDexRelease-output-hashes.txt"
   exit 0
 fi
 
