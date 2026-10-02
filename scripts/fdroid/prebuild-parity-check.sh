@@ -55,6 +55,7 @@ if [[ "${GLIDE_REPRO_PROOF:-0}" == "1" ]]; then
   grep -q 'associateBy { it.name }.values.toList()' "$GLIDE_KSP_FILE"
   sed -i 's/associateBy { it.name }.values.toList()/associateBy { it.name }.values.sortedBy { it.name.qualifiedName }/' "$GLIDE_KSP_FILE"
   grep 'uniqueLibraryGlideModules = ' "$GLIDE_KSP_FILE"
+  chown -R vagrant:vagrant "$SOURCE_DIR/glide-proof"
   run_as_vagrant "cd '$SOURCE_DIR/glide-proof' && ./gradlew :annotation:ksp:publishToMavenLocal --no-daemon"
   mkdir -p /home/vagrant/.gradle
   cat > /home/vagrant/.gradle/init.gradle <<'GRADLE'
