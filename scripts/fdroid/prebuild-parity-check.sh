@@ -56,7 +56,14 @@ if [[ "${GLIDE_REPRO_PROOF:-0}" == "1" ]]; then
   sed -i 's/associateBy { it.name }.values.toList()/associateBy { it.name }.values.sortedBy { it.name.qualifiedName }/' "$GLIDE_KSP_FILE"
   grep 'uniqueLibraryGlideModules = ' "$GLIDE_KSP_FILE"
   chown -R vagrant:vagrant "$SOURCE_DIR/glide-proof"
-  run_as_vagrant "cd '$SOURCE_DIR/glide-proof' && ./gradlew :annotation:ksp:publishToMavenLocal --no-daemon"
+  apt-get update -qq
+  apt-get install -y openjdk-11-jdk-headless
+  run_as_vagrant "cd '$SOURCE_DIR/glide-proof' && JAVA_HOME=/usr/lib/jvm/java-11-openjdk-amd64 ./gradlew :annotation:ksp:publishToMavenLocal --no-daemon"
+  PATCHED_KSP_POM="/home/vagrant/.m2/repository/com/github/bumptech/glide/ksp/5.0.5/ksp-5.0.5.pom"
+  PATCHED_KSP_JAR="/home/vagrant/.m2/repository/com/github/bumptech/glide/ksp/5.0.5/ksp-5.0.5.jar"
+  test -s "$PATCHED_KSP_POM"
+  test -s "$PATCHED_KSP_JAR"
+  echo "patched_ksp_sha256=$(sha256sum "$PATCHED_KSP_JAR" | cut -d' ' -f1)"
   mkdir -p /home/vagrant/.gradle
   cat > /home/vagrant/.gradle/init.gradle <<'GRADLE'
 allprojects {
