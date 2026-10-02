@@ -2,7 +2,7 @@
 set -euo pipefail
 
 APP_ID="io.github.ditiskees.homelibrary"
-SOURCE_SHA="f5a6762bc092c3f9295658354aeaa76315fa84ec"
+SOURCE_SHA="${SOURCE_SHA:-f5a6762bc092c3f9295658354aeaa76315fa84ec}"
 SOURCE_DIR="/home/vagrant/build/$APP_ID"
 OUT_DIR="${GITHUB_WORKSPACE:-$PWD}/diagnostic-output"
 AGP_OVERRIDE="${AGP_OVERRIDE:-}"
