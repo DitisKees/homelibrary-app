@@ -642,6 +642,20 @@ sed -E 's/0x[0-9a-fA-F]{8}/0xRESOURCE_ID/g' "$OUT_DIR/aapt2-resources-dump.txt" 
 echo "aapt2_resources_dump_ids_normalized_sorted_sha256=$(sha256sum "$OUT_DIR/aapt2-resources-dump.ids-normalized.sorted.txt" | awk '{print $1}')"
 echo "aapt2_resources_dump_lines=$(wc -l < "$OUT_DIR/aapt2-resources-dump.txt")"
 
+sed -E 's/0x[0-9a-fA-F]{8}/0xRESOURCE_ID/g' "$OUT_DIR/aapt2-resources-dump.txt" > "$OUT_DIR/aapt2-resources-dump.ids-normalized.txt"
+
+grep '^  type ' "$OUT_DIR/aapt2-resources-dump.ids-normalized.txt" | LC_ALL=C sort > "$OUT_DIR/aapt2-type-summary.sorted.txt"
+echo "aapt2_type_summary_sha256=$(sha256sum "$OUT_DIR/aapt2-type-summary.sorted.txt" | awk '{print $1}')"
+echo "aapt2_type_summary_lines=$(wc -l < "$OUT_DIR/aapt2-type-summary.sorted.txt")"
+
+grep '^    resource ' "$OUT_DIR/aapt2-resources-dump.ids-normalized.txt" | LC_ALL=C sort > "$OUT_DIR/aapt2-resource-declarations.sorted.txt"
+echo "aapt2_resource_declarations_sha256=$(sha256sum "$OUT_DIR/aapt2-resource-declarations.sorted.txt" | awk '{print $1}')"
+echo "aapt2_resource_declarations_lines=$(wc -l < "$OUT_DIR/aapt2-resource-declarations.sorted.txt")"
+
+grep '^      ' "$OUT_DIR/aapt2-resources-dump.ids-normalized.txt" | LC_ALL=C sort > "$OUT_DIR/aapt2-resource-values.sorted.txt"
+echo "aapt2_resource_values_sha256=$(sha256sum "$OUT_DIR/aapt2-resource-values.sorted.txt" | awk '{print $1}')"
+echo "aapt2_resource_values_lines=$(wc -l < "$OUT_DIR/aapt2-resource-values.sorted.txt")"
+
 if [[ "$RESOURCE_ONLY_DIAGNOSTIC" == "1" ]]; then
   echo "resource_only_diagnostic_complete=true"
   exit 0
