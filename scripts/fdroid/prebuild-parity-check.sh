@@ -441,6 +441,14 @@ GROOVY
   cp /tmp/homelibrary-merge-dex-trace/mergeDexRelease-task-inputs.txt "$OUT_DIR/"
   sha256sum "$OUT_DIR/mergeDexRelease-task-inputs.txt"
   find "$SOURCE_DIR/android/app/build/intermediates/dex/release/mergeDexRelease" -type f -name "classes*.dex" -print0 | sort -z | xargs -0 sha256sum | tee "$OUT_DIR/mergeDexRelease-output-hashes.txt"
+  DEXDUMP="$(find /opt/android-sdk/build-tools -type f -name dexdump | sort -V | tail -n1)"
+  PRIMARY_DEX="$SOURCE_DIR/android/app/build/intermediates/dex/release/mergeDexRelease/classes.dex"
+  "$DEXDUMP" -f "$PRIMARY_DEX" | sed -n "s/.*Class descriptor  : '\\(.*\\)'/\\1/p" | LC_ALL=C sort > "$OUT_DIR/primary-dex-classes.txt"
+  echo "primary_dex_class_count=$(wc -l < "$OUT_DIR/primary-dex-classes.txt")"
+  sha256sum "$OUT_DIR/primary-dex-classes.txt"
+  find "$SOURCE_DIR/android/app/build/intermediates" -type f \( -iname '*main*dex*' -o -iname '*startup*' -o -iname '*profile*' \) -print0 | sort -z | while IFS= read -r -d '' p; do
+    printf '%s  %s\n' "$(sha256sum "$p" | cut -d' ' -f1)" "${p#"$SOURCE_DIR/android/app/build/"}"
+  done | tee "$OUT_DIR/primary-dex-related-files.txt"
   exit 0
 fi
 
