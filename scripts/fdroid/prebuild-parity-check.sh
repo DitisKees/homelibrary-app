@@ -47,6 +47,10 @@ run_as_vagrant() {
 run_as_vagrant "cd '$SOURCE_DIR' && node --version && npm --version" | tee "$OUT_DIR/node-toolchain.txt"
 
 run_as_vagrant "cd '$SOURCE_DIR' && sed -i -e 's/\"node\":\ \">=22.13.0 <23\"/\"node\":\ \">=22.13.0\"/' package.json && npm ci"
+if [[ "${GLIDE_REPRO_PROOF:-0}" == "1" ]]; then
+  echo "=== Glide reproducibility proof: 5.0.5 -> 5.0.9 ==="
+  run_as_vagrant "cd '$SOURCE_DIR' && test -f node_modules/expo-image/android/build.gradle && grep -q 'def GLIDE_VERSION = \"5.0.5\"' node_modules/expo-image/android/build.gradle && sed -i 's/def GLIDE_VERSION = \"5.0.5\"/def GLIDE_VERSION = \"5.0.9\"/' node_modules/expo-image/android/build.gradle && grep 'GLIDE_VERSION' node_modules/expo-image/android/build.gradle"
+fi
 
 if [[ -n "$AGP_OVERRIDE" ]]; then
   echo "=== AGP override: 8.12.0 -> $AGP_OVERRIDE ==="
