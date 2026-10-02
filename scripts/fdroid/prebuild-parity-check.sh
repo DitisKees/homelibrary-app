@@ -625,6 +625,21 @@ for row in rows:
     print(row)
 PY
 sha256sum "$OUT_DIR/linked-resource-archive-manifest.txt"
+
+echo "=== AAPT2 resource-table semantic checkpoint ==="
+LINKED_RESOURCE_ARCHIVE="$SOURCE_DIR/android/app/build/intermediates/linked_resources_binary_format/release/processReleaseResources/linked-resources-binary-format-release.ap_"
+AAPT2_BIN="$(find /home/vagrant/.gradle -type f -name aapt2 -perm -111 -print -quit)"
+if [[ -z "$AAPT2_BIN" ]]; then
+  echo "[FAIL] Could not locate extracted AAPT2 binary." >&2
+  exit 12
+fi
+echo "aapt2_bin=$AAPT2_BIN"
+"$AAPT2_BIN" dump resources "$LINKED_RESOURCE_ARCHIVE" > "$OUT_DIR/aapt2-resources-dump.txt"
+echo "aapt2_resources_dump_sha256=$(sha256sum "$OUT_DIR/aapt2-resources-dump.txt" | awk '{print $1}')"
+LC_ALL=C sort "$OUT_DIR/aapt2-resources-dump.txt" > "$OUT_DIR/aapt2-resources-dump.sorted.txt"
+echo "aapt2_resources_dump_sorted_sha256=$(sha256sum "$OUT_DIR/aapt2-resources-dump.sorted.txt" | awk '{print $1}')"
+echo "aapt2_resources_dump_lines=$(wc -l < "$OUT_DIR/aapt2-resources-dump.txt")"
+
 if [[ "$RESOURCE_ONLY_DIAGNOSTIC" == "1" ]]; then
   echo "resource_only_diagnostic_complete=true"
   exit 0
