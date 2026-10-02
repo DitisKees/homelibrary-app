@@ -8,6 +8,10 @@ on:
       - '.github/workflows/fdroid-prebuild-parity.yml'
       - 'scripts/fdroid/prebuild-parity-check.sh'
 
+concurrency:
+  group: fdroid-prebuild-parity-diagnostic
+  cancel-in-progress: true
+
 permissions:
   contents: read
 
