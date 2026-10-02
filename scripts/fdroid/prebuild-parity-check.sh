@@ -628,9 +628,9 @@ sha256sum "$OUT_DIR/linked-resource-archive-manifest.txt"
 
 echo "=== AAPT2 resource-table semantic checkpoint ==="
 LINKED_RESOURCE_ARCHIVE="$SOURCE_DIR/android/app/build/intermediates/linked_resources_binary_format/release/processReleaseResources/linked-resources-binary-format-release.ap_"
-AAPT2_BIN="$(find /home/vagrant/.gradle -type f -name aapt2 -perm -111 -print -quit)"
-if [[ -z "$AAPT2_BIN" ]]; then
-  echo "[FAIL] Could not locate extracted AAPT2 binary." >&2
+AAPT2_BIN="/opt/android-sdk/build-tools/36.0.0/aapt2"
+if [[ ! -x "$AAPT2_BIN" ]]; then
+  echo "[FAIL] Installed Android Build Tools AAPT2 not found at $AAPT2_BIN." >&2
   exit 12
 fi
 echo "aapt2_bin=$AAPT2_BIN"
