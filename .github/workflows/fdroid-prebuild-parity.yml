@@ -21,12 +21,13 @@ jobs:
       - name: Check out diagnostic branch
         uses: actions/checkout@v4
 
-      - name: Trace production AGP task inputs
+      - name: Test sorted directory enumeration
         env:
           DETERMINISTIC_AGP_WORKAROUNDS: "0"
           FULL_BUILD_DIAGNOSTIC: "0"
           AGP_OVERRIDE: ""
           ORDER_TRACE: "1"
+          SORT_DIRENTS_PRELOAD: "1"
         run: bash scripts/fdroid/prebuild-parity-check.sh
 
       - name: Upload prebuild manifest

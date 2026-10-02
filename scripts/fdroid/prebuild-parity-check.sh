@@ -9,6 +9,7 @@ AGP_OVERRIDE="${AGP_OVERRIDE:-}"
 DETERMINISTIC_AGP_WORKAROUNDS="${DETERMINISTIC_AGP_WORKAROUNDS:-0}"
 FULL_BUILD_DIAGNOSTIC="${FULL_BUILD_DIAGNOSTIC:-0}"
 ORDER_TRACE="${ORDER_TRACE:-0}"
+SORT_DIRENTS_PRELOAD="${SORT_DIRENTS_PRELOAD:-0}"
 
 mkdir -p "$OUT_DIR"
 rm -rf "$SOURCE_DIR"
@@ -30,7 +31,11 @@ git -C "$SOURCE_DIR" checkout --quiet --detach "$SOURCE_SHA"
 chown -R vagrant:vagrant "$SOURCE_DIR"
 
 run_as_vagrant() {
-  runuser -u vagrant -- env     HOME=/home/vagrant     PATH="$PATH"     bash -lc "$1"
+  runuser -u vagrant -- env \
+    HOME=/home/vagrant \
+    PATH="$PATH" \
+    LD_PRELOAD="${LD_PRELOAD:-}" \
+    bash -lc "$1"
 }
 
 run_as_vagrant "cd '$SOURCE_DIR' && node --version && npm --version" | tee "$OUT_DIR/node-toolchain.txt"
@@ -50,6 +55,263 @@ run_as_vagrant "cd '$SOURCE_DIR' && npx expo prebuild -p android --clean"
 run_as_vagrant "cd '$SOURCE_DIR' && bash scripts/prepare-android-gradle-properties.sh"
 run_as_vagrant "cd '$SOURCE_DIR' && printf '%s\n' 'org.gradle.jvmargs=-Xmx3g -XX:MaxMetaspaceSize=1g -Dfile.encoding=UTF-8' 'org.gradle.workers.max=2' 'kotlin.compiler.execution.strategy=in-process' >> android/gradle.properties"
 run_as_vagrant "cd '$SOURCE_DIR' && bash scripts/prepare-android-gradle-properties.sh"
+
+if [[ "$SORT_DIRENTS_PRELOAD" == "1" ]]; then
+  echo "=== deterministic sorted readdir preload ==="
+  if ! command -v gcc >/dev/null 2>&1; then
+    DEBIAN_FRONTEND=noninteractive apt-get install -y gcc libc6-dev
+  fi
+  cat > /tmp/homelibrary-sortdir-preload.c <<'C'
+#define _GNU_SOURCE
+#include <dirent.h>
+#include <dlfcn.h>
+#include <errno.h>
+#include <pthread.h>
+#include <stddef.h>
+#include <stdint.h>
+#include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
+
+typedef struct SortEntry {
+    uint64_t ino;
+    int64_t off;
+    unsigned short reclen;
+    unsigned char type;
+    char *name;
+} SortEntry;
+
+typedef struct SortState {
+    DIR *dir;
+    SortEntry *entries;
+    size_t count;
+    size_t capacity;
+    size_t index;
+    int loaded;
+    struct SortState *next;
+} SortState;
+
+static pthread_mutex_t state_lock = PTHREAD_MUTEX_INITIALIZER;
+static pthread_once_t init_once = PTHREAD_ONCE_INIT;
+static SortState *states = NULL;
+
+static struct dirent *(*real_readdir_fn)(DIR *);
+static struct dirent64 *(*real_readdir64_fn)(DIR *);
+static int (*real_closedir_fn)(DIR *);
+static void (*real_rewinddir_fn)(DIR *);
+static long (*real_telldir_fn)(DIR *);
+static void (*real_seekdir_fn)(DIR *, long);
+
+static void init_real(void) {
+    real_readdir_fn = dlsym(RTLD_NEXT, "readdir");
+    real_readdir64_fn = dlsym(RTLD_NEXT, "readdir64");
+    real_closedir_fn = dlsym(RTLD_NEXT, "closedir");
+    real_rewinddir_fn = dlsym(RTLD_NEXT, "rewinddir");
+    real_telldir_fn = dlsym(RTLD_NEXT, "telldir");
+    real_seekdir_fn = dlsym(RTLD_NEXT, "seekdir");
+    if (!real_readdir_fn || !real_readdir64_fn || !real_closedir_fn) {
+        const char msg[] = "sortdir-preload: failed to resolve libc directory functions\n";
+        write(2, msg, sizeof(msg) - 1);
+        _exit(127);
+    }
+}
+
+static int entry_cmp(const void *a, const void *b) {
+    const SortEntry *ea = a;
+    const SortEntry *eb = b;
+    return strcmp(ea->name, eb->name);
+}
+
+static SortState *find_state(DIR *dir) {
+    for (SortState *s = states; s; s = s->next) {
+        if (s->dir == dir) return s;
+    }
+    return NULL;
+}
+
+static SortState *get_state(DIR *dir) {
+    SortState *s = find_state(dir);
+    if (s) return s;
+    s = calloc(1, sizeof(*s));
+    if (!s) return NULL;
+    s->dir = dir;
+    s->next = states;
+    states = s;
+    return s;
+}
+
+static int append_entry(SortState *s, uint64_t ino, int64_t off,
+                        unsigned short reclen, unsigned char type,
+                        const char *name) {
+    if (s->count == s->capacity) {
+        size_t cap = s->capacity ? s->capacity * 2 : 32;
+        SortEntry *p = realloc(s->entries, cap * sizeof(*p));
+        if (!p) return -1;
+        s->entries = p;
+        s->capacity = cap;
+    }
+    SortEntry *e = &s->entries[s->count++];
+    e->ino = ino;
+    e->off = off;
+    e->reclen = reclen;
+    e->type = type;
+    e->name = strdup(name);
+    return e->name ? 0 : -1;
+}
+
+static int load_entries(DIR *dir, SortState *s, int use64) {
+    errno = 0;
+    if (use64) {
+        struct dirent64 *d;
+        while ((d = real_readdir64_fn(dir)) != NULL) {
+            if (append_entry(s, d->d_ino, d->d_off, d->d_reclen, d->d_type, d->d_name) != 0)
+                return -1;
+        }
+    } else {
+        struct dirent *d;
+        while ((d = real_readdir_fn(dir)) != NULL) {
+            if (append_entry(s, d->d_ino, d->d_off, d->d_reclen, d->d_type, d->d_name) != 0)
+                return -1;
+        }
+    }
+    if (errno != 0) return -1;
+    qsort(s->entries, s->count, sizeof(*s->entries), entry_cmp);
+    s->loaded = 1;
+    s->index = 0;
+    return 0;
+}
+
+static void free_state(SortState *s) {
+    if (!s) return;
+    for (size_t i = 0; i < s->count; ++i) free(s->entries[i].name);
+    free(s->entries);
+    free(s);
+}
+
+struct dirent *readdir(DIR *dir) {
+    static __thread struct dirent out;
+    pthread_once(&init_once, init_real);
+    pthread_mutex_lock(&state_lock);
+    SortState *s = get_state(dir);
+    if (!s || (!s->loaded && load_entries(dir, s, 0) != 0)) {
+        pthread_mutex_unlock(&state_lock);
+        return NULL;
+    }
+    if (s->index >= s->count) {
+        pthread_mutex_unlock(&state_lock);
+        errno = 0;
+        return NULL;
+    }
+    SortEntry *e = &s->entries[s->index++];
+    memset(&out, 0, sizeof(out));
+    out.d_ino = (ino_t)e->ino;
+    out.d_off = (off_t)e->off;
+    out.d_reclen = e->reclen;
+    out.d_type = e->type;
+    strncpy(out.d_name, e->name, sizeof(out.d_name) - 1);
+    pthread_mutex_unlock(&state_lock);
+    errno = 0;
+    return &out;
+}
+
+struct dirent64 *readdir64(DIR *dir) {
+    static __thread struct dirent64 out;
+    pthread_once(&init_once, init_real);
+    pthread_mutex_lock(&state_lock);
+    SortState *s = get_state(dir);
+    if (!s || (!s->loaded && load_entries(dir, s, 1) != 0)) {
+        pthread_mutex_unlock(&state_lock);
+        return NULL;
+    }
+    if (s->index >= s->count) {
+        pthread_mutex_unlock(&state_lock);
+        errno = 0;
+        return NULL;
+    }
+    SortEntry *e = &s->entries[s->index++];
+    memset(&out, 0, sizeof(out));
+    out.d_ino = (ino64_t)e->ino;
+    out.d_off = (off64_t)e->off;
+    out.d_reclen = e->reclen;
+    out.d_type = e->type;
+    strncpy(out.d_name, e->name, sizeof(out.d_name) - 1);
+    pthread_mutex_unlock(&state_lock);
+    errno = 0;
+    return &out;
+}
+
+int closedir(DIR *dir) {
+    pthread_once(&init_once, init_real);
+    pthread_mutex_lock(&state_lock);
+    SortState **pp = &states;
+    SortState *found = NULL;
+    while (*pp) {
+        if ((*pp)->dir == dir) {
+            found = *pp;
+            *pp = found->next;
+            break;
+        }
+        pp = &(*pp)->next;
+    }
+    pthread_mutex_unlock(&state_lock);
+    free_state(found);
+    return real_closedir_fn(dir);
+}
+
+void rewinddir(DIR *dir) {
+    pthread_once(&init_once, init_real);
+    pthread_mutex_lock(&state_lock);
+    SortState *s = find_state(dir);
+    if (s && s->loaded) {
+        s->index = 0;
+        pthread_mutex_unlock(&state_lock);
+        return;
+    }
+    pthread_mutex_unlock(&state_lock);
+    if (real_rewinddir_fn) real_rewinddir_fn(dir);
+}
+
+long telldir(DIR *dir) {
+    pthread_once(&init_once, init_real);
+    pthread_mutex_lock(&state_lock);
+    SortState *s = find_state(dir);
+    if (s && s->loaded) {
+        long pos = (long)s->index;
+        pthread_mutex_unlock(&state_lock);
+        return pos;
+    }
+    pthread_mutex_unlock(&state_lock);
+    return real_telldir_fn ? real_telldir_fn(dir) : -1;
+}
+
+void seekdir(DIR *dir, long loc) {
+    pthread_once(&init_once, init_real);
+    pthread_mutex_lock(&state_lock);
+    SortState *s = find_state(dir);
+    if (s && s->loaded && loc >= 0 && (size_t)loc <= s->count) {
+        s->index = (size_t)loc;
+        pthread_mutex_unlock(&state_lock);
+        return;
+    }
+    pthread_mutex_unlock(&state_lock);
+    if (real_seekdir_fn) real_seekdir_fn(dir, loc);
+}
+C
+  gcc -shared -fPIC -O2 -Wall -Wextra \
+    -o /tmp/homelibrary-sortdir-preload.so /tmp/homelibrary-sortdir-preload.c \
+    -ldl -pthread
+  chmod 0755 /tmp/homelibrary-sortdir-preload.so
+  export LD_PRELOAD=/tmp/homelibrary-sortdir-preload.so
+  echo "sortdir_preload=$LD_PRELOAD"
+  run_as_vagrant "python3 - <<'PY'
+import os, tempfile
+with tempfile.TemporaryDirectory() as d:
+    for n in ['z','b','a','m']:
+        open(os.path.join(d,n),'w').close()
+    print('sortdir_probe=' + ','.join(x.name for x in os.scandir(d)))
+PY"
+fi
+
 if [[ "$DETERMINISTIC_AGP_WORKAROUNDS" == "1" ]]; then
   echo "=== deterministic AGP workarounds ==="
   run_as_vagrant "cd '$SOURCE_DIR' && printf '%s\\n' 'android.enableResourceOptimizations=false' 'android.useFullClasspathForDexingTransform=true' >> android/gradle.properties"
