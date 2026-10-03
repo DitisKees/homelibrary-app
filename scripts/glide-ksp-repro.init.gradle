@@ -1,38 +1,41 @@
 // HomeLibrary reproducibility backport for Glide 5.0.5 KSP.
 // Applied explicitly with: ./gradlew -I ../scripts/glide-ksp-repro.init.gradle <task>
 //
-// KSP creates kspReleaseKotlinProcessorClasspath as the resolvable processor
-// classpath. Keep Expo's stock dependency graph, but replace only the Glide
-// processor artifact on that derived classpath.
+// KSP lazily creates kspReleaseKotlinProcessorClasspath while applying itself
+// to the release compilation. Observe configurations as they are created;
+// do not assume the configuration exists during project evaluation.
 
 def homeLibraryRoot = initscript.sourceFile.parentFile.parentFile
 def patchedJar = new File(homeLibraryRoot,
     "build/repro-tools/glide-ksp-5.0.5-homelibrary-repro1.normalized.jar")
-
 if (!patchedJar.isFile()) {
     throw new GradleException("Patched Glide KSP processor missing: " + patchedJar)
 }
 
-gradle.afterProject { project ->
-    if (project.path != ":expo-image") {
-        return
-    }
+gradle.beforeProject { project ->
+    if (project.path != ":expo-image") return
 
-    def cfg = project.configurations.findByName("kspReleaseKotlinProcessorClasspath")
-    if (cfg == null) {
-        throw new GradleException(
-            "Expected KSP processor classpath kspReleaseKotlinProcessorClasspath was not created"
-        )
-    }
+    def matched = new java.util.concurrent.atomic.AtomicBoolean(false)
 
-    // Remove only the stock Glide processor module from the derived processor
-    // classpath. Its transitive dependencies remain available through the
-    // original KSP dependency graph.
-    cfg.exclude(group: "com.github.bumptech.glide", module: "ksp")
-    project.dependencies.add(cfg.name, project.files(patchedJar))
+    project.configurations.configureEach { cfg ->
+        if (cfg.name != "kspReleaseKotlinProcessorClasspath") return
+        matched.set(true)
+
+        // KSP has already wired this derived configuration to the normal
+        // Expo 'ksp' dependency graph. Exclude only Glide's processor module
+        // and add the patched processor JAR; all transitive dependencies stay.
+        cfg.exclude(group: "com.github.bumptech.glide", module: "ksp")
+        project.dependencies.add(cfg.name, project.files(patchedJar))
+    }
 
     project.tasks.register("homeLibraryGlideKspResolution") {
         doLast {
+            if (!matched.get()) {
+                throw new GradleException(
+                    "KSP never created kspReleaseKotlinProcessorClasspath for :expo-image"
+                )
+            }
+            def cfg = project.configurations.getByName("kspReleaseKotlinProcessorClasspath")
             def files = cfg.files
             def patched = files.findAll { it.canonicalFile == patchedJar.canonicalFile }
             if (patched.size() != 1) {
