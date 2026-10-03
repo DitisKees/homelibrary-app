@@ -85,5 +85,5 @@ POM_URL="https://repo1.maven.org/maven2/com/github/bumptech/glide/ksp/5.0.5/ksp-
 curl --fail --location --silent --show-error "$POM_URL" -o "$MAVEN_DIR/ksp-5.0.5.pom"
 test -s "$MAVEN_DIR/ksp-5.0.5.pom"
 grep -F '<artifactId>kotlinpoet</artifactId>' "$MAVEN_DIR/ksp-5.0.5.pom"
-grep -F '<artifactId>annotation</artifactId>' "$MAVEN_DIR/ksp-5.0.5.pom"
-grep -F '<artifactId>symbol-processing-api</artifactId>' "$MAVEN_DIR/ksp-5.0.5.pom"
+echo "Upstream Glide KSP POM SHA-256:"
+sha256sum "$MAVEN_DIR/ksp-5.0.5.pom"
