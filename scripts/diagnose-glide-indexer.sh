@@ -4,7 +4,7 @@ set -euo pipefail
 ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 cd "$ROOT"
 
-PATCHED_JAR="$ROOT/build/repro-maven/com/github/bumptech/glide/ksp/5.0.5-homelibrary-repro1/ksp-5.0.5-homelibrary-repro1.jar"
+PATCHED_JAR="$ROOT/build/repro-tools/glide-ksp-5.0.5-homelibrary-repro1.normalized.jar"
 test -f "$PATCHED_JAR"
 echo "=== use prebuilt deterministic Glide 5.0.5 KSP processor ==="
 sha256sum "$PATCHED_JAR"
@@ -29,7 +29,8 @@ echo "=== verify declarative dependency redirect on actual resolvable KSP classp
   ./gradlew -I ../scripts/glide-ksp-repro.init.gradle :expo-image:homeLibraryGlideKspResolution |
     tee "$ROOT/diagnostic-output-glide-dependencies.txt"
 )
-grep -F 'HOMELIBRARY_KSP_RESOLVED=com.github.bumptech.glide:ksp:5.0.5-homelibrary-repro1' "$ROOT/diagnostic-output-glide-dependencies.txt"
+grep -F 'HOMELIBRARY_KSP_CLASSPATH=kspReleaseKotlinProcessorClasspath' "$ROOT/diagnostic-output-glide-dependencies.txt"
+grep -F 'HOMELIBRARY_KSP_PATCHED=' "$ROOT/diagnostic-output-glide-dependencies.txt"
 
 echo "=== run expo-image KSP only ==="
 (
