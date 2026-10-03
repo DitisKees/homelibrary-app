@@ -10,7 +10,14 @@ if [[ ! -f "$PROPERTIES_FILE" ]]; then
 fi
 
 BARCODE_PROPERTY='expo.camera.barcode-scanner-enabled=false'
-DEV_SERVER_PROPERTY='reactNativeDevServerIp=localhost'
+
+# The config plugin must generate exactly one canonical override. Reject stale
+# or conflicting generated projects before any resource compilation starts.
+if [[ "$(grep -Ec '^[[:space:]]*reactNativeDevServerIp([[:space:]]|=|:|$)' "$PROPERTIES_FILE" || true)" != 1 ]] ||
+   ! grep -qxF 'reactNativeDevServerIp=localhost' "$PROPERTIES_FILE"; then
+  echo "[FAIL] Expected exactly one reactNativeDevServerIp=localhost in $PROPERTIES_FILE; rerun Expo prebuild." >&2
+  exit 1
+fi
 
 if ! grep -qxF "$BARCODE_PROPERTY" "$PROPERTIES_FILE"; then
   echo "[FAIL] Expo Camera barcode scanning is not explicitly disabled in $PROPERTIES_FILE." >&2
@@ -31,18 +38,4 @@ if ! grep -qxF "$BARCODE_PROPERTY" "$PROPERTIES_FILE"; then
   exit 1
 fi
 
-# React Native otherwise derives this resource from the first non-loopback IPv4
-# address of the build host. That makes react_native_dev_server_ip differ across
-# otherwise identical release builders and breaks APK reproducibility.
-if grep -q '^reactNativeDevServerIp=' "$PROPERTIES_FILE"; then
-  sed -i 's/^reactNativeDevServerIp=.*/reactNativeDevServerIp=localhost/' "$PROPERTIES_FILE"
-else
-  printf '%s\n' "$DEV_SERVER_PROPERTY" >> "$PROPERTIES_FILE"
-fi
-
-if ! grep -qxF "$DEV_SERVER_PROPERTY" "$PROPERTIES_FILE"; then
-  echo "[FAIL] React Native dev-server IP is not deterministic in $PROPERTIES_FILE." >&2
-  exit 1
-fi
-
-echo "[PASS] Expo Camera barcode scanning remains disabled and React Native dev-server IP is deterministic."
+echo "[PASS] Expo Camera barcode scanning remains disabled and Gradle properties are safe to append."

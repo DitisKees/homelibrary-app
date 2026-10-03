@@ -26,6 +26,9 @@ jobs:
       - name: Install dependencies
         run: npm ci
 
+      - name: Check reproducible Gradle configuration
+        run: node --test scripts/test-reproducible-gradle.mjs
+
       - name: Audit F-Droid npm dependencies
         run: npm run audit:fdroid-npm
 

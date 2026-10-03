@@ -1,4 +1,4 @@
-const { withAppBuildGradle } = require('expo/config-plugins');
+const { withAppBuildGradle, withGradleProperties } = require('expo/config-plugins');
 
 const MARKER = '// HomeLibrary reproducible native builds';
 
@@ -6,6 +6,21 @@ const MARKER = '// HomeLibrary reproducible native builds';
 // externalNativeBuild compiler flags used by React Native codegen. F-Droid
 // metadata must not patch the generated Gradle project after Expo prebuild.
 module.exports = function withReproducibleNativeBuilds(config) {
+  config = withGradleProperties(config, (config) => {
+    // React Native otherwise embeds the builder's first non-loopback IPv4
+    // address in every variant, including release. Configure the supported
+    // property through Expo's parsed model before Gradle generates resources.
+    config.modResults = config.modResults.filter(
+      (item) => item.type !== 'property' || item.key.trim() !== 'reactNativeDevServerIp',
+    );
+    config.modResults.push({
+      type: 'property',
+      key: 'reactNativeDevServerIp',
+      value: 'localhost',
+    });
+    return config;
+  });
+
   return withAppBuildGradle(config, (config) => {
     if (config.modResults.language !== 'groovy') {
       throw new Error('with-reproducible-native-builds requires a Groovy app build.gradle');

@@ -25,6 +25,12 @@ fi
 
 BADGING="$($AAPT dump badging "$APK")"
 
+# Inspect the packaged resource, not only the generated Gradle property. A
+# command-line/user Gradle override can otherwise reintroduce the host address.
+AAPT2="$(dirname "$AAPT")/aapt2"
+test -x "$AAPT2"
+python3 "$ROOT/scripts/verify-release-dev-server.py" "$AAPT2" "$APK"
+
 if ! grep -Fq "package: name='$EXPECTED_PACKAGE'" <<<"$BADGING"; then
   echo "[FAIL] APK package name is not $EXPECTED_PACKAGE." >&2
   grep -m1 '^package:' <<<"$BADGING" >&2 || true

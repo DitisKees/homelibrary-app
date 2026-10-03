@@ -18,12 +18,24 @@ Builds:
     commit: v1.0.8
     sudo:
       - echo "deb https://deb.debian.org/debian forky main" > /etc/apt/sources.list.d/forky.list
-      - apt-get update
-      - apt-get install -y -t forky npm
+      - echo "deb https://deb.debian.org/debian bookworm main" > /etc/apt/sources.list.d/bookworm.list
+      - echo "deb https://deb.debian.org/debian bullseye main" > /etc/apt/sources.list.d/bullseye.list
+      - apt-get -o Acquire::Retries=3 update
+      - apt-get -o Acquire::Retries=3 install -y -t forky npm
+      - apt-get -o Acquire::Retries=3 install -y -t bookworm openjdk-17-jdk-headless
+      - apt-get -o Acquire::Retries=3 install -y -t bullseye openjdk-11-jdk-headless
+      - install -d -o vagrant -g vagrant /usr/share/maven-repo/com/github/bumptech/glide/ksp/5.0.5
     init:
       - node --version
       - npm --version
       - sed -i -e 's/"node":\ ">=22.13.0 <23"/"node":\ ">=22.13.0"/' package.json
+      - mkdir -p "$HOME/.gradle"
+      - echo 'org.gradle.java.installations.paths=/usr/lib/jvm/java-11-openjdk-amd64,/usr/lib/jvm/java-17-openjdk-amd64,/usr/lib/jvm/java-21-openjdk-amd64' >> "$HOME/.gradle/gradle.properties"
+      - JAVA_HOME=/usr/lib/jvm/java-17-openjdk-amd64 bash scripts/build-glide-ksp-repro.sh
+      - mkdir -p /usr/share/maven-repo/com/github/bumptech/glide/ksp/5.0.5
+      - cp build/repro-maven/com/github/bumptech/glide/ksp/5.0.5/ksp-5.0.5.jar /usr/share/maven-repo/com/github/bumptech/glide/ksp/5.0.5/
+      - cp build/repro-maven/com/github/bumptech/glide/ksp/5.0.5/ksp-5.0.5.pom /usr/share/maven-repo/com/github/bumptech/glide/ksp/5.0.5/
+      - rm -rf build/repro-maven build/repro-tools
       - npm ci
     output: android/app/build/outputs/apk/release/app-release-unsigned.apk
     prebuild:
@@ -49,7 +61,7 @@ Builds:
       - node_modules
     build:
       - cd android/app
-      - gradle assembleRelease
+      - gradle -I ../../scripts/glide-ksp-repro.init.gradle assembleRelease
     ndk: r27b
     postbuild:
       - python3 scripts/normalize-fdroid-apk-build-ids.py android/app/build/outputs/apk/release/app-release-unsigned.apk

@@ -165,7 +165,13 @@ Review `rewritemeta` output rather than blindly committing it.
 
 The open fdroiddata MR uses the reviewer-requested React Native recipe shape with Debian forky Node/npm, Expo prebuild, and direct Gradle assembly. Per maintainer review, `externalNativeBuild` is configured by the checked-in Expo config plugin and APK build-ID normalization is called from the checked-in Python helper; the metadata must not embed either Python implementation.
 
-The current remote reproducibility failure is **not** a build failure: F-Droid completes the Android build, but its rebuilt APK differs from the published reference in `classes.dex`, `resources.arsc`, and `assets/dexopt/baseline.prof`. The GitHub harness produces `c1e9a6f4...`; the GitLab/F-Droid runner reproducibly produces `31343023...`. See `fdroid-harness.md` for the exact ruled-out causes and the remaining hypotheses.
+The original v1.0.8 remote comparison differs in DEX, ART profile, and resource
+table entries. Current-source diagnostics have resolved the DEX/profile delta
+through deterministic Glide KSP generation. The remaining table delta was
+isolated to React Native's host-derived dev-server IP; the Expo reproducibility
+plugin now pins it to `localhost`, with checks before compilation and in the
+packaged APK. The immutable v1.0.8 release remains unchanged. See
+`fdroid-harness.md` for evidence and the outstanding full cross-runner gate.
 
 The F-Droid parent build environment observed during review supplied Node 20.19.2, while the current React Native/Expo toolchain requires a newer supported Node baseline. The fdroiddata recipe should keep the reviewer-approved Debian packaging approach where possible, but the final build-tool solution must satisfy the actual React Native/Expo engine requirement and should be discussed transparently in the MR rather than hidden with disabled checks.
 

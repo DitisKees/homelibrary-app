@@ -36,6 +36,14 @@ The script stages source-controlled inputs at the fixed `/tmp/homelibrary-fdroid
 
 Upstream CI retains the existing two-clean-checkout Android reproducibility check and also runs two independent F-Droid buildserver source builds. The harness pins the buildserver image by digest plus exact fdroidserver/fdroiddata commits, derives source-test metadata structurally with fdroidserver itself, runs the live scanner and `fdroid build --refresh-scanner --on-server`, and requires both unsigned APKs to be byte-for-byte identical before release. Release verification is a separate path that uses canonical `.fdroid.yml` unchanged. These checks prove determinism on the GitHub-hosted harness, not automatic parity with F-Droid's GitLab SaaS runner.
 
+### Glide KSP reproducibility backport
+
+Expo Image resolves Glide 5.0.5's KSP processor. Cross-runner diagnostics isolated a nondeterministic iteration in Glide's `LibraryGlideModules.parseUnique`: the generated `GlideIndexer` could enumerate library modules in a different order on GitHub and GitLab, changing downstream DEX output.
+
+HomeLibrary keeps the stock Glide 5.0.5 runtime and backports only deterministic ordering to the KSP processor. `scripts/build-glide-ksp-repro.sh` checks out the immutable Glide 5.0.5 tag, applies the one-line ordering fix, builds the processor from source, normalizes only JAR ZIP metadata, and creates a local Maven mirror using Glide's unmodified published POM. `scripts/glide-ksp-repro.init.gradle` restricts that mirror to `com.github.bumptech.glide:ksp:5.0.5`, so no other dependency can be shadowed.
+
+The focused proof generated the same Glide indexer on independent GitHub and GitLab environments, SHA-256 `bb57a537b3084dc8845d11f01e167df3c61675a22ffbc7655f1f9de60e41627a`. The production F-Droid recipe builds this processor during the network-enabled init phase using explicit Debian JDK 11/17 toolchains; the Android release itself remains on the buildserver's Java 21 baseline.
+
 ## Production signing and reproducible verification
 
 The production signing workflow keeps signing outside Gradle, but the unsigned artifact is now built by the F-Droid buildserver path itself:
