@@ -1,63 +1,55 @@
 // HomeLibrary reproducibility backport for Glide 5.0.5 KSP.
 // Applied explicitly with: ./gradlew -I ../scripts/glide-ksp-repro.init.gradle <task>
 //
-// This does not modify Expo or node_modules. It redirects exactly one pinned
-// processor dependency and fails if the local backport repository is absent.
+// KSP creates kspReleaseKotlinProcessorClasspath as the resolvable processor
+// classpath. Keep Expo's stock dependency graph, but replace only the Glide
+// processor artifact on that derived classpath.
 
 def homeLibraryRoot = initscript.sourceFile.parentFile.parentFile
-def repoDir = new File(homeLibraryRoot, "build/repro-maven")
-if (!repoDir.isDirectory()) {
-    throw new GradleException("HomeLibrary Glide KSP backport repository missing: " + repoDir)
+def patchedJar = new File(homeLibraryRoot,
+    "build/repro-tools/glide-ksp-5.0.5-homelibrary-repro1.normalized.jar")
+
+if (!patchedJar.isFile()) {
+    throw new GradleException("Patched Glide KSP processor missing: " + patchedJar)
 }
 
-gradle.beforeProject { project ->
-    project.repositories {
-        maven {
-            name = "homeLibraryGlideKspRepro"
-            url = repoDir.toURI()
-            content {
-                includeVersion("com.github.bumptech.glide", "ksp", "5.0.5-homelibrary-repro1")
-            }
-        }
-    }
-
-    project.configurations.configureEach { configuration ->
-        configuration.resolutionStrategy.eachDependency { details ->
-            if (details.requested.group == "com.github.bumptech.glide" &&
-                details.requested.name == "ksp" &&
-                details.requested.version == "5.0.5") {
-                details.useVersion("5.0.5-homelibrary-repro1")
-                details.because("Backport Glide deterministic LibraryGlideModule ordering for reproducible builds")
-            }
-        }
-    }
-}
-
-
-// Diagnostic task: resolve only configurations that actually inherit a Glide KSP declaration.
 gradle.afterProject { project ->
-    if (project.path == ":expo-image") {
-        project.tasks.register("homeLibraryGlideKspResolution") {
-            doLast {
-                def candidates = project.configurations.findAll { cfg ->
-                    cfg.canBeResolved && cfg.allDependencies.any { dep ->
-                        dep.group == "com.github.bumptech.glide" && dep.name == "ksp"
-                    }
-                }
-                if (candidates.empty) {
-                    throw new GradleException("No resolvable expo-image configuration inherits the Glide KSP dependency")
-                }
-                candidates.each { cfg ->
-                    println("HOMELIBRARY_KSP_CONFIGURATION=" + cfg.name)
-                    def artifacts = cfg.resolvedConfiguration.resolvedArtifacts.findAll {
-                        it.moduleVersion.id.group == "com.github.bumptech.glide" && it.name == "ksp"
-                    }
-                    artifacts.each { artifact ->
-                        println("HOMELIBRARY_KSP_RESOLVED=" + artifact.moduleVersion.id)
-                        println("HOMELIBRARY_KSP_FILE=" + artifact.file)
-                    }
-                }
+    if (project.path != ":expo-image") {
+        return
+    }
+
+    def cfg = project.configurations.findByName("kspReleaseKotlinProcessorClasspath")
+    if (cfg == null) {
+        throw new GradleException(
+            "Expected KSP processor classpath kspReleaseKotlinProcessorClasspath was not created"
+        )
+    }
+
+    // Remove only the stock Glide processor module from the derived processor
+    // classpath. Its transitive dependencies remain available through the
+    // original KSP dependency graph.
+    cfg.exclude(group: "com.github.bumptech.glide", module: "ksp")
+    project.dependencies.add(cfg.name, project.files(patchedJar))
+
+    project.tasks.register("homeLibraryGlideKspResolution") {
+        doLast {
+            def files = cfg.files
+            def patched = files.findAll { it.canonicalFile == patchedJar.canonicalFile }
+            if (patched.size() != 1) {
+                throw new GradleException(
+                    "Expected patched Glide processor exactly once, found " + patched.size()
+                )
             }
+            def stock = files.findAll {
+                it.name == "ksp-5.0.5.jar" &&
+                it.canonicalFile != patchedJar.canonicalFile
+            }
+            if (!stock.empty) {
+                throw new GradleException("Stock Glide ksp-5.0.5.jar still present: " + stock)
+            }
+            println("HOMELIBRARY_KSP_CLASSPATH=" + cfg.name)
+            println("HOMELIBRARY_KSP_PATCHED=" + patchedJar.canonicalPath)
+            println("HOMELIBRARY_KSP_FILE_COUNT=" + files.size())
         }
     }
 }
