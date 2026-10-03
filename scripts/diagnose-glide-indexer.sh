@@ -12,6 +12,10 @@ sha256sum "$PATCHED_JAR"
 echo "=== Expo 57 prebuild ==="
 rm -rf android
 npx expo prebuild --clean --platform android --no-install
+bash scripts/prepare-android-gradle-properties.sh
+echo "=== generated Android toolchain ==="
+grep distributionUrl android/gradle/wrapper/gradle-wrapper.properties
+grep -E 'android\.(compileSdkVersion|targetSdkVersion|buildToolsVersion)' android/gradle.properties || true
 
 echo "=== verify stock Expo image dependency remains untouched ==="
 EXPO_IMAGE_GRADLE="$ROOT/node_modules/expo-image/android/build.gradle"
