@@ -11,6 +11,14 @@ fi
 
 BARCODE_PROPERTY='expo.camera.barcode-scanner-enabled=false'
 
+# The config plugin must generate exactly one canonical override. Reject stale
+# or conflicting generated projects before any resource compilation starts.
+if [[ "$(grep -Ec '^[[:space:]]*reactNativeDevServerIp([[:space:]]|=|:|$)' "$PROPERTIES_FILE" || true)" != 1 ]] ||
+   ! grep -qxF 'reactNativeDevServerIp=localhost' "$PROPERTIES_FILE"; then
+  echo "[FAIL] Expected exactly one reactNativeDevServerIp=localhost in $PROPERTIES_FILE; rerun Expo prebuild." >&2
+  exit 1
+fi
+
 if ! grep -qxF "$BARCODE_PROPERTY" "$PROPERTIES_FILE"; then
   echo "[FAIL] Expo Camera barcode scanning is not explicitly disabled in $PROPERTIES_FILE." >&2
   grep -nF 'expo.camera.barcode-scanner-enabled' "$PROPERTIES_FILE" >&2 || true

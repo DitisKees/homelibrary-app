@@ -348,6 +348,37 @@ Still open:
 
 Do **not** re-run any ruled-out experiment unless the relevant toolchain/source changes. Add new evidence to this section instead.
 
+### Confirmed fixes and remaining validation (2026-10-03)
+
+PR #47 backports deterministic Glide KSP module ordering. The full production
+recipe now produces identical DEX and ART profile entries on GitHub and GitLab.
+The two GitHub source builds at `f5261fe2da2da67124718ee0947b032ccd49ba6c`
+produced APK SHA-256 `1927eeb887398ce227b4240376f431cd5cbf5f8223f8a47de71457a0cb01af85`.
+GitLab job `16913602113` built the identical source tree at merged commit
+`ffcad1fe0cad8956bc0f5390c9b67ad08284e5ce` and produced
+`0ece9f2f9fd2c27a2d63fade633353c8019a5c64d0730c3c481cf582fa9515a8`.
+
+Artifact inspection found 1,266 identical entries. Only `resources.arsc`
+differed, in exactly two bytes: the `react_native_dev_server_ip` string was
+`172.18.0.2` on GitHub and `172.17.0.3` on GitLab. This is React Native's
+documented Gradle-property fallback to the builder's IP, not an AAPT2 ordering
+issue. The earlier targeted fix in PR #46 was still unmerged when #47 was built.
+
+The upstream Expo reproducibility plugin now sets `reactNativeDevServerIp` to
+`localhost` using Expo's parsed Gradle-properties model. It removes prior
+definitions before adding exactly one canonical value. The pre-build guard
+rejects missing/conflicting definitions, and final APK verification uses AAPT2
+to require the actual default `string/react_native_dev_server_ip` value to be
+`localhost`. This catches command-line/user Gradle overrides too. No APK bytes
+are patched to fix this resource.
+
+Fast regression checks run before Android compilation in CI:
+`node --test scripts/test-reproducible-gradle.mjs`. They cover missing properties,
+different host IPs, duplicates, idempotency, and the generated-project guard.
+Full cross-runner parity still requires a new GitHub/GitLab artifact comparison
+with both source fixes present. Do not describe the earlier Glide-only full
+build as cross-runner APK parity.
+
 ## Desired end state
 
 A healthy F-Droid release should be uneventful:
