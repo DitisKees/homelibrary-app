@@ -1,0 +1,61 @@
+// HomeLibrary reproducibility backport for Glide 5.0.5 KSP.
+//
+// The local repository mirrors exactly com.github.bumptech.glide:ksp:5.0.5:
+// its POM is copied verbatim from Maven Central and only its main JAR is the
+// deterministic one-line backport. Restrict the repository to that one module.
+
+def homeLibraryRoot = initscript.sourceFile.parentFile.parentFile
+def repoDir = new File(homeLibraryRoot, "build/repro-maven")
+def moduleDir = new File(repoDir, "com/github/bumptech/glide/ksp/5.0.5")
+def patchedJar = new File(moduleDir, "ksp-5.0.5.jar")
+def upstreamPom = new File(moduleDir, "ksp-5.0.5.pom")
+
+if (!patchedJar.isFile() || !upstreamPom.isFile()) {
+    throw new GradleException("Complete local Glide KSP 5.0.5 mirror is missing: " + moduleDir)
+}
+
+gradle.beforeProject { project ->
+    project.repositories {
+        exclusiveContent {
+            forRepository {
+                maven {
+                    name = "homeLibraryGlideKspRepro"
+                    url = repoDir.toURI()
+                    metadataSources { mavenPom(); artifact() }
+                }
+            }
+            filter {
+                includeModule("com.github.bumptech.glide", "ksp")
+            }
+        }
+    }
+
+    if (project.path == ":expo-image") {
+        project.tasks.register("homeLibraryGlideKspResolution") {
+            doLast {
+                def cfg = project.configurations.getByName("kspReleaseKotlinProcessorClasspath")
+                def result = cfg.incoming.resolutionResult
+                def glide = result.allComponents.findAll {
+                    it.id instanceof org.gradle.api.artifacts.component.ModuleComponentIdentifier &&
+                    it.id.group == "com.github.bumptech.glide" &&
+                    it.id.module == "ksp"
+                }
+                if (glide.size() != 1 || glide[0].id.version != "5.0.5") {
+                    throw new GradleException("Expected exactly Glide KSP 5.0.5, found: " + glide*.id)
+                }
+                def files = cfg.files
+                def resolved = files.findAll { it.name == "ksp-5.0.5.jar" }
+                if (resolved.size() != 1 || resolved[0].canonicalFile != patchedJar.canonicalFile) {
+                    throw new GradleException("Glide KSP did not resolve to patched local artifact: " + resolved)
+                }
+                def kotlinPoet = files.findAll { it.name.toLowerCase().contains("kotlinpoet") }
+                if (kotlinPoet.empty) {
+                    throw new GradleException("Glide KSP transitive KotlinPoet dependency is missing")
+                }
+                println("HOMELIBRARY_KSP_RESOLVED=" + glide[0].id)
+                println("HOMELIBRARY_KSP_PATCHED=" + resolved[0].canonicalPath)
+                println("HOMELIBRARY_KSP_KOTLINPOET=" + kotlinPoet*.name)
+            }
+        }
+    }
+}
