@@ -74,13 +74,26 @@ jar tf "$NORMALIZED" | grep -Fx "$SERVICE"
 test "$(unzip -p "$NORMALIZED" "$SERVICE" | tr -d '\r')" = 'com.bumptech.glide.annotation.ksp.GlideSymbolProcessorProvider'
 jar tf "$NORMALIZED" | grep -Fx 'com/bumptech/glide/annotation/ksp/GlideSymbolProcessorProvider.class'
 
-cat > "$MAVEN_DIR/ksp-5.0.5-homelibrary-repro1.pom" <<'POM'
-<project xmlns="http://maven.apache.org/POM/4.0.0">
-  <modelVersion>4.0.0</modelVersion>
-  <groupId>com.github.bumptech.glide</groupId>
-  <artifactId>ksp</artifactId>
-  <version>5.0.5-homelibrary-repro1</version>
-</project>
-POM
+# Preserve Glide's published dependency metadata rather than inventing a POM.
+# The Gradle build produces the publication POM from the same v5.0.5 source.
+./gradlew --no-daemon --max-workers=1 :annotation:ksp:generatePomFileForReleasePublication
+PUBLISHED_POM="$WORK/annotation/ksp/build/publications/release/pom-default.xml"
+test -s "$PUBLISHED_POM"
+python3 - "$PUBLISHED_POM" "$MAVEN_DIR/ksp-5.0.5-homelibrary-repro1.pom" <<'PY'
+from pathlib import Path
+import sys
+src, dst = map(Path, sys.argv[1:])
+s = src.read_text()
+if "<version>5.0.5</version>" not in s:
+    raise SystemExit("unexpected Glide KSP publication POM version")
+s = s.replace("<version>5.0.5</version>", "<version>5.0.5-homelibrary-repro1</version>", 1)
+dst.write_text(s)
+PY
+
+# Fail closed unless the copied publication metadata retains the processor's
+# important transitive runtime dependencies.
+grep -F '<artifactId>annotation</artifactId>' "$MAVEN_DIR/ksp-5.0.5-homelibrary-repro1.pom"
+grep -F 'kotlinpoet' "$MAVEN_DIR/ksp-5.0.5-homelibrary-repro1.pom"
+grep -F 'symbol-processing-api' "$MAVEN_DIR/ksp-5.0.5-homelibrary-repro1.pom"
 
 sha256sum "$TOOLS/glide-ksp-5.0.5-homelibrary-repro1.raw.jar" "$NORMALIZED"
