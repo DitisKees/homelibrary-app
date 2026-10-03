@@ -322,6 +322,14 @@ with tempfile.TemporaryDirectory() as d:
 PY"
 fi
 
+echo "=== preinstall Android SDK Platform 37 for Glide 5.0.9 ==="
+source /etc/profile.d/bsenv.sh
+export ANDROID_HOME=/opt/android-sdk
+export ANDROID_SDK_ROOT=/opt/android-sdk
+yes | sdkmanager "platforms;android-37"
+test -f /opt/android-sdk/platforms/android-37/android.jar
+echo "android_37_platform_verified=true"
+
 if [[ "$DETERMINISTIC_AGP_WORKAROUNDS" == "1" ]]; then
   echo "=== deterministic AGP workarounds ==="
   run_as_vagrant "cd '$SOURCE_DIR' && printf '%s\\n' 'android.enableResourceOptimizations=false' 'android.useFullClasspathForDexingTransform=true' >> android/gradle.properties"
