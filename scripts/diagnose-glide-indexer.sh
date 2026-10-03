@@ -4,10 +4,9 @@ set -euo pipefail
 ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 cd "$ROOT"
 
-echo "=== build deterministic Glide 5.0.5 KSP processor ==="
-bash scripts/build-glide-ksp-repro.sh
 PATCHED_JAR="$ROOT/build/repro-maven/com/github/bumptech/glide/ksp/5.0.5-homelibrary-repro1/ksp-5.0.5-homelibrary-repro1.jar"
 test -f "$PATCHED_JAR"
+echo "=== use prebuilt deterministic Glide 5.0.5 KSP processor ==="
 sha256sum "$PATCHED_JAR"
 
 echo "=== Expo 57 prebuild ==="
