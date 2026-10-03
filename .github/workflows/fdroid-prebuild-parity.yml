@@ -31,12 +31,16 @@ jobs:
       - name: Resolve SDK 58 beta dependency set
         run: |
           rm -rf node_modules
-          npm install --package-lock=false --ignore-scripts expo@next
-          npx expo install --fix --npm
-          npx expo install --check
+          npm install --package-lock=false --ignore-scripts --legacy-peer-deps expo@next
+          npm_config_legacy_peer_deps=true npx expo install --fix --npm
+          npm_config_legacy_peer_deps=true npx expo install --check
+
+      - name: Report resolved SDK 58 package matrix
+        run: |
+          node -e "const p=require('./package.json'); console.log(JSON.stringify({dependencies:p.dependencies,devDependencies:p.devDependencies},null,2))"
 
       - name: Expo Doctor
-        run: npx expo-doctor@latest
+        run: npm_config_legacy_peer_deps=true npx expo-doctor@latest
 
       - name: Typecheck
         run: npm run typecheck
