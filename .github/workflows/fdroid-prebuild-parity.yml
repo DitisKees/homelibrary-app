@@ -5,6 +5,7 @@ on:
     paths:
       - scripts/build-glide-ksp-repro.sh
       - scripts/diagnose-glide-indexer.sh
+      - scripts/glide-ksp-repro.init.gradle
       - .github/workflows/fdroid-prebuild-parity.yml
 concurrency:
   group: focused-glide-indexer-proof
