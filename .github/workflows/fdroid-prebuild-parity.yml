@@ -24,6 +24,12 @@ jobs:
       - uses: actions/setup-java@v5
         with:
           distribution: temurin
+          java-version: '17'
+      - name: Build deterministic Glide processor
+        run: bash scripts/build-glide-ksp-repro.sh
+      - uses: actions/setup-java@v5
+        with:
+          distribution: temurin
           java-version: '21'
       - name: Install app dependencies
         run: npm ci
