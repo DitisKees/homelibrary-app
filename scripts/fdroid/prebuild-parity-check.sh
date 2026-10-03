@@ -322,11 +322,17 @@ with tempfile.TemporaryDirectory() as d:
 PY"
 fi
 
-echo "=== preinstall Android SDK Platform 37 for Glide 5.0.9 ==="
+echo "=== install pinned Android SDK Platform 37.1 r01 for Glide 5.0.9 ==="
 source /etc/profile.d/bsenv.sh
 export ANDROID_HOME=/opt/android-sdk
 export ANDROID_SDK_ROOT=/opt/android-sdk
-yes | sdkmanager "platforms;android-37"
+PLATFORM37_ZIP=/tmp/platform-37.1_r01.zip
+curl -fL --retry 3 https://dl.google.com/android/repository/platform-37.1_r01.zip -o "$PLATFORM37_ZIP"
+echo "cadf0a541847820ea3d8ffc5c192562a18376cf9ba510bf9659c772f9a442184  $PLATFORM37_ZIP" | sha256sum -c -
+rm -rf /opt/android-sdk/platforms/android-37 /opt/android-sdk/platforms/android-37.1
+unzip -q "$PLATFORM37_ZIP" -d /opt/android-sdk/platforms/
+test -f /opt/android-sdk/platforms/android-37.1/android.jar
+ln -s /opt/android-sdk/platforms/android-37.1 /opt/android-sdk/platforms/android-37
 test -f /opt/android-sdk/platforms/android-37/android.jar
 echo "android_37_platform_verified=true"
 
