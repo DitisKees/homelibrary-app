@@ -22,6 +22,11 @@ fdroid_reset
 trap fdroid_collect_diagnostics EXIT
 fdroid_prepare_environment
 
+# Validate the checked-in release recipe before derivation can reformat it.
+# This is the same pinned rewritemeta gate used by release verification.
+fdroid_install_metadata "${METADATA_SOURCE}"
+fdroid_assert_metadata_canonical
+
 VERSION_CODE="$(fdroid_version_code)"
 DERIVED_METADATA="${WORK_ROOT}/source-metadata.yml"
 
