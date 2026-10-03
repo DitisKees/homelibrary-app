@@ -20,10 +20,10 @@ Builds:
       - echo "deb https://deb.debian.org/debian forky main" > /etc/apt/sources.list.d/forky.list
       - echo "deb https://deb.debian.org/debian bookworm main" > /etc/apt/sources.list.d/bookworm.list
       - echo "deb https://deb.debian.org/debian bullseye main" > /etc/apt/sources.list.d/bullseye.list
-      - apt-get update
-      - apt-get install -y -t forky npm
-      - apt-get install -y -t bookworm openjdk-17-jdk-headless
-      - apt-get install -y -t bullseye openjdk-11-jdk-headless
+      - apt-get -o Acquire::Retries=3 update
+      - apt-get -o Acquire::Retries=3 install -y -t forky npm
+      - apt-get -o Acquire::Retries=3 install -y -t bookworm openjdk-17-jdk-headless
+      - apt-get -o Acquire::Retries=3 install -y -t bullseye openjdk-11-jdk-headless
       - install -d -o vagrant -g vagrant /usr/share/maven-repo/com/github/bumptech/glide/ksp/5.0.5
     init:
       - node --version
