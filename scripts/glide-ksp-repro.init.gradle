@@ -32,3 +32,32 @@ gradle.beforeProject { project ->
         }
     }
 }
+
+
+// Diagnostic task: resolve only configurations that actually inherit a Glide KSP declaration.
+gradle.afterProject { project ->
+    if (project.path == ":expo-image") {
+        project.tasks.register("homeLibraryGlideKspResolution") {
+            doLast {
+                def candidates = project.configurations.findAll { cfg ->
+                    cfg.canBeResolved && cfg.allDependencies.any { dep ->
+                        dep.group == "com.github.bumptech.glide" && dep.name == "ksp"
+                    }
+                }
+                if (candidates.empty) {
+                    throw new GradleException("No resolvable expo-image configuration inherits the Glide KSP dependency")
+                }
+                candidates.each { cfg ->
+                    println("HOMELIBRARY_KSP_CONFIGURATION=" + cfg.name)
+                    def artifacts = cfg.resolvedConfiguration.resolvedArtifacts.findAll {
+                        it.moduleVersion.id.group == "com.github.bumptech.glide" && it.name == "ksp"
+                    }
+                    artifacts.each { artifact ->
+                        println("HOMELIBRARY_KSP_RESOLVED=" + artifact.moduleVersion.id)
+                        println("HOMELIBRARY_KSP_FILE=" + artifact.file)
+                    }
+                }
+            }
+        }
+    }
+}
