@@ -35,6 +35,7 @@ Builds:
       - mkdir -p /usr/share/maven-repo/com/github/bumptech/glide/ksp/5.0.5
       - cp build/repro-maven/com/github/bumptech/glide/ksp/5.0.5/ksp-5.0.5.jar /usr/share/maven-repo/com/github/bumptech/glide/ksp/5.0.5/
       - cp build/repro-maven/com/github/bumptech/glide/ksp/5.0.5/ksp-5.0.5.pom /usr/share/maven-repo/com/github/bumptech/glide/ksp/5.0.5/
+      - rm -rf build/repro-maven build/repro-tools
       - npm ci
     output: android/app/build/outputs/apk/release/app-release-unsigned.apk
     prebuild:
