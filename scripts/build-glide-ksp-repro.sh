@@ -5,7 +5,7 @@ GLIDE_TAG=v5.0.5
 WORK="${TMPDIR:-/tmp}/homelibrary-glide-ksp"
 ROOT="$(pwd)"
 TOOLS="$ROOT/build/repro-tools"
-MAVEN_DIR="$ROOT/build/repro-maven/com/github/bumptech/glide/ksp/5.0.5-homelibrary-repro1"
+MAVEN_DIR="$ROOT/build/repro-maven/com/github/bumptech/glide/ksp/5.0.5"
 
 rm -rf "$WORK" "$TOOLS" "$MAVEN_DIR"
 mkdir -p "$TOOLS" "$MAVEN_DIR"
@@ -75,3 +75,15 @@ test "$(unzip -p "$NORMALIZED" "$SERVICE" | tr -d '\r')" = 'com.bumptech.glide.a
 jar tf "$NORMALIZED" | grep -Fx 'com/bumptech/glide/annotation/ksp/GlideSymbolProcessorProvider.class'
 
 sha256sum "$TOOLS/glide-ksp-5.0.5-homelibrary-repro1.raw.jar" "$NORMALIZED"
+
+
+# Build a standard local Maven mirror for the *same* upstream coordinate.
+# Use Glide's published 5.0.5 POM verbatim so Gradle retains the exact
+# transitive processor dependency graph; replace only the main processor JAR.
+cp "$NORMALIZED" "$MAVEN_DIR/ksp-5.0.5.jar"
+POM_URL="https://repo1.maven.org/maven2/com/github/bumptech/glide/ksp/5.0.5/ksp-5.0.5.pom"
+curl --fail --location --silent --show-error "$POM_URL" -o "$MAVEN_DIR/ksp-5.0.5.pom"
+test -s "$MAVEN_DIR/ksp-5.0.5.pom"
+grep -F '<artifactId>kotlinpoet</artifactId>' "$MAVEN_DIR/ksp-5.0.5.pom"
+grep -F '<artifactId>annotation</artifactId>' "$MAVEN_DIR/ksp-5.0.5.pom"
+grep -F '<artifactId>symbol-processing-api</artifactId>' "$MAVEN_DIR/ksp-5.0.5.pom"
