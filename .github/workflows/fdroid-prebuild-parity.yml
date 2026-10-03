@@ -1,38 +1,38 @@
-name: Glide KSP deterministic backport proof
+name: Focused Glide indexer reproducibility proof
 on:
   push:
     branches: [diagnose/fdroid-prebuild-parity]
     paths:
       - scripts/build-glide-ksp-repro.sh
+      - scripts/diagnose-glide-indexer.sh
       - .github/workflows/fdroid-prebuild-parity.yml
 concurrency:
-  group: glide-ksp-backport-proof
+  group: focused-glide-indexer-proof
   cancel-in-progress: true
 permissions:
   contents: read
 jobs:
-  prove-ksp:
+  glide-indexer:
     runs-on: ubuntu-latest
-    timeout-minutes: 20
+    timeout-minutes: 25
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v5
+      - uses: actions/setup-node@v5
+        with:
+          node-version: '22.13.1'
+          cache: npm
       - uses: actions/setup-java@v5
         with:
           distribution: temurin
-          java-version: '17'
-      - name: Build patched processor first time
-        run: |
-          bash scripts/build-glide-ksp-repro.sh
-          cp build/repro-tools/glide-ksp-entry-hashes.txt /tmp/first-entry-hashes.txt
-          cp build/repro-tools/glide-ksp-5.0.5-homelibrary-repro1.raw.jar /tmp/first-raw.jar
-      - name: Build patched processor second time and compare unpacked contents
-        run: |
-          bash scripts/build-glide-ksp-repro.sh
-          echo '=== differing unpacked entries, if any ==='
-          diff -u /tmp/first-entry-hashes.txt build/repro-tools/glide-ksp-entry-hashes.txt || {
-            echo 'processor_entry_contents_reproducible=false'
-            exit 1
-          }
-          echo 'processor_entry_contents_reproducible=true'
-          echo '=== raw JAR hashes (metadata may differ) ==='
-          sha256sum /tmp/first-raw.jar build/repro-tools/glide-ksp-5.0.5-homelibrary-repro1.raw.jar
+          java-version: '21'
+      - name: Install app dependencies
+        run: npm ci
+      - name: Generate Glide indexer with deterministic processor
+        run: bash scripts/diagnose-glide-indexer.sh
+      - name: Upload indexer evidence
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: glide-indexer-evidence
+          path: diagnostic-output/glide-indexer/
+          if-no-files-found: warn
