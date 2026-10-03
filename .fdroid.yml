@@ -24,6 +24,7 @@ Builds:
       - apt-get install -y -t forky npm
       - apt-get install -y -t bookworm openjdk-17-jdk-headless
       - apt-get install -y -t bullseye openjdk-11-jdk-headless
+      - install -d -o vagrant -g vagrant /usr/share/maven-repo/com/github/bumptech/glide/ksp/5.0.5
     init:
       - node --version
       - npm --version
