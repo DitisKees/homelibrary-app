@@ -44,3 +44,23 @@ mkdir -p "$ROOT/build/repro-tools/unpacked"
 test -s "$ROOT/build/repro-tools/glide-ksp-entry-hashes.txt"
 grep -F 'LibraryGlideModulesParser.class' "$ROOT/build/repro-tools/glide-ksp-entry-hashes.txt"
 sha256sum "$ROOT/build/repro-tools/glide-ksp-5.0.5-homelibrary-repro1.raw.jar"
+
+# Produce deterministic local Maven artifact from the verified unpacked contents.
+MAVEN_DIR="$ROOT/build/repro-maven/com/github/bumptech/glide/ksp/5.0.5-homelibrary-repro1"
+mkdir -p "$MAVEN_DIR"
+NORMALIZED="$MAVEN_DIR/ksp-5.0.5-homelibrary-repro1.jar"
+rm -f "$NORMALIZED"
+(
+  cd "$ROOT/build/repro-tools/unpacked"
+  find . -type f -print0 | sort -z | xargs -0 touch -h -d '@315532800'
+  find . -type f -print0 | sort -z | sed -z 's#^./##' | zip -X -q -@ "$NORMALIZED"
+)
+cat > "$MAVEN_DIR/ksp-5.0.5-homelibrary-repro1.pom" <<'POM'
+<project xmlns="http://maven.apache.org/POM/4.0.0">
+  <modelVersion>4.0.0</modelVersion>
+  <groupId>com.github.bumptech.glide</groupId>
+  <artifactId>ksp</artifactId>
+  <version>5.0.5-homelibrary-repro1</version>
+</project>
+POM
+sha256sum "$NORMALIZED"
