@@ -16,16 +16,23 @@ jobs:
     timeout-minutes: 20
     steps:
       - uses: actions/checkout@v4
-      - uses: actions/setup-java@v4
+      - uses: actions/setup-java@v5
         with:
           distribution: temurin
           java-version: '17'
-      - name: Build minimal patched Glide KSP processor
-        run: bash scripts/build-glide-ksp-repro.sh
-      - name: Build it again and compare
+      - name: Build patched processor first time
         run: |
-          cp build/repro-tools/glide-ksp-5.0.5-homelibrary-repro1.jar /tmp/first.jar
           bash scripts/build-glide-ksp-repro.sh
-          sha256sum /tmp/first.jar build/repro-tools/glide-ksp-5.0.5-homelibrary-repro1.jar
-          cmp /tmp/first.jar build/repro-tools/glide-ksp-5.0.5-homelibrary-repro1.jar
-          echo glide_ksp_processor_reproducible=true
+          cp build/repro-tools/glide-ksp-entry-hashes.txt /tmp/first-entry-hashes.txt
+          cp build/repro-tools/glide-ksp-5.0.5-homelibrary-repro1.raw.jar /tmp/first-raw.jar
+      - name: Build patched processor second time and compare unpacked contents
+        run: |
+          bash scripts/build-glide-ksp-repro.sh
+          echo '=== differing unpacked entries, if any ==='
+          diff -u /tmp/first-entry-hashes.txt build/repro-tools/glide-ksp-entry-hashes.txt || {
+            echo 'processor_entry_contents_reproducible=false'
+            exit 1
+          }
+          echo 'processor_entry_contents_reproducible=true'
+          echo '=== raw JAR hashes (metadata may differ) ==='
+          sha256sum /tmp/first-raw.jar build/repro-tools/glide-ksp-5.0.5-homelibrary-repro1.raw.jar
