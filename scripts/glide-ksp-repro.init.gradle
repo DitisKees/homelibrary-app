@@ -4,12 +4,13 @@
 // This does not modify Expo or node_modules. It redirects exactly one pinned
 // processor dependency and fails if the local backport repository is absent.
 
-gradle.beforeProject { project ->
-    def repoDir = new File(project.rootDir, "../build/repro-maven")
-    if (!repoDir.isDirectory()) {
-        throw new GradleException("HomeLibrary Glide KSP backport repository missing: " + repoDir)
-    }
+def homeLibraryRoot = initscript.sourceFile.parentFile.parentFile
+def repoDir = new File(homeLibraryRoot, "build/repro-maven")
+if (!repoDir.isDirectory()) {
+    throw new GradleException("HomeLibrary Glide KSP backport repository missing: " + repoDir)
+}
 
+gradle.beforeProject { project ->
     project.repositories {
         maven {
             name = "homeLibraryGlideKspRepro"
