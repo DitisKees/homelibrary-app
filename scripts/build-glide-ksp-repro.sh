@@ -21,7 +21,18 @@ cd "$WORK"
 JAR="$(find annotation/ksp/build/libs -maxdepth 1 -type f -name '*.jar' ! -name '*sources*' ! -name '*javadoc*' | head -1)"
 test -n "$JAR"
 mkdir -p "$ROOT/build/repro-tools"
-cp "$JAR" "$ROOT/build/repro-tools/glide-ksp-5.0.5-homelibrary-repro1.jar"
-sha256sum "$ROOT/build/repro-tools/glide-ksp-5.0.5-homelibrary-repro1.jar"
-jar tf "$ROOT/build/repro-tools/glide-ksp-5.0.5-homelibrary-repro1.jar" | sort > "$ROOT/build/repro-tools/glide-ksp-contents.txt"
+RAW="$ROOT/build/repro-tools/glide-ksp-5.0.5-homelibrary-repro1.raw.jar"
+OUT="$ROOT/build/repro-tools/glide-ksp-5.0.5-homelibrary-repro1.jar"
+cp "$JAR" "$RAW"
+rm -rf "$ROOT/build/repro-tools/unpacked"
+mkdir -p "$ROOT/build/repro-tools/unpacked"
+(cd "$ROOT/build/repro-tools/unpacked" && jar xf "$RAW")
+(
+  cd "$ROOT/build/repro-tools/unpacked"
+  find . -type f -print0 | sort -z | xargs -0 sha256sum > ../glide-ksp-entry-hashes.txt
+  find . -type f -print0 | sort -z | xargs -0 touch -h -d '@0'
+  find . -type f -print0 | sort -z | sed -z 's#^./##' | zip -X -q -@ "$OUT"
+)
+sha256sum "$RAW" "$OUT"
+jar tf "$OUT" | sort > "$ROOT/build/repro-tools/glide-ksp-contents.txt"
 grep -F 'LibraryGlideModulesParser' "$ROOT/build/repro-tools/glide-ksp-contents.txt"
