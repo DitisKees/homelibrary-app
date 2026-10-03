@@ -1,51 +1,54 @@
-name: F-Droid prebuild parity diagnostic
+name: Expo 58 Android baseline diagnostic
 
 on:
   push:
     branches:
-      - diagnose/fdroid-prebuild-parity
+      - diagnose/expo58-reproducibility
     paths:
       - '.github/workflows/fdroid-prebuild-parity.yml'
-      - 'scripts/fdroid/prebuild-parity-check.sh'
+      - 'package.json'
+      - 'app.json'
+      - 'tsconfig.json'
 
 concurrency:
-  group: fdroid-prebuild-parity-diagnostic
+  group: expo58-baseline-diagnostic
   cancel-in-progress: true
 
 permissions:
   contents: read
 
 jobs:
-  prebuild-parity:
+  expo58-baseline:
     runs-on: ubuntu-latest
-    container:
-      image: registry.gitlab.com/fdroid/fdroidserver:buildserver-trixie@sha256:9cb68105642ca4e7b295f0ceab10f069f5b3247dc18fa7c36046e9d81aa469a8
-    timeout-minutes: 30
+    timeout-minutes: 20
     steps:
-      - name: Check out diagnostic branch
-        uses: actions/checkout@v4
+      - uses: actions/checkout@v4
 
-      - name: Trace pre-merge DEX inputs
-        env:
-          DETERMINISTIC_AGP_WORKAROUNDS: "0"
-          FULL_BUILD_DIAGNOSTIC: "0"
-          AGP_OVERRIDE: "8.13.2"
-          ORDER_TRACE: "0"
-          SORT_DIRENTS_PRELOAD: "0"
-          RESOURCE_TASK_TRACE: "0"
-          RESOURCE_ONLY_DIAGNOSTIC: "0"
-          DEX_ONLY_DIAGNOSTIC: "0"
-          DEX_INPUT_DIAGNOSTIC: "0"
-          MERGE_DEX_TRACE: "1"
-          SOURCE_SHA: "182da53ec162df7ff1874e9ddbbba41464a118a2"
-          RESOURCE_MAX_WORKERS: "1"
-        run: bash scripts/fdroid/prebuild-parity-check.sh
-
-      - name: Upload prebuild manifest
-        if: always()
-        uses: actions/upload-artifact@v4
+      - uses: actions/setup-node@v4
         with:
-          name: fdroid-prebuild-parity-github
-          path: diagnostic-output/
-          if-no-files-found: error
-          retention-days: 7
+          node-version: '22.13.1'
+
+      - name: Resolve SDK 58 beta dependency set
+        run: |
+          rm -rf node_modules
+          npm install --package-lock=false --ignore-scripts expo@next
+          npx expo install --fix --npm
+          npx expo install --check
+
+      - name: Expo Doctor
+        run: npx expo-doctor@latest
+
+      - name: Typecheck
+        run: npm run typecheck
+
+      - name: Generate Android project
+        run: npx expo prebuild --clean --platform android --no-install
+
+      - name: Report generated Android toolchain
+        run: |
+          echo '=== Gradle wrapper ==='
+          cat android/gradle/wrapper/gradle-wrapper.properties
+          echo '=== SDK/AGP references ==='
+          grep -RInE 'compileSdk|targetSdk|buildTools|com.android.tools.build:gradle|agp' android/gradle.properties android/build.gradle android/settings.gradle android/app/build.gradle 2>/dev/null || true
+          echo '=== Expo Image Glide version ==='
+          grep -RIn 'GLIDE_VERSION' node_modules/expo-image/android || true
