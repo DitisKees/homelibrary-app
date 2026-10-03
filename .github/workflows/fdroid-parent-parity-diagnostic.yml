@@ -1,0 +1,82 @@
+name: F-Droid parent parity diagnostic
+
+on:
+  pull_request:
+    paths:
+      - '.github/workflows/fdroid-parent-parity-diagnostic.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  diagnose:
+    name: diagnose-${{ matrix.variant }}
+    runs-on: ubuntu-latest
+    container:
+      image: registry.gitlab.com/fdroid/fdroidserver:buildserver-trixie@sha256:9cb68105642ca4e7b295f0ceab10f069f5b3247dc18fa7c36046e9d81aa469a8
+    timeout-minutes: 90
+    strategy:
+      fail-fast: false
+      matrix:
+        variant:
+          - baseline
+          - current-fdroiddata
+          - parent-wrapper
+    env:
+      ANDROID_HOME: /opt/android-sdk
+      ANDROID_SDK_ROOT: /opt/android-sdk
+      FDROID_EXPORT_APK: diagnostic-output/app-release-unsigned.apk
+      RELEASE_SOURCE_SHA: f5a6762bc092c3f9295658354aeaa76315fa84ec
+      CURRENT_FDROIDDATA_COMMIT: b8e54df427e099162d372cea8bbaf61bdafa18b3
+
+    steps:
+      - name: Check out diagnostic harness
+        uses: actions/checkout@v4
+
+      - name: Prepare diagnostic variant
+        run: |
+          set -euo pipefail
+          git config --global --add safe.directory "$GITHUB_WORKSPACE"
+
+          case "${{ matrix.variant }}" in
+            baseline)
+              ;;
+            current-fdroiddata)
+              sed -i -E 's/^FDROIDDATA_COMMIT="[^"]+"/FDROIDDATA_COMMIT="'"${CURRENT_FDROIDDATA_COMMIT}"'"/' scripts/fdroid/pins.env
+              ;;
+            parent-wrapper)
+              sed -i -E 's/^FDROIDDATA_COMMIT="[^"]+"/FDROIDDATA_COMMIT="'"${CURRENT_FDROIDDATA_COMMIT}"'"/' scripts/fdroid/pins.env
+              apt-get update
+              DEBIAN_FRONTEND=noninteractive apt-get -y dist-upgrade
+              git -C /home/vagrant/gradlew-fdroid pull
+              ;;
+            *)
+              echo "Unknown diagnostic variant." >&2
+              exit 2
+              ;;
+          esac
+
+          echo "=== pins ==="
+          cat scripts/fdroid/pins.env
+          echo "=== selected host packages ==="
+          dpkg-query -W -f='${Package}=${Version}\n' rsync openssl androguard openjdk-21-jdk-headless 2>/dev/null || true
+          echo "=== gradlew-fdroid ==="
+          git -C /home/vagrant/gradlew-fdroid rev-parse HEAD
+
+      - name: Build immutable v1.0.8 source
+        run: |
+          set -euo pipefail
+          bash scripts/fdroid/run-source-build.sh "$RELEASE_SOURCE_SHA" .fdroid.yml
+          sha256sum diagnostic-output/app-release-unsigned.apk | tee diagnostic-output/apk.sha256
+
+      - name: Upload diagnostic APK
+        uses: actions/upload-artifact@v4
+        with:
+          name: fdroid-parent-diagnostic-${{ matrix.variant }}
+          path: |
+            diagnostic-output/app-release-unsigned.apk
+            diagnostic-output/apk.sha256
+            fdroid-buildserver-diagnostics/
+          if-no-files-found: error
+          retention-days: 7

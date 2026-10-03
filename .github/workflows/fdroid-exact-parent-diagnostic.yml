@@ -1,0 +1,37 @@
+name: F-Droid exact parent diagnostic
+
+on:
+  pull_request:
+    paths:
+      - '.github/workflows/fdroid-exact-parent-diagnostic.yml'
+      - 'scripts/fdroid/run-exact-parent-diagnostic.sh'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  exact-parent:
+    name: exact-parent-agp-8.11.1
+    runs-on: ubuntu-latest
+    container:
+      image: registry.gitlab.com/fdroid/fdroidserver:buildserver-trixie@sha256:9cb68105642ca4e7b295f0ceab10f069f5b3247dc18fa7c36046e9d81aa469a8
+    timeout-minutes: 90
+    env:
+      AGP_OVERRIDE: 8.11.1
+
+    steps:
+      - name: Check out diagnostic harness
+        uses: actions/checkout@v4
+
+      - name: Mirror fdroiddata parent build with AGP 8.11.1
+        run: bash scripts/fdroid/run-exact-parent-diagnostic.sh
+
+      - name: Upload exact-parent diagnostics
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: fdroid-exact-parent-agp-8.11.1
+          path: diagnostic-output/
+          if-no-files-found: warn
+          retention-days: 7
