@@ -1,0 +1,1 @@
+Buildsysteem: vaste Android-resourcewaarden en deterministische Glide-codegeneratie. Onafhankelijke F-Droid-builds op GitHub en GitLab leveren nu identieke ongetekende APK's op. Nieuwe controles voorkomen dat IP-adressen van bouwservers in release-resources terechtkomen.

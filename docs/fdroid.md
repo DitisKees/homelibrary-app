@@ -9,12 +9,12 @@ See [`fdroid-dependencies.md`](./fdroid-dependencies.md) for the dependency/lice
 The next F-Droid candidate is:
 
 ```text
-versionName: 1.0.8
-versionCode: 9
-tag: v1.0.8
+versionName: 1.0.9
+versionCode: 10
+tag: v1.0.9
 ```
 
-`v1.0.7` / versionCode 8 is immutable and its source builds successfully on F-Droid, but its published signed APK does not reproduce F-Droid's buildserver output. Version 1.0.8 is therefore a build-system-only parity release: upstream will sign the exact unsigned APK produced by the same F-Droid buildserver/scanner path used for official verification.
+`v1.0.7` / versionCode 8 is immutable and its source builds successfully on F-Droid, but its published signed APK does not reproduce F-Droid's buildserver output. Version 1.0.9 is therefore a build-system-only parity release: upstream will sign the exact unsigned APK produced by the same F-Droid buildserver/scanner path used for official verification.
 
 `app.json` is the source of truth for Android versionName and versionCode. `package.json` remains the private JavaScript package manifest.
 
@@ -96,7 +96,7 @@ CI verifies, among other things:
 
 ## F-Droid submission status
 
-The official fdroiddata submission is already open as `fdroid/fdroiddata!48673`. Version 1.0.7 exposed a cross-environment reproducibility gap; version 1.0.8 closes that gap before the MR is updated:
+The official fdroiddata submission is already open as `fdroid/fdroiddata!48673`. Version 1.0.7 exposed a cross-environment reproducibility gap; version 1.0.9 includes the verified fixes for that gap before the MR is updated:
 
 - [x] Public GPL-3.0-or-later source repository
 - [x] Permanent Android application ID
@@ -115,7 +115,7 @@ The official fdroiddata submission is already open as `fdroid/fdroiddata!48673`.
 - [x] Update fdroiddata !48673 to versionCode 8/full source SHA
 - [x] Require two independent GitHub-hosted F-Droid buildserver APKs to match
 - [x] Publish the signed APK from the pinned upstream F-Droid buildserver path
-- [ ] Resolve the GitHub-versus-GitLab runner reproducibility delta (`classes.dex`, `resources.arsc`, `baseline.prof`)
+- [x] Resolve the GitHub-versus-GitLab runner reproducibility delta (`classes.dex`, `resources.arsc`, `baseline.prof`)
 - [ ] Require post-publication F-Droid signed-reference parity to pass on the actual remote runner
 - [ ] Only then obtain official acceptance
 

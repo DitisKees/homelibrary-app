@@ -2,9 +2,9 @@
 
 The harness architecture and maintenance constraints are defined in [`fdroid-harness.md`](./fdroid-harness.md). That document is normative for how F-Droid tooling is pinned, how metadata may be transformed, and how remote-only failures are handled.
 
-This document describes the release path for HomeLibrary's upstream-signed reproducible F-Droid publication. The current candidate is Android `1.0.8` / versionCode `9`, with intended immutable tag `v1.0.8`.
+This document describes the release path for HomeLibrary's upstream-signed reproducible F-Droid publication. The current candidate is Android `1.0.9` / versionCode `10`, with intended immutable tag `v1.0.9`.
 
-`v1.0.7` / versionCode 8 is already published and remains immutable. F-Droid can build its source successfully, but the resulting unsigned APK differs from the published 1.0.7 APK because the upstream release and F-Droid buildserver used different Java/native build paths. Version 1.0.8 fixes the process by making the F-Droid buildserver output the authoritative unsigned release artifact.
+`v1.0.7` / versionCode 8 is already published and remains immutable. F-Droid can build its source successfully, but the resulting unsigned APK differs from the published 1.0.7 APK because the upstream release and F-Droid buildserver used different Java/native build paths. Version 1.0.8 made the F-Droid buildserver output authoritative. Version 1.0.9 includes the Glide KSP and dev-server resource fixes that subsequently proved cross-runner determinism. Both older releases remain immutable.
 
 ## Version source of truth
 
@@ -13,9 +13,9 @@ Android release versions are defined in `app.json`:
 ```json
 {
   "expo": {
-    "version": "1.0.8",
+    "version": "1.0.9",
     "android": {
-      "versionCode": 9
+      "versionCode": 10
     }
   }
 }
@@ -78,15 +78,15 @@ git pull --ff-only
 git status --short
 node -p "require('./app.json').expo.version"
 node -p "require('./app.json').expo.android.versionCode"
-git tag -a v1.0.8 -m "HomeLibrary 1.0.8"
-git push origin v1.0.8
+git tag -a v1.0.9 -m "HomeLibrary 1.0.9"
+git push origin v1.0.9
 ```
 
 Expected version output:
 
 ```text
-1.0.8
-9
+1.0.9
+10
 ```
 
 Never move, delete/recreate, or reuse a published tag. If correction is needed after tagging, create a new version/versionCode.
@@ -107,11 +107,11 @@ For a `vX.Y.Z` tag, `.github/workflows/android-release.yml`:
 
 Manual workflow runs remain useful for signing tests. If an immutable tag-triggered release fails because of release infrastructure, the corrected workflow may be run manually with `release_tag` set to that existing tag; it checks out and verifies the exact immutable tag source and may publish the permanent assets without moving the tag.
 
-After `v1.0.8` finishes, independently download and verify:
+After `v1.0.9` finishes, independently download and verify:
 
 ```bash
-apksigner verify --verbose --print-certs HomeLibrary-1.0.8.apk
-sha256sum HomeLibrary-1.0.8.apk
+apksigner verify --verbose --print-certs HomeLibrary-1.0.9.apk
+sha256sum HomeLibrary-1.0.9.apk
 ```
 
 The signer certificate SHA-256 must equal the configured production certificate. Keep that fingerprint: fdroiddata needs its lower-case hex form in `AllowedAPKSigningKeys`.
@@ -126,7 +126,7 @@ It also defines the reproducible binary location:
 Binaries: https://github.com/DitisKees/homelibrary-app/releases/download/v%v/HomeLibrary-%v.apk
 ```
 
-The submitted fdroiddata metadata must replace `commit: v1.0.8` with the full 40-character SHA resolved from the immutable tag.
+The submitted fdroiddata metadata must replace `commit: v1.0.9` with the full 40-character SHA resolved from the immutable tag.
 
 The official metadata must retain the already verified `AllowedAPKSigningKeys` value for the permanent production certificate. Do not change the signing identity between releases.
 
@@ -148,17 +148,17 @@ For manual fdroidserver testing, resolve the source commit as before:
 Resolve the source commit:
 
 ```bash
-git rev-list -n 1 v1.0.8
+git rev-list -n 1 v1.0.9
 ```
 
-In the fdroiddata fork, update `metadata/io.github.ditiskees.homelibrary.yml` to versionName 1.0.8/versionCode 9 and the full SHA, then run:
+In the fdroiddata fork, update `metadata/io.github.ditiskees.homelibrary.yml` to versionName 1.0.9/versionCode 10 and the full SHA, then run:
 
 ```bash
 fdroid readmeta
 fdroid rewritemeta io.github.ditiskees.homelibrary
 fdroid checkupdates --allow-dirty io.github.ditiskees.homelibrary
 fdroid lint io.github.ditiskees.homelibrary
-fdroid build -v -l io.github.ditiskees.homelibrary:9
+fdroid build -v -l io.github.ditiskees.homelibrary:10
 ```
 
 Review `rewritemeta` output rather than blindly committing it.
@@ -171,7 +171,7 @@ through deterministic Glide KSP generation. The remaining table delta was
 isolated to React Native's host-derived dev-server IP; the Expo reproducibility
 plugin now pins it to `localhost`, with checks before compilation and in the
 packaged APK. The immutable v1.0.8 release remains unchanged. See
-`fdroid-harness.md` for evidence and the outstanding full cross-runner gate.
+`fdroid-harness.md` for evidence and the confirmed full cross-runner result and remaining signed-release gate.
 
 The F-Droid parent build environment observed during review supplied Node 20.19.2, while the current React Native/Expo toolchain requires a newer supported Node baseline. The fdroiddata recipe should keep the reviewer-approved Debian packaging approach where possible, but the final build-tool solution must satisfy the actual React Native/Expo engine requirement and should be discussed transparently in the MR rather than hidden with disabled checks.
 
@@ -180,7 +180,7 @@ The F-Droid parent build environment observed during review supplied Node 20.19.
 Confirm that:
 
 - package is `io.github.ditiskees.homelibrary`;
-- versionName is 1.0.8 and versionCode is 9;
+- versionName is 1.0.9 and versionCode is 9;
 - target SDK remains 36;
 - no Google Play Services, Firebase, ML Kit, or Play SDK dependency appears;
 - `expo.camera.barcode-scanner-enabled=false` remains an exact generated Gradle property after release-only settings are appended;
@@ -193,15 +193,15 @@ Confirm that:
 
 ## Update existing fdroiddata MR !48673
 
-Do not open a second app-submission MR. Update the existing `fdroid/fdroiddata!48673` branch after `v1.0.8` and its GitHub Release APK exist:
+Do not open a second app-submission MR. Update the existing `fdroid/fdroiddata!48673` branch after `v1.0.9` and its GitHub Release APK exist:
 
-1. set `CurrentVersion: 1.0.8` and `CurrentVersionCode: 9`;
-2. add/update the build entry for versionCode 9 with the full `v1.0.8` commit SHA;
+1. set `CurrentVersion: 1.0.9` and `CurrentVersionCode: 10`;
+2. add/update the build entry for versionCode 10 with the full `v1.0.9` commit SHA;
 3. use the shared canonical build path;
 4. add `Binaries: https://github.com/DitisKees/homelibrary-app/releases/download/v%v/HomeLibrary-%v.apk`;
 5. add the independently verified lower-case certificate fingerprint as `AllowedAPKSigningKeys`;
 6. retain `AuthorName`;
-7. require the GitHub `F-Droid buildserver simulation` workflow to be green, then run `rewritemeta`, `lint`, `checkupdates`, and the versionCode 9 build;
+7. require the GitHub `F-Droid buildserver simulation` workflow to be green, then run `rewritemeta`, `lint`, `checkupdates`, and the versionCode 10 build;
 8. update the MR description to state that upstream reproducible signing is complete;
 9. ask for the parent pipeline/buildserver to be rerun.
 

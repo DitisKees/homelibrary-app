@@ -1,0 +1,1 @@
+Build-System: feste Android-Ressourcenwerte und deterministische Glide-Codegenerierung. Unabhängige F-Droid-Builds auf GitHub und GitLab erzeugen jetzt identische unsignierte APKs. Neue Prüfungen verhindern IP-Adressen der Build-Server in Release-Ressourcen.

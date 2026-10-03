@@ -1,0 +1,1 @@
+Build-system release: fix host-dependent Android resource values and Glide code generation. Independent GitHub and GitLab F-Droid builds now produce identical unsigned APKs. Add checks that prevent builder IP addresses from entering release resources.
