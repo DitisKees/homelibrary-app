@@ -1,0 +1,33 @@
+// HomeLibrary reproducibility backport for Glide 5.0.5 KSP.
+// Applied explicitly with: ./gradlew -I ../scripts/glide-ksp-repro.init.gradle <task>
+//
+// This does not modify Expo or node_modules. It redirects exactly one pinned
+// processor dependency and fails if the local backport repository is absent.
+
+gradle.beforeProject { project ->
+    def repoDir = new File(project.rootDir, "../build/repro-maven")
+    if (!repoDir.isDirectory()) {
+        throw new GradleException("HomeLibrary Glide KSP backport repository missing: " + repoDir)
+    }
+
+    project.repositories {
+        maven {
+            name = "homeLibraryGlideKspRepro"
+            url = repoDir.toURI()
+            content {
+                includeVersion("com.github.bumptech.glide", "ksp", "5.0.5-homelibrary-repro1")
+            }
+        }
+    }
+
+    project.configurations.configureEach { configuration ->
+        configuration.resolutionStrategy.eachDependency { details ->
+            if (details.requested.group == "com.github.bumptech.glide" &&
+                details.requested.name == "ksp" &&
+                details.requested.version == "5.0.5") {
+                details.useVersion("5.0.5-homelibrary-repro1")
+                details.because("Backport Glide deterministic LibraryGlideModule ordering for reproducible builds")
+            }
+        }
+    }
+}
