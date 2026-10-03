@@ -1,0 +1,1 @@
+Système de compilation : valeurs de ressources Android fixes et génération de code Glide déterministe. Les compilations F-Droid indépendantes sur GitHub et GitLab produisent désormais des APK non signés identiques. De nouveaux contrôles empêchent les adresses IP des serveurs de compilation d'apparaître dans les ressources de production.

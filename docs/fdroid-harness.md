@@ -375,9 +375,21 @@ are patched to fix this resource.
 Fast regression checks run before Android compilation in CI:
 `node --test scripts/test-reproducible-gradle.mjs`. They cover missing properties,
 different host IPs, duplicates, idempotency, and the generated-project guard.
-Full cross-runner parity still requires a new GitHub/GitLab artifact comparison
-with both source fixes present. Do not describe the earlier Glide-only full
-build as cross-runner APK parity.
+Full unsigned-APK parity was subsequently confirmed with both fixes present.
+GitHub run `37134050591` produced two byte-identical APKs at PR source commit
+`2211430306d34c65c46b8554e54dc6b35d90a35d`. GitLab pipeline #111
+(`2909442996`), job `16914108034`, built merged source commit
+`e7c562dada984993e81cd54d4c22dbde21208665`; its Git tree is identical to the
+green PR source tree (`217b65784815a76c85c0d1a4fe990ba166f2ffa0`). All three
+unsigned APKs have SHA-256
+`faa0db483d754ae936ae6962908bc3a697a4cf39d02e3d8bab9bb24fe54d817c`.
+The packaged dev-server resource check passed on both runners. No sorted
+directory preload was needed for this production comparison.
+
+This proves cross-runner determinism for that source tree. The next release
+candidate (1.0.9/versionCode 10) still needs its release checks and immutable
+publication, followed by F-Droid's signed-reference verification. The existing
+1.0.8 tag and APK must not be replaced.
 
 ## Desired end state
 
