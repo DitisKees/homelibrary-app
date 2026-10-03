@@ -23,13 +23,13 @@ test -f "$EXPO_IMAGE_GRADLE"
 grep -F 'def GLIDE_VERSION = "5.0.5"' "$EXPO_IMAGE_GRADLE"
 grep -F 'ksp "com.github.bumptech.glide:ksp:' "$EXPO_IMAGE_GRADLE"
 
-echo "=== verify declarative dependency redirect ==="
+echo "=== verify declarative dependency redirect on actual resolvable KSP classpath ==="
 (
   cd android
-  ./gradlew -I ../scripts/glide-ksp-repro.init.gradle :expo-image:dependencies --configuration kspRelease |
+  ./gradlew -I ../scripts/glide-ksp-repro.init.gradle :expo-image:homeLibraryGlideKspResolution |
     tee "$ROOT/diagnostic-output-glide-dependencies.txt"
 )
-grep -F 'com.github.bumptech.glide:ksp:5.0.5 -> 5.0.5-homelibrary-repro1' "$ROOT/diagnostic-output-glide-dependencies.txt"
+grep -F 'HOMELIBRARY_KSP_RESOLVED=com.github.bumptech.glide:ksp:5.0.5-homelibrary-repro1' "$ROOT/diagnostic-output-glide-dependencies.txt"
 
 echo "=== run expo-image KSP only ==="
 (
