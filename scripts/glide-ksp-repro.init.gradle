@@ -1,17 +1,16 @@
 // HomeLibrary reproducibility backport for Glide 5.0.5 KSP.
 //
-// The local repository mirrors exactly com.github.bumptech.glide:ksp:5.0.5:
-// its POM is copied verbatim from Maven Central and only its main JAR is the
-// deterministic one-line backport. Restrict the repository to that one module.
+// F-Droid's scanner explicitly allows the Debian system Maven repository at
+// file:///usr/share/maven-repo. The F-Droid init phase copies only the patched
+// Glide KSP 5.0.5 JAR and its unmodified upstream POM into that repository.
 
-def homeLibraryRoot = initscript.sourceFile.parentFile.parentFile
-def repoDir = new File(homeLibraryRoot, "build/repro-maven")
+def repoDir = new File("/usr/share/maven-repo")
 def moduleDir = new File(repoDir, "com/github/bumptech/glide/ksp/5.0.5")
 def patchedJar = new File(moduleDir, "ksp-5.0.5.jar")
 def upstreamPom = new File(moduleDir, "ksp-5.0.5.pom")
 
 if (!patchedJar.isFile() || !upstreamPom.isFile()) {
-    throw new GradleException("Complete local Glide KSP 5.0.5 mirror is missing: " + moduleDir)
+    throw new GradleException("Complete system Glide KSP 5.0.5 mirror is missing: " + moduleDir)
 }
 
 gradle.beforeProject { project ->
@@ -20,7 +19,7 @@ gradle.beforeProject { project ->
             forRepository {
                 maven {
                     name = "homeLibraryGlideKspRepro"
-                    url = repoDir.toURI()
+                    url = uri("file:///usr/share/maven-repo")
                     metadataSources { mavenPom(); artifact() }
                 }
             }
@@ -46,7 +45,7 @@ gradle.beforeProject { project ->
                 def files = cfg.files
                 def resolved = files.findAll { it.name == "ksp-5.0.5.jar" }
                 if (resolved.size() != 1 || resolved[0].canonicalFile != patchedJar.canonicalFile) {
-                    throw new GradleException("Glide KSP did not resolve to patched local artifact: " + resolved)
+                    throw new GradleException("Glide KSP did not resolve to patched system artifact: " + resolved)
                 }
                 def kotlinPoet = files.findAll { it.name.toLowerCase().contains("kotlinpoet") }
                 if (kotlinPoet.empty) {
