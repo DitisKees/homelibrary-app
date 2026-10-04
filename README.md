@@ -2,7 +2,7 @@
 
 HomeLibrary is a cross-platform client for managing a shared, self-hosted household book collection backed by PocketBase.
 
-> **F-Droid status:** The official `fdroid/fdroiddata!48673` submission is open. HomeLibrary **1.0.9 / versionCode 10** is being prepared with verified cross-runner reproducibility fixes. Independent GitHub and GitLab builds of the fixed source produced identical unsigned APKs. The new release must pass F-Droid's signed-reference verification before the submission is updated.
+> **F-Droid status:** The official `fdroid/fdroiddata!48673` submission is open. HomeLibrary **1.0.10 / versionCode 11** is being prepared with the verified reproducibility fixes, removal of disabled Google barcode references, and strict F-Droid APK scanner gates. The published 1.0.9 release remains immutable. The new signed APK must pass F-Droid’s signed-reference verification on the remote runner before the submission is updated.
 
 ## Features
 
@@ -21,7 +21,7 @@ HomeLibrary is a cross-platform client for managing a shared, self-hosted househ
 
 ## Development status
 
-HomeLibrary is early-stage software, but the current source is functional and the Android release path is deterministic on the pinned GitHub F-Droid harness. Cross-runner parity with F-Droid's GitLab build runner is still under investigation. See `docs/fdroid.md`, `docs/fdroid-harness.md`, and the open `fdroid/fdroiddata!48673` submission for the remaining publication work.
+HomeLibrary is early-stage software, but the current source is functional and the Android release path is deterministic on the pinned GitHub F-Droid harness. Cross-runner unsigned parity was verified for the earlier build fixes; the updated candidate still needs signed-reference verification on F-Droid's GitLab runner. See `docs/fdroid.md`, `docs/fdroid-harness.md`, and the open `fdroid/fdroiddata!48673` submission for the remaining publication work.
 
 The permanent Android application ID is:
 

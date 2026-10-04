@@ -1,0 +1,1 @@
+Entfernt deaktivierte Google-Barcodeverweise aus Android-Builds für F-Droid. ISBNs werden weiterhin lokal mit ZXing gescannt. Strenge APK-Prüfungen vor der Veröffentlichung; die geprüften Verbesserungen für reproduzierbare Builds bleiben erhalten.

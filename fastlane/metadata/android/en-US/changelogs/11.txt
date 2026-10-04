@@ -1,0 +1,1 @@
+Remove disabled Google barcode references from Android builds for F-Droid compatibility. ISBN scanning still uses the local ZXing scanner. Add strict APK scanning before publication and retain the verified reproducibility fixes.

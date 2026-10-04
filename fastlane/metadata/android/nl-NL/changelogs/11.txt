@@ -1,0 +1,1 @@
+Verwijder uitgeschakelde Google-barcodeverwijzingen uit Android-builds voor F-Droid. ISBN-scanning blijft de lokale ZXing-scanner gebruiken. Voeg strikte APK-controles vóór publicatie toe en behoud de geverifieerde reproduceerbaarheidsoplossingen.

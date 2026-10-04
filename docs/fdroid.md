@@ -9,18 +9,18 @@ See [`fdroid-dependencies.md`](./fdroid-dependencies.md) for the dependency/lice
 The next F-Droid candidate is:
 
 ```text
-versionName: 1.0.9
-versionCode: 10
-tag: v1.0.9
+versionName: 1.0.10
+versionCode: 11
+tag: v1.0.10
 ```
 
-`v1.0.7` / versionCode 8 is immutable and its source builds successfully on F-Droid, but its published signed APK does not reproduce F-Droid's buildserver output. Version 1.0.9 is therefore a build-system-only parity release: upstream will sign the exact unsigned APK produced by the same F-Droid buildserver/scanner path used for official verification.
+`v1.0.7` / versionCode 8 is immutable and its source builds successfully on F-Droid, but its published signed APK does not reproduce F-Droid's buildserver output. The published 1.0.9 APK subsequently failed the binary scanner on disabled Google barcode references. Version 1.0.10 removes those references and adds strict APK scanning gates; all existing tags and APKs remain immutable. For this candidate, upstream will sign the exact unsigned APK produced by the same F-Droid buildserver/scanner path used for official verification.
 
 `app.json` is the source of truth for Android versionName and versionCode. `package.json` remains the private JavaScript package manifest.
 
 ## Barcode scanning
 
-Android ISBN barcode scanning uses the local Expo module backed by ZXing Core 3.5.4 (Apache-2.0). Expo Camera provides the camera preview, while its Android ML Kit barcode path is disabled with `barcodeScannerEnabled: false`. Manual ISBN entry remains available.
+Android ISBN barcode scanning uses the local Expo module backed by ZXing Core 3.5.4 (Apache-2.0). Expo Camera provides the camera preview, while its Android ML Kit barcode path is disabled with `barcodeScannerEnabled: false` and its Google barcode source references are removed by the reviewed pinned patch. See `fdroid-apk-scanner.md`. Manual ISBN entry remains available.
 
 ## Source-only native build
 
@@ -96,7 +96,7 @@ CI verifies, among other things:
 
 ## F-Droid submission status
 
-The official fdroiddata submission is already open as `fdroid/fdroiddata!48673`. Version 1.0.7 exposed a cross-environment reproducibility gap; version 1.0.9 includes the verified fixes for that gap before the MR is updated:
+The official fdroiddata submission is already open as `fdroid/fdroiddata!48673`. Version 1.0.7 exposed a cross-environment reproducibility gap; version 1.0.10 retains the verified fixes for that gap and removes the barcode references found by the binary scanner before the MR is updated:
 
 - [x] Public GPL-3.0-or-later source repository
 - [x] Permanent Android application ID

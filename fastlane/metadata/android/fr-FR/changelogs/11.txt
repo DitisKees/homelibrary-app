@@ -1,0 +1,1 @@
+Suppression des références Google désactivées pour les codes-barres dans les builds Android pour F-Droid. La lecture ISBN utilise toujours ZXing localement. Analyse stricte des APK avant publication et conservation des correctifs de reproductibilité vérifiés.
