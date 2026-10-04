@@ -3,7 +3,11 @@
 FROM --platform=$BUILDPLATFORM node:22.13.1-alpine AS build
 WORKDIR /app
 
+RUN apk add --no-cache git
 COPY package.json package-lock.json ./
+COPY app.json ./
+COPY patches/ patches/
+COPY scripts/patch-expo-camera.mjs scripts/patch-expo-camera.mjs
 COPY scripts/generate-app-icons.mjs scripts/generate-app-icons.mjs
 COPY scripts/prepare-fastlane-icon.mjs scripts/prepare-fastlane-icon.mjs
 RUN npm ci

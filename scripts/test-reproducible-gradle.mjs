@@ -11,6 +11,22 @@ import plugin from '../plugins/with-reproducible-native-builds.js';
 const { AndroidConfig } = configPlugins;
 const scriptDir = path.dirname(fileURLToPath(import.meta.url));
 
+test('Expo disables dependency signature metadata even on an already configured project', async () => {
+  const generated = plugin({ name: 'test', slug: 'test' });
+  const apply = async (contents) => (await generated.mods.android.appBuildGradle({
+    modResults: { language: 'groovy', contents }, modRequest: {},
+  })).modResults.contents;
+  for (const contents of [
+    'android { defaultConfig {} }',
+    'android { defaultConfig { // HomeLibrary reproducible native builds\n} }',
+  ]) {
+    const result = await apply(contents);
+    assert.match(result, /includeInApk = false/);
+    assert.match(result, /includeInBundle = false/);
+    assert.equal(await apply(result), result);
+  }
+});
+
 test('Expo generation replaces host IPs and duplicates and remains idempotent', async () => {
   const generated = plugin({ name: 'test', slug: 'test' });
   const apply = async (modResults) => (await generated.mods.android.gradleProperties({

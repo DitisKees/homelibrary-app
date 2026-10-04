@@ -27,6 +27,7 @@ jobs:
     env:
       ANDROID_HOME: /opt/android-sdk
       ANDROID_SDK_ROOT: /opt/android-sdk
+      JAVA_HOME: /usr/lib/jvm/java-21-openjdk-amd64
       GRADLE_OPTS: -Dorg.gradle.jvmargs=-Xmx3g\ -XX:MaxMetaspaceSize=1g\ -Dfile.encoding=UTF-8 -Dorg.gradle.workers.max=2 -Dkotlin.compiler.execution.strategy=in-process
     steps:
       - name: Check out repository twice
@@ -50,7 +51,8 @@ jobs:
           mv /tmp/android-cli/cmdline-tools "$ANDROID_HOME/cmdline-tools/latest"
           yes | "$ANDROID_HOME/cmdline-tools/latest/bin/sdkmanager" --licenses >/dev/null || true
           "$ANDROID_HOME/cmdline-tools/latest/bin/sdkmanager" "platform-tools" "platforms;android-36" "build-tools;36.0.0" "ndk;27.1.12297006"
-          java -version
+          export PATH="$JAVA_HOME/bin:$PATH"
+          "$JAVA_HOME/bin/java" -version
           node --version
           npm --version
 

@@ -52,3 +52,19 @@ package, run the patch tests and native compilation, then scan the actual APK.
 Do not suppress scanner findings or rely only on dependency/artifact-name
 checks. Removing these references changes DEX bytes and requires a new release;
 the existing 1.0.9 tag and published APK must remain immutable.
+
+## Integration requirements
+
+The web Docker builder runs the same npm postinstall. Its dependency-install
+layer must include app.json, the reviewed patch/checksum files, the patcher,
+and Git before npm ci. Copying the application only after dependency
+installation omits required inputs.
+
+Installing Debian forky's fdroidserver can also install a newer default JDK.
+The legacy Android reproducibility job therefore selects Java 21 explicitly
+through JAVA_HOME; package-manager alternatives must not choose Gradle's JVM.
+
+The app's Expo Gradle plugin disables AGP dependenciesInfo inclusion in APKs
+and bundles using includeInApk=false and includeInBundle=false. This prevents
+the dependency-metadata signing block rejected by F-Droid's scanner. Keep
+the scanner strict and configure generation rather than altering signed APKs.
