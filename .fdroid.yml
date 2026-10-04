@@ -13,9 +13,9 @@ Binaries:
   https://github.com/DitisKees/homelibrary-app/releases/download/v%v/HomeLibrary-%v.apk
 
 Builds:
-  - versionName: 1.0.9
-    versionCode: 10
-    commit: v1.0.9
+  - versionName: 1.0.10
+    versionCode: 11
+    commit: v1.0.10
     sudo:
       - echo "deb https://deb.debian.org/debian forky main" > /etc/apt/sources.list.d/forky.list
       - echo "deb https://deb.debian.org/debian bookworm main" > /etc/apt/sources.list.d/bookworm.list
@@ -118,5 +118,5 @@ MaintainerNotes: |-
 AutoUpdateMode: Version
 UpdateCheckMode: Tags ^v[0-9]+\.[0-9]+\.[0-9]+$
 UpdateCheckData: app.json|"versionCode":\s*(\d+)|app.json|"version":\s*"([\d.]+)"
-CurrentVersion: 1.0.9
-CurrentVersionCode: 10
+CurrentVersion: 1.0.10
+CurrentVersionCode: 11

@@ -387,9 +387,9 @@ The packaged dev-server resource check passed on both runners. No sorted
 directory preload was needed for this production comparison.
 
 This proves cross-runner determinism for that source tree. The next release
-candidate (1.0.9/versionCode 10) still needs its release checks and immutable
+candidate (1.0.10/versionCode 11) still needs its release checks and immutable
 publication, followed by F-Droid's signed-reference verification. The existing
-1.0.8 tag and APK must not be replaced.
+1.0.8 and 1.0.9 tags and APKs must not be replaced.
 
 ## Desired end state
 
