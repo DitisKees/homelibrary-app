@@ -155,6 +155,15 @@ fdroid_build() {
     echo "[FAIL] F-Droid build failed for ${build_spec}." >&2
     exit "${status}"
   fi
+
+  # Run the separate binary scanner before exporting or publishing any APK.
+  local apk
+  apk="$(fdroid_find_unsigned_apk "${version_code}")"
+  bash "${REPO_ROOT}/scripts/scan-fdroid-apk.sh" "${apk}" 2>&1 | tee "${DIAG_ROOT}/fdroid-unsigned-apk-scan.log"
+  local reference="${home_vagrant}/tmp/binaries/${APP_ID}_${version_code}.binary.apk"
+  if [[ -f "${reference}" ]]; then
+    bash "${REPO_ROOT}/scripts/scan-fdroid-apk.sh" "${reference}" 2>&1 | tee "${DIAG_ROOT}/fdroid-reference-apk-scan.log"
+  fi
 }
 
 fdroid_find_unsigned_apk() {

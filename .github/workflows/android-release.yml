@@ -238,6 +238,20 @@ jobs:
           test "${ACTUAL}" = "${EXPECTED}"
           sha256sum "${SIGNED}" | tee "${SIGNED}.sha256"
 
+      - name: Check out release APK scanner tooling
+        uses: actions/checkout@v4
+        with:
+          path: release-scanner-tooling
+          ref: ${{ inputs.release_tag && github.sha || github.ref }}
+
+      - name: Install F-Droid APK scanner dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y --no-install-recommends fdroidserver
+
+      - name: Scan signed APK before publication
+        run: bash release-scanner-tooling/scripts/scan-fdroid-apk.sh "${GITHUB_WORKSPACE}/release/HomeLibrary-${HOMELIBRARY_RELEASE_VERSION}.apk"
+
       - name: Upload signed release APK
         uses: actions/upload-artifact@v4
         with:

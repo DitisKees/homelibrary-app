@@ -29,6 +29,9 @@ jobs:
       - name: Check reproducible Gradle configuration
         run: node --test scripts/test-reproducible-gradle.mjs
 
+      - name: Check reviewed Expo Camera source patch
+        run: node --test scripts/test-expo-camera-patch.mjs
+
       - name: Audit F-Droid npm dependencies
         run: npm run audit:fdroid-npm
 
@@ -63,6 +66,14 @@ jobs:
 
       - name: Verify F-Droid-style release APK
         run: bash scripts/verify-fdroid-apk.sh
+
+      - name: Install F-Droid APK scanner dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y --no-install-recommends fdroidserver
+
+      - name: Scan release APK with F-Droid binary scanner
+        run: bash scripts/scan-fdroid-apk.sh android/app/build/outputs/apk/release/app-release.apk
 
       - name: Typecheck
         run: npm run typecheck

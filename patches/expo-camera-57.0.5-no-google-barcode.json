@@ -1,0 +1,34 @@
+{
+  "android/build.gradle": {
+    "before": "ae2c789a85483b9ffe6bcb582ca3626c73e33d551e395cc49deb6d688185816a",
+    "after": "dd1e3ef921742aaaf5921f43322b8d5533ea04c58b798ce30cd62e7a43bf9ff1"
+  },
+  "android/src/main/AndroidManifest.xml": {
+    "before": "dace20ff54c855d7b5a640eb04dad2e97a8e1be216eb62880a0c114b6aded111",
+    "after": "b591656fbb0d239f2af3d500b05840c901f1b1f8e289630c86b943338ce918c3"
+  },
+  "android/src/main/java/expo/modules/camera/CameraViewModule.kt": {
+    "before": "0aee230cb5709770aded06b2f3b99655857876233cc376279529bbccaae54afd",
+    "after": "58be31a77f9b87913c7b220c6fa6ecfdd79aa7c10a3409c0145afaa58ea9370d"
+  },
+  "android/src/main/java/expo/modules/camera/analyzers/BarcodeAnalyzer.kt": {
+    "before": "edc0ea00efafd5660c1ae97effed0f782f8d376cc8e29d6eb77f00ce8e04183c",
+    "after": "2278acda5a7d671be69b9a23f9ed447be07773f66f56e2d7cd4e7995c33df675"
+  },
+  "android/src/main/java/expo/modules/camera/analyzers/BarcodeScannerResultSerializer.kt": {
+    "before": "8986c9a887587fd7eb3ea422d2a783ec666b37d8d2fe7aec43e2fa127b0ed9f6",
+    "after": null
+  },
+  "android/src/main/java/expo/modules/camera/analyzers/MLKitBarcodeAnalyzer.kt": {
+    "before": "5e293c23c69930e9ca35c2661041a5d8f288dd9be1c1017808b0b3b212ddc260",
+    "after": null
+  },
+  "android/src/main/java/expo/modules/camera/records/CameraRecords.kt": {
+    "before": "f4d2d46e8a84a6c51cff42fa6e64963664cdbe205a366d8c38141e1260561286",
+    "after": "45cfcf0a9338fbf13342eee9c9e06f24206a0b7241ad916f9510a0ec6de64a05"
+  },
+  "android/src/main/java/expo/modules/camera/utils/CameraUtils.kt": {
+    "before": "dc3a9721f3f86c402bf354117b1eed826c1d7b453baba7ae021d7f2001d3b317",
+    "after": "898063c9117fd3b6a2203b5a924194f3544f825c3adac0fc7b7b75eeb239a3e6"
+  }
+}

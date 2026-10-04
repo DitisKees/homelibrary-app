@@ -76,5 +76,6 @@ test -f "$APK"
 # Normalize remaining GNU SHA-1 build-id notes with the checked-in helper.
 python3 scripts/normalize-fdroid-apk-build-ids.py "$APK"
 bash scripts/verify-fdroid-apk.sh "$APK"
+bash scripts/scan-fdroid-apk.sh "$APK"
 
 echo "[PASS] F-Droid recipe-compatible unsigned Android build completed."
