@@ -8,7 +8,10 @@ APK="$(realpath "${1:?Usage: scan-fdroid-apk.sh APK}")"
 test -f "${APK}"
 SDK="${ANDROID_HOME:-${ANDROID_SDK_ROOT:-}}"
 test -d "${SDK}/build-tools" || { echo '[FAIL] Android SDK build-tools are required.' >&2; exit 2; }
-SCANNER_ROOT="${FDROID_APK_SCANNER_DIR:-${ROOT}/.fdroid-apk-scanner}"
+# Keep upstream tooling and its test fixtures outside the application checkout.
+WORK="$(mktemp -d "${RUNNER_TEMP:-${TMPDIR:-/tmp}}/homelibrary-apk-scanner.XXXXXX")"
+trap 'rm -rf "${WORK}"' EXIT
+SCANNER_ROOT="${FDROID_APK_SCANNER_DIR:-${WORK}/fdroidserver}"
 if [[ ! -d "${SCANNER_ROOT}/.git" ]]; then
   git init -q "${SCANNER_ROOT}"
   git -C "${SCANNER_ROOT}" remote add origin https://gitlab.com/fdroid/fdroidserver.git
@@ -20,8 +23,6 @@ fi
 test "$(git -C "${SCANNER_ROOT}" rev-parse HEAD)" = "${FDROID_APK_SCANNER_COMMIT}"
 test -z "$(git -C "${SCANNER_ROOT}" status --porcelain)" || { echo '[FAIL] APK scanner checkout is modified.' >&2; exit 2; }
 
-WORK="$(mktemp -d)"
-trap 'rm -rf "${WORK}"' EXIT
 cd "${WORK}"
 /usr/bin/python3 - "${SDK}" <<'PY'
 import json, sys

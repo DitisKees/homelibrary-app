@@ -22,7 +22,11 @@ bash scripts/scan-fdroid-apk.sh path/to/app.apk
 
 An isolated Python environment can be selected with
 `FDROID_APK_SCANNER_PYTHON`; the default is `/usr/bin/python3`, matching Debian
-packages. The clean scanner checkout must match the pinned revision.
+packages. By default the scanner checkout and configuration live in an isolated
+system temporary directory, removed on exit. Upstream scanner test fixtures
+must stay outside the application checkout so Jest and other application tools
+do not crawl them. `FDROID_APK_SCANNER_DIR` can select an existing clean checkout
+outside the application directory; it must match the pinned revision.
 
 ## Expo Camera's disabled barcode source
 
