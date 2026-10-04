@@ -12,7 +12,7 @@
     "uuid": "11.1.1"
   },
   "scripts": {
-    "postinstall": "npm run generate:app-icons && npm run prepare:fastlane-icon",
+    "postinstall": "node scripts/patch-expo-camera.mjs && npm run generate:app-icons && npm run prepare:fastlane-icon",
     "generate:app-icons": "node scripts/generate-app-icons.mjs",
     "prepare:fastlane-icon": "node scripts/prepare-fastlane-icon.mjs",
     "start": "expo start",
@@ -37,7 +37,7 @@
     "@tanstack/react-query": "^5.28.0",
     "expo": "~57.0.25",
     "expo-blob": "^57.0.1",
-    "expo-camera": "~57.0.5",
+    "expo-camera": "57.0.5",
     "expo-file-system": "~57.0.7",
     "expo-image": "~57.0.5",
     "expo-image-manipulator": "~57.0.20",

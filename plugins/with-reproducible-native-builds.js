@@ -1,6 +1,7 @@
 const { withAppBuildGradle, withGradleProperties } = require('expo/config-plugins');
 
 const MARKER = '// HomeLibrary reproducible native builds';
+const DEPENDENCY_INFO_MARKER = '// HomeLibrary excludes encrypted dependency metadata';
 
 // This config plugin is the authoritative upstream location for the app-level
 // externalNativeBuild compiler flags used by React Native codegen. F-Droid
@@ -24,6 +25,19 @@ module.exports = function withReproducibleNativeBuilds(config) {
   return withAppBuildGradle(config, (config) => {
     if (config.modResults.language !== 'groovy') {
       throw new Error('with-reproducible-native-builds requires a Groovy app build.gradle');
+    }
+
+    // Use AGP's supported DSL rather than modifying a signed APK after build.
+    if (!config.modResults.contents.includes(DEPENDENCY_INFO_MARKER)) {
+      config.modResults.contents += `
+${DEPENDENCY_INFO_MARKER}
+android {
+    dependenciesInfo {
+        includeInApk = false
+        includeInBundle = false
+    }
+}
+`;
     }
 
     if (config.modResults.contents.includes(MARKER)) {

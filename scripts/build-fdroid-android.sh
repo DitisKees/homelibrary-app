@@ -61,5 +61,6 @@ bash scripts/check-fdroid-android-dependencies.sh
 
 APK="$ROOT/android/app/build/outputs/apk/release/app-release-unsigned.apk"
 bash scripts/verify-fdroid-apk.sh "$APK"
+bash scripts/scan-fdroid-apk.sh "$APK"
 
 echo "[PASS] Clean reproducible Android source build completed from canonical source root without bundled Expo AARs, EAS, private registries, private files, or signing secrets."
