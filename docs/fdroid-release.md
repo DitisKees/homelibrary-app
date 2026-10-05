@@ -1,210 +1,144 @@
-# F-Droid release procedure
+# F-Droid release process
 
-The harness architecture and maintenance constraints are defined in [`fdroid-harness.md`](./fdroid-harness.md). That document is normative for how F-Droid tooling is pinned, how metadata may be transformed, and how remote-only failures are handled.
+The next candidate is **1.0.11**, base Android code **12**. Published releases,
+including 1.0.10, and their tags/assets remain immutable. The 2026-10-05
+maintainer review of `fdroid/fdroiddata!48673` requests R8 and ABI-specific APKs.
 
-This document describes the release path for HomeLibrary's upstream-signed reproducible F-Droid publication. The current candidate is Android `1.0.10` / versionCode `11`, with intended immutable tag `v1.0.10`.
+## Version and APK identity
 
-`v1.0.7` / versionCode 8 is already published and remains immutable. F-Droid can build its source successfully, but the resulting unsigned APK differs from the published 1.0.7 APK because the upstream release and F-Droid buildserver used different Java/native build paths. Version 1.0.8 made the F-Droid buildserver output authoritative. Version 1.0.9 includes the Glide KSP and dev-server resource fixes that subsequently proved cross-runner determinism. Both older releases remain immutable. Version 1.0.10 removes the disabled Google barcode references rejected by the binary scanner and enforces strict APK scanning before publication. The published 1.0.9 release also remains immutable.
+`app.json` stores the semantic version and the **base** Android code.
+`scripts/android-release-abis.json` defines the ABI suffixes. The Expo plugin
+`plugins/with-android-release-packaging.js` generates release configuration
+upstream; fdroiddata does not patch the generated Gradle version or optimizer.
 
-## Version source of truth
+| ABI | Code (`10 * base + suffix`) | Asset for 1.0.11 |
+| --- | --- | --- |
+| armeabi-v7a | 121 | HomeLibrary-1.0.11-armeabi-v7a.apk |
+| arm64-v8a | 122 | HomeLibrary-1.0.11-arm64-v8a.apk |
+| x86 | 123 | HomeLibrary-1.0.11-x86.apk |
+| x86_64 | 124 | HomeLibrary-1.0.11-x86_64.apk |
 
-Android release versions are defined in `app.json`:
+Each is a standalone installable APK, built with React Native's supported
+`-PreactNativeArchitectures=<abi>` property. These are not APK-set fragments.
+An ordinary all-ABI developer/smoke build retains a universal APK, code 120.
+The production workflow publishes the four smaller ABI APKs.
 
-```json
-{
-  "expo": {
-    "version": "1.0.10",
-    "android": {
-      "versionCode": 11
-    }
-  }
-}
-```
+For each new release:
 
-For every later Android release:
+1. Increment the semantic version and **base** code in `app.json`.
+2. Update all four `.fdroid.yml` builds and their tag, plus `CurrentVersion`.
+3. Set `CurrentVersionCode` to `10 * base + 4`.
+4. Add changelogs for all four actual APK codes in every Fastlane locale; also
+   add code `10 * base` for the universal smoke APK.
+5. Keep the four `VercodeOperation` expressions and per-build binary URLs.
 
-1. increment `expo.version`;
-2. increment `android.versionCode` monotonically;
-3. add `<versionCode>.txt` changelogs under all supported Fastlane locales;
-4. update the upstream `.fdroid.yml` build/current-version fields;
-5. run the complete release validations;
-6. create the immutable source tag only from the exact green `main` commit.
+ABI digits are in the lowest position, so every APK in the next release has a
+higher code than every APK in the previous release. F-Droid copies all four
+build entries during automatic updates. Each entry's `binary` URL includes its
+literal ABI and `%v` for the version. An app-wide universal `Binaries` URL would
+compare each rebuild with the wrong signed APK.
 
-`package.json` is not the Android version source of truth.
+## R8 and dependency rules
 
-## Pre-release validation
+The plugin enables release minification and replaces Expo's non-optimized
+default ProGuard file with `proguard-android-optimize.txt`, retaining the generated
+app rules and dependency consumer rules. React Native supplies JNI/bridge rules;
+Expo Modules Core supplies module/record/view rules; Expo Image supplies Glide
+and WebP rules. The local ZXing module extends Expo's Module and uses ZXing
+classes directly, so it does not require a blanket keep rule.
 
-From a clean checkout of the exact release candidate:
+Do not disable R8 or add global `-dontwarn`, `-dontoptimize`, or keep-all rules to
+hide a failure. Inspect missing-class reports and runtime behavior first.
+Resource shrinking is disabled: F-Droid documents potential non-determinism and
+recommends enabling it only when its reduction is substantial and verified.
+The existing Expo AGP 8.10.1 toolchain includes a newer R8 than the versions recommended
+for older CPU-dependent reproducibility bugs; no toolchain upgrade is needed.
 
-```bash
-npm ci
-npx expo-doctor
-npm run audit:fdroid-npm
-npm run validate:android-release
-npm run validate:fdroid-metadata
-npm run check:fdroid-icons
-npm run typecheck
-npm run lint
-npm test
-npm run build:web
-npm run build:fdroid-android
-```
+## Before tagging
 
-The pinned repository `expo-doctor` version must be used; do not use `@latest` in release validation. GitHub CI, the two-clean-checkout reproducibility workflow, and the `F-Droid buildserver simulation` workflow must all be green before tagging. A green GitHub buildserver simulation proves determinism only on the pinned GitHub-hosted harness; it does **not** by itself prove parity with F-Droid's GitLab runner. Do not update fdroiddata until the remote-runner parity investigation described in `fdroid-harness.md` is resolved.
+Run `npm ci`, the release/metadata validators, native config regression checks,
+`npm run typecheck`, `npm run lint`, `npm test`, and `npm run build:web`.
 
-## Store metadata
+The normal CI and Android reproducibility checks must pass. F-Droid buildserver
+simulation independently builds **every ABI twice**, scans each APK, verifies
+its package/version/native ABI and bundled JavaScript, and byte-compares matching
+ABIs. A nonempty R8 `mapping.txt` is required and exported with each APK. The
+x86_64 comparison job also signs an ephemeral copy, installs it in an Android
+emulator, and requires the initial React Native screen to render without a fatal
+exception. This uses no production key.
 
-The real English phone screenshots are already committed under:
+Emulator startup does not replace device testing. Before release, verify on ARM
+hardware: installation/update, login, session persistence and logout, library
+thumbnails, ISBN scanning, cover capture, and navigation. Record actual sizes
+for all four APKs compared with the preceding universal release. Do not claim
+these checks or size reductions passed before evidence exists.
 
-```text
-fastlane/metadata/android/en-US/images/phoneScreenshots/
-```
-
-The deterministic application icon is also committed as:
-
-```text
-fastlane/metadata/android/en-US/images/icon.png
-```
-
-Do not replace these with mock UI or screenshots containing private server URLs, household data, email addresses, tokens, or other private information.
-
-## Create the immutable source tag
-
-After the release-preparation PR is merged and the exact `main` commit is green:
+Once the PR is merged and main is green, create the **new** immutable tag:
 
 ```bash
 git switch main
 git pull --ff-only
-git status --short
-node -p "require('./app.json').expo.version"
-node -p "require('./app.json').expo.android.versionCode"
-git tag -a v1.0.10 -m "HomeLibrary 1.0.10"
-git push origin v1.0.10
+git tag v1.0.11
+git push origin v1.0.11
 ```
 
-Expected version output:
+Never move/recreate an existing tag or replace an existing APK with different
+bytes. Use the manual `release_tag` recovery input only for an existing immutable
+release whose source/version still agrees with canonical metadata.
 
-```text
-1.0.10
-11
-```
+## Publication and signed-reference verification
 
-Never move, delete/recreate, or reuse a published tag. If correction is needed after tagging, create a new version/versionCode.
+The Android release workflow:
 
-The tag push triggers both the existing versioned self-hosting image flow and the Android production release workflow.
+1. Builds each ABI from the immutable source using the pinned F-Droid production
+   buildserver path and source scanner.
+2. Exports the exact unsigned APK and its R8 mapping.
+3. Signs all four artifacts with the permanent production key and apksigner
+   **34.0.0**, preserving F-Droid signature-copy compatibility.
+4. Verifies the certificate, scans each signed APK and publishes the four APKs,
+   checksums, certificate reports and mapping files as immutable release assets.
+5. Rebuilds each ABI with canonical `.fdroid.yml` unchanged and requires
+   F-Droid's signed-reference/signature-copy comparison to pass for **each**.
 
-## Production APK publication
+Keep `AllowedAPKSigningKeys` unchanged. Each source test removes both app-wide
+and per-build reference binary fields structurally; released verification retains
+them. Do not turn a source test into release-parity evidence.
 
-For a `vX.Y.Z` tag, `.github/workflows/android-release.yml`:
+## Update the existing fdroiddata MR
 
-1. checks that the tag exactly matches `app.json`;
-2. builds the unsigned APK inside F-Droid's `buildserver-trixie` image using the live source scanner;
-3. exports and signs that exact APK outside Gradle with the permanent upstream key;
-4. uses Android build-tools 34.0.0 `apksigner` for signature-copy compatibility;
-5. verifies the signing certificate against `ANDROID_RELEASE_CERT_SHA256`;
-6. publishes `HomeLibrary-X.Y.Z.apk` and checksums to the immutable GitHub Release;
-7. reruns F-Droid in release mode with `Binaries` and `AllowedAPKSigningKeys`, and the workflow is not green unless F-Droid's own reference-binary/signature-copy verification succeeds.
+Only after source CI, device testing, immutable publication and all four signed
+reference checks are green, update the existing
+[fdroid/fdroiddata!48673](https://gitlab.com/fdroid/fdroiddata/-/merge_requests/48673).
+Do not create another app submission or spend GitLab CI minutes testing an
+unpublished reference binary.
 
-Manual workflow runs remain useful for signing tests. If an immutable tag-triggered release fails because of release infrastructure, the corrected workflow may be run manually with `release_tag` set to that existing tag; it checks out and verifies the exact immutable tag source and may publish the permanent assets without moving the tag.
+Copy canonical `.fdroid.yml` to `metadata/io.github.ditiskees.homelibrary.yml` in
+the fdroiddata fork, resolving all four `commit` entries to the full new tag SHA.
+Retain the four `binary` URLs, `VercodeOperation`, production signer and reviewed
+scanner exceptions. Run `fdroid rewritemeta`, `fdroid lint`, `fdroid checkupdates`
+and each of the four build specifications (121, 122, 123, 124).
 
-After `v1.0.10` finishes, independently download and verify:
+Report the exact immutable source, per-ABI codes, sizes, SHA-256 values, signer
+and verification runs. The remote F-Droid runner remains the final parity check;
+a GitHub build in the same container alone does not establish remote parity.
 
-```bash
-apksigner verify --verbose --print-certs HomeLibrary-1.0.10.apk
-sha256sum HomeLibrary-1.0.10.apk
-```
+## Documentation reviewed
 
-The signer certificate SHA-256 must equal the configured production certificate. Keep that fingerprint: fdroiddata needs its lower-case hex form in `AllowedAPKSigningKeys`.
+- [Submitting to F-Droid: ABI split](https://f-droid.org/en/docs/Submitting_to_F-Droid_Quick_Start_Guide/#setup-abi-split)
+- [Build metadata: VercodeOperation](https://f-droid.org/en/docs/Build_Metadata_Reference/#vercodeoperation)
+- [Reproducible builds: R8, resource shrinking and signatures](https://f-droid.org/en/docs/Reproducible_Builds/)
+- [Inclusion policy](https://f-droid.org/en/docs/Inclusion_Policy/)
+- [Anti-Features: non-free network services](https://f-droid.org/en/docs/Anti-Features/#non-free-network-services)
+- [React Native: other stores and ProGuard](https://reactnative.dev/docs/signed-apk-android)
 
-## Upstream F-Droid recipe
+The existing build-from-source policy, Debian Node/npm, NDK pin, Glide KSP
+ordering fix, localhost dev-server resource, scanner gates and permanent signing
+identity remain part of every architecture's recipe. See `fdroid-harness.md` for
+pinning, diagnostics and the previous reproducibility investigation.
 
-The root `.fdroid.yml` is the upstream development copy. It references the intended immutable tag because a source file cannot contain the SHA of the commit containing itself.
-
-It also defines the reproducible binary location:
-
-```text
-Binaries: https://github.com/DitisKees/homelibrary-app/releases/download/v%v/HomeLibrary-%v.apk
-```
-
-The submitted fdroiddata metadata must replace `commit: v1.0.10` with the full 40-character SHA resolved from the immutable tag.
-
-The official metadata must retain the already verified `AllowedAPKSigningKeys` value for the permanent production certificate. Do not change the signing identity between releases.
-
-## Test with fdroidserver
-
-The preferred pre-submission test is the GitHub `F-Droid buildserver simulation` workflow. It runs a pinned buildserver image digest with pinned fdroidserver/fdroiddata revisions, uses the live F-Droid source scanner, and derives temporary source metadata structurally through fdroidserver's parser/writer. The canonical `.fdroid.yml` is never edited as text. The source path runs:
-
-```text
-fdroid fetchsrclibs <appid>:<versionCode> --verbose
-fdroid build --verbose --test --refresh-scanner --on-server --no-tarball <appid>:<versionCode>
-```
-
-The source simulation intentionally omits `Binaries`/signing-key comparison so it can run before a release exists, but it runs twice and byte-compares the two buildserver APKs. It uses `scripts/fdroid/run-source-build.sh`. After publication, the release workflow uses the separate `scripts/fdroid/run-release-verification.sh` entry point with canonical `.fdroid.yml` unchanged, retaining `Binaries` and `AllowedAPKSigningKeys` for F-Droid's final signed-reference comparison. On failure both paths upload build logs, effective metadata, generated Android files, scanner-sensitive React Native Gradle files, and pinned toolchain diagnostics.
-
-Only after that workflow is green **and** remote-runner parity has been demonstrated should the fdroiddata branch be updated. If the remote fdroiddata pipeline still fails, first consult the ruled-out/open-cause record in `fdroid-harness.md`. Do not repeat already disproven experiments, and do not patch metadata ad hoc from the remote log. Prefer environment- and artifact-level diagnostics before another full Android build.
-
-For manual fdroidserver testing, resolve the source commit as before:
-
-Resolve the source commit:
-
-```bash
-git rev-list -n 1 v1.0.10
-```
-
-In the fdroiddata fork, update `metadata/io.github.ditiskees.homelibrary.yml` to versionName 1.0.10/versionCode 11 and the full SHA, then run:
-
-```bash
-fdroid readmeta
-fdroid rewritemeta io.github.ditiskees.homelibrary
-fdroid checkupdates --allow-dirty io.github.ditiskees.homelibrary
-fdroid lint io.github.ditiskees.homelibrary
-fdroid build -v -l io.github.ditiskees.homelibrary:11
-```
-
-Review `rewritemeta` output rather than blindly committing it.
-
-The open fdroiddata MR uses the reviewer-requested React Native recipe shape with Debian forky Node/npm, Expo prebuild, and direct Gradle assembly. Per maintainer review, `externalNativeBuild` is configured by the checked-in Expo config plugin and APK build-ID normalization is called from the checked-in Python helper; the metadata must not embed either Python implementation.
-
-The original v1.0.8 remote comparison differs in DEX, ART profile, and resource
-table entries. Current-source diagnostics have resolved the DEX/profile delta
-through deterministic Glide KSP generation. The remaining table delta was
-isolated to React Native's host-derived dev-server IP; the Expo reproducibility
-plugin now pins it to `localhost`, with checks before compilation and in the
-packaged APK. The immutable v1.0.8 release remains unchanged. See
-`fdroid-harness.md` for evidence and the confirmed full cross-runner result and remaining signed-release gate.
-
-The F-Droid parent build environment observed during review supplied Node 20.19.2, while the current React Native/Expo toolchain requires a newer supported Node baseline. The fdroiddata recipe should keep the reviewer-approved Debian packaging approach where possible, but the final build-tool solution must satisfy the actual React Native/Expo engine requirement and should be discussed transparently in the MR rather than hidden with disabled checks.
-
-## What to verify in the F-Droid build
-
-Confirm that:
-
-- package is `io.github.ditiskees.homelibrary`;
-- versionName is 1.0.10 and versionCode is 11;
-- target SDK remains 36;
-- no Google Play Services, Firebase, ML Kit, or Play SDK dependency appears;
-- `expo.camera.barcode-scanner-enabled=false` remains an exact generated Gradle property after release-only settings are appended;
-- the final APK contains no Barhopper native library, ML Kit barcode models, or Google barcode-scanner metadata;
-- bundled Expo `local-maven-repo` directories are absent before Android generation;
-- Expo native modules compile from source;
-- the F-Droid scanner has no unexplained proprietary/binary finding;
-- F-Droid's rebuilt unsigned APK reproduces the upstream-signed APK sufficiently for signature copying/verification;
-- installation, authentication, library loading, ISBN scanning/manual entry, cover handling, reading status, and lending basics work.
-
-## Update existing fdroiddata MR !48673
-
-Do not open a second app-submission MR. Update the existing `fdroid/fdroiddata!48673` branch after `v1.0.10` and its GitHub Release APK exist:
-
-1. set `CurrentVersion: 1.0.10` and `CurrentVersionCode: 11`;
-2. add/update the build entry for versionCode 11 with the full `v1.0.10` commit SHA;
-3. use the shared canonical build path;
-4. add `Binaries: https://github.com/DitisKees/homelibrary-app/releases/download/v%v/HomeLibrary-%v.apk`;
-5. add the independently verified lower-case certificate fingerprint as `AllowedAPKSigningKeys`;
-6. retain `AuthorName`;
-7. require the GitHub `F-Droid buildserver simulation` workflow to be green, then run `rewritemeta`, `lint`, `checkupdates`, and the versionCode 11 build;
-8. update the MR description to state that upstream reproducible signing is complete;
-9. ask for the parent pipeline/buildserver to be rerun.
-
-## After acceptance
-
-For each later release, repeat the version bump/changelog/green-CI/tag/signed-GitHub-Release sequence and monitor the first F-Droid build after native dependency or Expo SDK changes.
+The policy review also found an existing metadata omission: ISBN lookup always
+includes Google Books, even without an API key (Open Library is tried first).
+With a user-provided API key, Google Books is tried first. The canonical recipe
+now declares `NonFreeNet` with that precise explanation. Manual entry and the
+self-hosted PocketBase library remain usable without Google Books. No built-in
+API key or service dependency is added by this change.

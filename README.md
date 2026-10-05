@@ -2,7 +2,7 @@
 
 HomeLibrary is a cross-platform client for managing a shared, self-hosted household book collection backed by PocketBase.
 
-> **F-Droid status:** The official `fdroid/fdroiddata!48673` submission is open. HomeLibrary **1.0.10 / versionCode 11** is being prepared with the verified reproducibility fixes, removal of disabled Google barcode references, and strict F-Droid APK scanner gates. The published 1.0.9 release remains immutable. The new signed APK must pass F-Droid’s signed-reference verification on the remote runner before the submission is updated.
+> **F-Droid status:** The official `fdroid/fdroiddata!48673` submission is open. Candidate **1.0.11 / base code 12 (ABI codes 121–124)** enables R8 and builds standalone APKs for ARMv7, ARM64, x86 and x86_64 in response to maintainer review. Every ABI must pass source/scanner, reproducibility and signed-reference checks before the MR is updated. Published releases remain immutable.
 
 ## Features
 

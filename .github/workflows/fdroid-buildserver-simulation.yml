@@ -33,7 +33,7 @@ permissions:
 
 jobs:
   fdroid-buildserver:
-    name: fdroid-buildserver-${{ matrix.copy }}
+    name: fdroid-buildserver-${{ matrix.abi }}-${{ matrix.copy }}
     runs-on: ubuntu-latest
     container:
       image: registry.gitlab.com/fdroid/fdroidserver:buildserver-trixie@sha256:9cb68105642ca4e7b295f0ceab10f069f5b3247dc18fa7c36046e9d81aa469a8
@@ -42,9 +42,11 @@ jobs:
       fail-fast: false
       matrix:
         copy: [a, b]
+        abi: [armeabi-v7a, arm64-v8a, x86, x86_64]
     env:
       ANDROID_HOME: /opt/android-sdk
       ANDROID_SDK_ROOT: /opt/android-sdk
+      FDROID_ABI: ${{ matrix.abi }}
       FDROID_SOURCE_REF: ${{ github.event.pull_request.head.sha || github.sha }}
       FDROID_EXPORT_APK: fdroid-buildserver-output/app-release-unsigned.apk
 
@@ -66,8 +68,8 @@ jobs:
       - name: Upload unsigned buildserver APK
         uses: actions/upload-artifact@v4
         with:
-          name: fdroid-buildserver-unsigned-${{ matrix.copy }}
-          path: fdroid-buildserver-output/app-release-unsigned.apk
+          name: fdroid-buildserver-unsigned-${{ matrix.abi }}-${{ matrix.copy }}
+          path: fdroid-buildserver-output/
           if-no-files-found: error
           retention-days: 7
 
@@ -75,7 +77,7 @@ jobs:
         if: always()
         uses: actions/upload-artifact@v4
         with:
-          name: fdroid-buildserver-diagnostics-${{ matrix.copy }}-${{ github.sha }}
+          name: fdroid-buildserver-diagnostics-${{ matrix.abi }}-${{ matrix.copy }}-${{ github.sha }}
           path: fdroid-buildserver-diagnostics/
           if-no-files-found: warn
           retention-days: 7
@@ -84,18 +86,26 @@ jobs:
     name: compare F-Droid buildserver APKs
     runs-on: ubuntu-latest
     needs: fdroid-buildserver
+    strategy:
+      fail-fast: false
+      matrix:
+        abi: [armeabi-v7a, arm64-v8a, x86, x86_64]
 
     steps:
+      - name: Check out startup verification tooling
+        if: matrix.abi == 'x86_64'
+        uses: actions/checkout@v4
+
       - name: Download build A
         uses: actions/download-artifact@v4
         with:
-          name: fdroid-buildserver-unsigned-a
+          name: fdroid-buildserver-unsigned-${{ matrix.abi }}-a
           path: build-a
 
       - name: Download build B
         uses: actions/download-artifact@v4
         with:
-          name: fdroid-buildserver-unsigned-b
+          name: fdroid-buildserver-unsigned-${{ matrix.abi }}-b
           path: build-b
 
       - name: Compare unsigned APKs
@@ -111,3 +121,48 @@ jobs:
             exit 1
           fi
           echo "Independent F-Droid buildserver APKs are byte-for-byte identical."
+
+      - name: Set up Java for emulator verification
+        if: matrix.abi == 'x86_64'
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '21'
+
+      - name: Set up Android SDK for emulator verification
+        if: matrix.abi == 'x86_64'
+        uses: android-actions/setup-android@v4
+        with:
+          packages: 'platform-tools build-tools;34.0.0'
+          log-accepted-android-sdk-licenses: false
+
+      - name: Sign an ephemeral emulator APK
+        if: matrix.abi == 'x86_64'
+        run: |
+          set -euo pipefail
+          keytool -genkeypair -keystore "$RUNNER_TEMP/smoke.jks" -storepass android -keypass android -alias smoke -keyalg RSA -validity 1 -dname "CN=Ephemeral CI"
+          "$ANDROID_HOME/build-tools/34.0.0/apksigner" sign --ks "$RUNNER_TEMP/smoke.jks" --ks-pass pass:android --out smoke.apk build-a/app-release-unsigned.apk
+
+      - name: Enable emulator KVM permissions
+        if: matrix.abi == 'x86_64'
+        run: |
+          echo 'KERNEL=="kvm", GROUP="kvm", MODE="0666", OPTIONS+="static_node=kvm"' | sudo tee /etc/udev/rules.d/99-kvm4all.rules
+          sudo udevadm control --reload-rules
+          sudo udevadm trigger --name-match=kvm
+
+      - name: Install and start the R8 release on Android
+        if: matrix.abi == 'x86_64'
+        uses: reactivecircus/android-emulator-runner@v2
+        with:
+          api-level: 36
+          arch: x86_64
+          disable-animations: true
+          script: bash scripts/smoke-android-startup.sh smoke.apk
+
+      - name: Upload startup diagnostics
+        if: always() && matrix.abi == 'x86_64'
+        uses: actions/upload-artifact@v4
+        with:
+          name: r8-startup-${{ github.sha }}
+          path: android-startup.log
+          if-no-files-found: warn

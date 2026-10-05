@@ -65,7 +65,7 @@ The harness intentionally has two entry points. Do not merge them back into a mo
 Entry point:
 
 ```bash
-scripts/fdroid/run-source-build.sh <40-character-source-sha> .fdroid.yml
+FDROID_ABI=arm64-v8a scripts/fdroid/run-source-build.sh <40-character-source-sha> .fdroid.yml
 ```
 
 Purpose:
@@ -100,7 +100,7 @@ A fast structural test runs before Android work:
 Entry point:
 
 ```bash
-scripts/fdroid/run-release-verification.sh .fdroid.yml
+FDROID_ABI=arm64-v8a scripts/fdroid/run-release-verification.sh .fdroid.yml
 ```
 
 Purpose:
@@ -386,10 +386,10 @@ unsigned APKs have SHA-256
 The packaged dev-server resource check passed on both runners. No sorted
 directory preload was needed for this production comparison.
 
-This proves cross-runner determinism for that source tree. The next release
-candidate (1.0.10/versionCode 11) still needs its release checks and immutable
-publication, followed by F-Droid's signed-reference verification. The existing
-1.0.8 and 1.0.9 tags and APKs must not be replaced.
+This proves cross-runner determinism for that source tree. Release 1.0.10 subsequently passed source, scanner and signed-reference
+verification and was published immutably. The 1.0.11 candidate introduces R8
+and per-ABI packaging, so each new ABI must pass these gates again. Existing
+tags and APKs must not be replaced.
 
 ## Desired end state
 
@@ -406,3 +406,18 @@ canonical .fdroid.yml
 ```
 
 If the remote build is routinely teaching us something the local gates could have known, improve the gates rather than adding another remote-only workaround. A green GitHub buildserver simulation must not be described as proof of GitLab/F-Droid runner parity until that parity has actually been demonstrated.
+
+## ABI packaging after maintainer review (2026-10-05)
+
+The harness now requires `FDROID_ABI` for source/released verification. It
+calculates the selected APK code from the base code and the checked-in ABI map.
+Each ABI is built twice independently and matching ABI artifacts are compared.
+Source derivation removes every per-build `binary` as well as `Binaries` and
+`AllowedAPKSigningKeys`; only the selected build's source commit is changed.
+Release verification keeps each ABI's signed-reference URL unchanged.
+
+R8 is now enabled, so the old observation ruling out R8 applies only to the
+historical unminified build. Re-evaluate new optimizer failures against actual
+mapping, missing-class and reproducibility evidence. Mapping files are required
+and exported. The x86_64 APK must also pass emulator installation/startup.
+See [the release process](fdroid-release.md) for the full four-ABI release gates.

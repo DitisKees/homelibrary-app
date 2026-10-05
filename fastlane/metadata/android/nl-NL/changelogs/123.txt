@@ -1,0 +1,1 @@
+R8-optimalisatie voor releases en kleinere afzonderlijke APKs voor ARMv7, ARM64, x86 en x86_64. Reproduceerbare builds en F-Droid-scannercontroles blijven gelden voor elke architectuur.

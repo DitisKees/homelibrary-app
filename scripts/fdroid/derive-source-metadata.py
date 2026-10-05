@@ -5,7 +5,7 @@ This intentionally uses fdroidserver's own parser/writer instead of modifying
 YAML as text. Release metadata remains untouched; source-test metadata differs
 only by:
   * removing Binaries
-  * removing AllowedAPKSigningKeys
+  * removing AllowedAPKSigningKeys and every per-build binary
   * replacing the selected build's commit with the requested source SHA
 """
 
@@ -22,6 +22,8 @@ def derive(source: Path, destination: Path, source_ref: str, version_code: int) 
 
     app.pop("Binaries", None)
     app.pop("AllowedAPKSigningKeys", None)
+    for build in app.get("Builds", []):
+        build.binary = ""
 
     matching = [
         build
@@ -42,6 +44,8 @@ def derive(source: Path, destination: Path, source_ref: str, version_code: int) 
     generated = metadata.parse_metadata(destination)
     if generated.get("Binaries"):
         raise SystemExit("source metadata unexpectedly contains Binaries")
+    if any(build.binary for build in generated.get("Builds", [])):
+        raise SystemExit("source metadata unexpectedly contains a per-build binary")
     if generated.get("AllowedAPKSigningKeys"):
         raise SystemExit("source metadata unexpectedly contains AllowedAPKSigningKeys")
 

@@ -1,0 +1,1 @@
+Enable R8 release optimization and publish smaller standalone APKs for ARMv7, ARM64, x86 and x86_64. Preserve reproducible builds and F-Droid scanner verification for every architecture.

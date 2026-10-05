@@ -12,11 +12,12 @@ if [[ ! -f "${METADATA_SOURCE}" ]]; then
   exit 2
 fi
 
+VERSION_CODE="$(fdroid_version_code)"
+
 fdroid_reset
 trap fdroid_collect_diagnostics EXIT
 fdroid_prepare_environment
 
-VERSION_CODE="$(fdroid_version_code)"
 
 fdroid_install_metadata "${METADATA_SOURCE}"
 fdroid_assert_metadata_canonical
