@@ -9,7 +9,7 @@ adb shell am start -W -n "$PACKAGE/.MainActivity"
 # activity. SecureStore/native module registration occurs before this UI.
 for attempt in $(seq 1 30); do
   adb shell uiautomator dump /sdcard/homelibrary-ui.xml >/dev/null 2>&1 || true
-  if adb shell cat /sdcard/homelibrary-ui.xml 2>/dev/null | grep -Eq 'text="(HomeLibrary|PocketBase[^" ]*)"'; then
+  if adb shell cat /sdcard/homelibrary-ui.xml 2>/dev/null | grep -Eq 'text="[^"]*(HomeLibrary|PocketBase)[^"]*"'; then
     adb shell pidof "$PACKAGE" >/dev/null
     adb logcat -d > android-startup.log
     if grep -Eq 'FATAL EXCEPTION|Fatal signal|ReactNativeJS.*(Error:|Exception)' android-startup.log; then
