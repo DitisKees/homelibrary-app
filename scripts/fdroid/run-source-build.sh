@@ -31,6 +31,7 @@ VERSION_CODE="$(fdroid_version_code)"
 DERIVED_METADATA="${WORK_ROOT}/source-metadata.yml"
 
 fdroid_python "${SCRIPT_DIR}/test-derive-source-metadata.py"
+fdroid_python "${SCRIPT_DIR}/test-abi-metadata.py"
 fdroid_python   "${SCRIPT_DIR}/derive-source-metadata.py"   "${METADATA_SOURCE}"   "${DERIVED_METADATA}"   "${SOURCE_REF}"   "${VERSION_CODE}"
 
 fdroid_install_metadata "${DERIVED_METADATA}"

@@ -39,6 +39,8 @@ const expo = app.expo ?? {};
 const android = expo.android ?? {};
 const versionName = expo.version;
 const versionCode = android.versionCode;
+const abis = JSON.parse(fs.readFileSync(path.join(root, "scripts/android-release-abis.json"), "utf8"));
+const splitCodes = Object.values(abis).map((offset) => versionCode * 10 + offset);
 
 expect(typeof versionName === 'string' && /^\d+\.\d+\.\d+$/.test(versionName), 'app.json expo.version must be semantic x.y.z');
 expect(Number.isInteger(versionCode) && versionCode > 0, 'app.json android.versionCode must be a positive integer');
@@ -58,7 +60,7 @@ for (const [locale, label] of localeSpecs) {
   const dir = path.join(root, 'fastlane', 'metadata', 'android', locale);
   const shortPath = path.join(dir, 'short_description.txt');
   const fullPath = path.join(dir, 'full_description.txt');
-  const changelogPath = path.join(dir, 'changelogs', `${versionCode}.txt`);
+  const changelogPath = path.join(dir, 'changelogs', `${splitCodes[0]}.txt`);
 
   expect(fs.existsSync(shortPath), `${label} short_description.txt is missing`);
   expect(fs.existsSync(fullPath), `${label} full_description.txt is missing`);
@@ -103,13 +105,20 @@ expect(!fs.existsSync(legacyBuildserverScriptPath), 'legacy mode-switching F-Dro
 if (fs.existsSync(fdroidPath)) {
   const fdroid = fs.readFileSync(fdroidPath, 'utf8');
   expect(fdroid.includes(`versionName: ${versionName}`) || fdroid.includes(`versionName: '${versionName}'`), `.fdroid.yml must use versionName ${versionName}`);
-  expect(fdroid.includes(`versionCode: ${versionCode}`), `.fdroid.yml must use versionCode ${versionCode}`);
+  for (const code of splitCodes) expect(fdroid.includes(`versionCode: ${code}\n`), `.fdroid.yml must include ABI versionCode ${code}`);
   expect(fdroid.includes(`commit: v${versionName}`), `.fdroid.yml must build tag v${versionName}`);
   expect(fdroid.includes('ndk: r27b'), '.fdroid.yml must pin Android NDK r27b for Expo SDK 57 / React Native 0.86');
   expect(fdroid.includes('AuthorName: Kees van \'t Slot'), '.fdroid.yml must declare the upstream author');
   expect(fdroid.includes('RepoType: git'), '.fdroid.yml must declare RepoType: git');
   expect(fdroid.includes('https://github.com/DitisKees/homelibrary-app'), '.fdroid.yml must reference the public upstream repository');
-  expect(fdroid.includes('Binaries: \n  https://github.com/DitisKees/homelibrary-app/releases/download/v%v/HomeLibrary-%v.apk'), '.fdroid.yml must use fdroid rewritemeta canonical Binaries formatting');
+  expect(!/^Binaries:/m.test(fdroid), '.fdroid.yml must use per-ABI binary URLs, not a universal Binaries URL');
+  for (const abi of Object.keys(abis)) {
+    expect(fdroid.includes(`HomeLibrary-%v-${abi}.apk`), `missing signed binary URL for ${abi}`);
+    expect(fdroid.includes(`-PreactNativeArchitectures=${abi}`), `missing native build selection for ${abi}`);
+    for (const locale of localeSpecs.map(([locale]) => locale)) {
+      for (const code of splitCodes) expect(fs.existsSync(path.join(root, 'fastlane/metadata/android', locale, 'changelogs', `${code}.txt`)), `missing ${locale} split changelog ${code}`);
+    }
+  }
   expect(!/^\s*subdir:/m.test(fdroid), '.fdroid.yml must not declare subdir because Expo generates android/ after checkout');
   expect(fdroid.includes('output: android/app/build/outputs/apk/release/app-release-unsigned.apk'), '.fdroid.yml must declare the generated unsigned APK output');
   expect(fdroid.includes('cd android/app'), '.fdroid.yml must build from the generated Android app directory');
@@ -129,7 +138,7 @@ if (fs.existsSync(fdroidPath)) {
   expect(fdroid.includes('UpdateCheckMode: Tags'), '.fdroid.yml must check tagged releases');
   expect(fdroid.includes('AutoUpdateMode: Version'), '.fdroid.yml must enable version autoupdates');
   expect(fdroid.includes(`CurrentVersion: ${versionName}`), `.fdroid.yml CurrentVersion must be ${versionName}`);
-  expect(fdroid.includes(`CurrentVersionCode: ${versionCode}`), `.fdroid.yml CurrentVersionCode must be ${versionCode}`);
+  expect(fdroid.includes(`CurrentVersionCode: ${Math.max(...splitCodes)}`), `.fdroid.yml CurrentVersionCode must be ${versionCode}`);
 }
 
 if (fs.existsSync(releaseWorkflowPath)) {
@@ -138,7 +147,7 @@ if (fs.existsSync(releaseWorkflowPath)) {
   expect(releaseWorkflow.includes('release_tag:'), 'Android release workflow must support recovery from an existing immutable release tag');
   expect(releaseWorkflow.includes("ref: ${{ inputs.release_tag && github.sha || github.ref }}"), 'Android release recovery must use current main harness tooling while F-Droid builds the immutable tag SHA');
   expect(releaseWorkflow.includes('build-tools;34.0.0'), 'Android release workflow must use apksigner from Android build-tools 34.0.0 for F-Droid signature-copy compatibility');
-  expect(releaseWorkflow.includes('HomeLibrary-${HOMELIBRARY_RELEASE_VERSION}.apk'), 'Android release workflow must produce a versioned stable APK filename');
+  expect(releaseWorkflow.includes('HomeLibrary-${HOMELIBRARY_RELEASE_VERSION}-${ABI}.apk'), 'Android release workflow must produce a versioned stable APK filename');
   expect(fdroidPinnedImage && releaseWorkflow.includes(fdroidPinnedImage), 'Android release workflow must use the image declared in scripts/fdroid/pins.env');
   expect(releaseWorkflow.includes('scripts/fdroid/run-source-build.sh'), 'Android release workflow must build unsigned APKs through the explicit source runner');
   expect(releaseWorkflow.includes('FDROID_RELEASE_SOURCE_SHA'), 'Android release workflow must pass the resolved immutable source SHA into the source runner');

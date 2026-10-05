@@ -16,11 +16,17 @@ BUILD_LOG="${DIAG_ROOT}/fdroid-build.log"
 home_vagrant="${home_vagrant:-/home/vagrant}"
 
 fdroid_version_code() {
-  python3 - "${REPO_ROOT}/app.json" <<'PY'
+  python3 - "${REPO_ROOT}/app.json" "${FDROID_ABI:-}" "${REPO_ROOT}/scripts/android-release-abis.json" <<'PY'
 import json
 import sys
 with open(sys.argv[1], "r", encoding="utf-8") as handle:
-    print(json.load(handle)["expo"]["android"]["versionCode"])
+    base = json.load(handle)["expo"]["android"]["versionCode"]
+with open(sys.argv[3], "r", encoding="utf-8") as handle:
+    abis = json.load(handle)
+abi = sys.argv[2]
+if abi not in abis:
+    raise SystemExit("FDROID_ABI must select a supported release ABI")
+print(base * 10 + abis[abi])
 PY
 }
 
@@ -197,6 +203,9 @@ fdroid_export_unsigned_apk() {
 
   mkdir -p "$(dirname "${destination}")"
   cp "${apk}" "${destination}"
+  local mapping="${home_vagrant}/build/${APP_ID}/android/app/build/outputs/mapping/release/mapping.txt"
+  test -s "${mapping}"
+  cp "${mapping}" "$(dirname "${destination}")/mapping.txt"
   sha256sum "${destination}"
 }
 

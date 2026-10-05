@@ -75,7 +75,7 @@ The workflow:
 5. locates `sdkmanager` under the configured Android SDK (rather than assuming it is on `PATH`), installs build-tools 34.0.0, and uses that `apksigner`;
 6. signs outside Gradle;
 7. verifies the signed APK and certificate again;
-8. produces `HomeLibrary-<version>.apk`, its SHA-256 file, and `apksigner.txt`;
+8. produces `HomeLibrary-<version>-<abi>.apk`, its SHA-256 file, and `apksigner.txt`;
 9. on tag runs, publishes those files to the immutable GitHub Release.
 
 Build-tools 34.0.0 is intentionally used for signing because F-Droid's reproducible-build tooling supports signature copying from that `apksigner` format reliably.
@@ -87,8 +87,8 @@ After the 1.0.3 preparation PR is merged and all required checks are green, crea
 When the tag workflow finishes, download the permanent release asset and independently verify:
 
 ```bash
-apksigner verify --verbose --print-certs HomeLibrary-1.0.3.apk
-sha256sum HomeLibrary-1.0.3.apk
+apksigner verify --verbose --print-certs HomeLibrary-1.0.11-arm64-v8a.apk
+sha256sum HomeLibrary-1.0.11-arm64-v8a.apk
 ```
 
 The signer certificate SHA-256 must equal `ANDROID_RELEASE_CERT_SHA256`.
@@ -96,7 +96,7 @@ The signer certificate SHA-256 must equal `ANDROID_RELEASE_CERT_SHA256`.
 The release APK URL is intentionally predictable:
 
 ```text
-https://github.com/DitisKees/homelibrary-app/releases/download/v1.0.3/HomeLibrary-1.0.3.apk
+https://github.com/DitisKees/homelibrary-app/releases/download/v1.0.11/HomeLibrary-1.0.11-arm64-v8a.apk
 ```
 
 This makes it suitable for F-Droid's `Binaries` reproducible-build verification.
@@ -112,3 +112,7 @@ The production keystore must never be committed, attached to an issue/PR, upload
 ## Recovering a failed tag-triggered release
 
 If release automation fails after an immutable tag has already been pushed, never move or recreate the tag. Fix the workflow on `main`, then manually run **Android release** from the corrected `main` workflow and set `release_tag` to the existing tag (for example `v1.0.3`). The workflow checks out that exact tag, verifies that its version matches `app.json`, confirms the checked-out commit equals the tag target, and publishes assets to that tag's GitHub Release.
+
+From 1.0.11 onward the production workflow signs four standalone ABI APKs with
+the same permanent certificate. See [F-Droid release process](fdroid-release.md)
+for version-code ordering, per-ABI binary URLs, mapping files and parity gates.

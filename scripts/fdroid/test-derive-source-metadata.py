@@ -28,6 +28,13 @@ Builds:
     versionCode: 42
     commit: v1.2.3
     output: app.apk
+    binary: https://example.invalid/arm64.apk
+
+  - versionName: 1.2.3
+    versionCode: 43
+    commit: v1.2.3
+    output: app.apk
+    binary: https://example.invalid/x86.apk
 
 AllowedAPKSigningKeys: deadbeef
 
@@ -52,6 +59,14 @@ with tempfile.TemporaryDirectory() as temp:
     builds = [b for b in app["Builds"] if int(b.versionCode) == 42]
     assert len(builds) == 1
     assert builds[0].commit == requested
+    assert all(not build.binary for build in app["Builds"])
+    assert app["Builds"][1].commit == "v1.2.3"
+    try:
+        module.derive(source, destination, requested, 999)
+    except SystemExit:
+        pass
+    else:
+        raise AssertionError("missing ABI code must be rejected")
 
     # The canonical release fixture itself must remain unchanged.
     assert "Binaries:" in source.read_text(encoding="utf-8")

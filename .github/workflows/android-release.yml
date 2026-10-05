@@ -16,11 +16,16 @@ permissions:
 
 jobs:
   build-fdroid-unsigned:
+    strategy:
+      fail-fast: false
+      matrix:
+        abi: [armeabi-v7a, arm64-v8a, x86, x86_64]
     runs-on: ubuntu-latest
     container:
       image: registry.gitlab.com/fdroid/fdroidserver:buildserver-trixie@sha256:9cb68105642ca4e7b295f0ceab10f069f5b3247dc18fa7c36046e9d81aa469a8
     timeout-minutes: 90
     env:
+      FDROID_ABI: ${{ matrix.abi }}
       ANDROID_HOME: /opt/android-sdk
       ANDROID_SDK_ROOT: /opt/android-sdk
       FDROID_EXPORT_APK: fdroid-buildserver-output/app-release-unsigned.apk
@@ -81,8 +86,8 @@ jobs:
       - name: Upload F-Droid buildserver unsigned APK
         uses: actions/upload-artifact@v4
         with:
-          name: homelibrary-fdroid-unsigned-${{ github.sha }}
-          path: fdroid-buildserver-output/app-release-unsigned.apk
+          name: homelibrary-fdroid-unsigned-${{ matrix.abi }}-${{ github.sha }}
+          path: fdroid-buildserver-output/
           if-no-files-found: error
           retention-days: 30
 
@@ -90,7 +95,7 @@ jobs:
         if: always()
         uses: actions/upload-artifact@v4
         with:
-          name: homelibrary-fdroid-release-build-diagnostics-${{ github.sha }}
+          name: homelibrary-fdroid-release-build-diagnostics-${{ matrix.abi }}-${{ github.sha }}
           path: fdroid-buildserver-diagnostics/
           if-no-files-found: warn
           retention-days: 30
@@ -160,7 +165,7 @@ jobs:
       - name: Download F-Droid buildserver unsigned APK
         uses: actions/download-artifact@v4
         with:
-          name: homelibrary-fdroid-unsigned-${{ github.sha }}
+          pattern: homelibrary-fdroid-unsigned-*-${{ github.sha }}
           path: fdroid-buildserver-output
 
       - name: Set up Java
@@ -216,27 +221,32 @@ jobs:
       - name: Sign F-Droid buildserver APK
         run: |
           set -euo pipefail
-          UNSIGNED="${GITHUB_WORKSPACE}/fdroid-buildserver-output/app-release-unsigned.apk"
           OUT_DIR="${GITHUB_WORKSPACE}/release"
-          SIGNED="${OUT_DIR}/HomeLibrary-${HOMELIBRARY_RELEASE_VERSION}.apk"
+
           mkdir -p "${OUT_DIR}"
-          test -f "${UNSIGNED}"
-          sha256sum "${UNSIGNED}" | tee "${OUT_DIR}/unsigned-apk.sha256"
+          for ABI in armeabi-v7a arm64-v8a x86 x86_64; do
+            UNSIGNED="${GITHUB_WORKSPACE}/fdroid-buildserver-output/homelibrary-fdroid-unsigned-${ABI}-${GITHUB_SHA}/app-release-unsigned.apk"
+            SIGNED="${OUT_DIR}/HomeLibrary-${HOMELIBRARY_RELEASE_VERSION}-${ABI}.apk"
+            cp "$(dirname "${UNSIGNED}")/mapping.txt" "${OUT_DIR}/mapping-${ABI}.txt"
+            test -f "${UNSIGNED}"
+            sha256sum "${UNSIGNED}" | tee "${OUT_DIR}/unsigned-${ABI}.sha256"
 
-          "${HOMELIBRARY_APKSIGNER}" sign \
-            --ks "${HOMELIBRARY_RELEASE_KEYSTORE_PATH}" \
-            --ks-key-alias "${HOMELIBRARY_RELEASE_KEY_ALIAS}" \
-            --ks-pass env:HOMELIBRARY_RELEASE_KEYSTORE_PASSWORD \
-            --key-pass env:HOMELIBRARY_RELEASE_KEY_PASSWORD \
-            --out "${SIGNED}" \
-            "${UNSIGNED}"
+            "${HOMELIBRARY_APKSIGNER}" sign \
+              --ks "${HOMELIBRARY_RELEASE_KEYSTORE_PATH}" \
+              --ks-key-alias "${HOMELIBRARY_RELEASE_KEY_ALIAS}" \
+              --ks-pass env:HOMELIBRARY_RELEASE_KEYSTORE_PASSWORD \
+              --key-pass env:HOMELIBRARY_RELEASE_KEY_PASSWORD \
+              --out "${SIGNED}" \
+              "${UNSIGNED}"
 
-          "${HOMELIBRARY_APKSIGNER}" verify --verbose --print-certs "${SIGNED}" | tee "${OUT_DIR}/apksigner.txt"
-          ACTUAL="$(sed -n 's/^.*certificate SHA-256 digest: //p' "${OUT_DIR}/apksigner.txt" | head -n 1 | tr -d ':[:space:]' | tr '[:lower:]' '[:upper:]')"
-          EXPECTED="$(printf '%s' "${HOMELIBRARY_RELEASE_CERT_SHA256}" | tr -d ':[:space:]' | tr '[:lower:]' '[:upper:]')"
-          test -n "${ACTUAL}"
-          test "${ACTUAL}" = "${EXPECTED}"
-          sha256sum "${SIGNED}" | tee "${SIGNED}.sha256"
+            "${HOMELIBRARY_APKSIGNER}" verify --verbose --print-certs "${SIGNED}" | tee "${OUT_DIR}/apksigner-${ABI}.txt"
+            ACTUAL="$(sed -n 's/^.*certificate SHA-256 digest: //p' "${OUT_DIR}/apksigner-${ABI}.txt" | head -n 1 | tr -d ':[:space:]' | tr '[:lower:]' '[:upper:]')"
+            EXPECTED="$(printf '%s' "${HOMELIBRARY_RELEASE_CERT_SHA256}" | tr -d ':[:space:]' | tr '[:lower:]' '[:upper:]')"
+            test -n "${ACTUAL}"
+            test "${ACTUAL}" = "${EXPECTED}"
+            sha256sum "${SIGNED}" | tee "${SIGNED}.sha256"
+
+          done
 
       - name: Check out release APK scanner tooling
         uses: actions/checkout@v4
@@ -250,7 +260,10 @@ jobs:
           sudo apt-get install -y --no-install-recommends fdroidserver
 
       - name: Scan signed APK before publication
-        run: bash release-scanner-tooling/scripts/scan-fdroid-apk.sh "${GITHUB_WORKSPACE}/release/HomeLibrary-${HOMELIBRARY_RELEASE_VERSION}.apk"
+        run: |
+          for ABI in armeabi-v7a arm64-v8a x86 x86_64; do
+            bash release-scanner-tooling/scripts/scan-fdroid-apk.sh "${GITHUB_WORKSPACE}/release/HomeLibrary-${HOMELIBRARY_RELEASE_VERSION}-${ABI}.apk"
+          done
 
       - name: Upload signed release APK
         uses: actions/upload-artifact@v4
@@ -259,8 +272,9 @@ jobs:
           path: |
             release/HomeLibrary-*.apk
             release/HomeLibrary-*.apk.sha256
-            release/unsigned-apk.sha256
-            release/apksigner.txt
+            release/unsigned-*.sha256
+            release/apksigner-*.txt
+            release/mapping-*.txt
           if-no-files-found: error
           retention-days: 30
 
@@ -271,8 +285,6 @@ jobs:
         run: |
           set -euo pipefail
           TAG="${HOMELIBRARY_RELEASE_TAG}"
-          APK="release/HomeLibrary-${HOMELIBRARY_RELEASE_VERSION}.apk"
-          CHECKSUM="${APK}.sha256"
 
           if ! gh release view "${TAG}" >/dev/null 2>&1; then
             gh release create "${TAG}" \
@@ -285,24 +297,12 @@ jobs:
           # run, accept an existing asset only when it is byte-for-byte identical.
           TMP="${RUNNER_TEMP}/existing-release-assets"
           mkdir -p "${TMP}"
-          if gh release download "${TAG}" --pattern "HomeLibrary-${HOMELIBRARY_RELEASE_VERSION}.apk" --dir "${TMP}" >/dev/null 2>&1; then
-            EXISTING="${TMP}/HomeLibrary-${HOMELIBRARY_RELEASE_VERSION}.apk"
-            if ! cmp --silent "${APK}" "${EXISTING}"; then
-              echo "Published release APK already exists with different bytes. Refusing to overwrite an immutable release asset." >&2
-              sha256sum "${APK}" "${EXISTING}" >&2
-              exit 1
-            fi
-            echo "Published APK already exists and is byte-for-byte identical; keeping it unchanged."
-          else
-            gh release upload "${TAG}" "${APK}"
-          fi
-
-          for ASSET in "${CHECKSUM}" "release/unsigned-apk.sha256" "release/apksigner.txt"; do
+          for ASSET in release/HomeLibrary-*.apk release/HomeLibrary-*.apk.sha256 release/unsigned-*.sha256 release/apksigner-*.txt release/mapping-*.txt; do
             NAME="$(basename "${ASSET}")"
             rm -f "${TMP}/${NAME}"
             if gh release download "${TAG}" --pattern "${NAME}" --dir "${TMP}" >/dev/null 2>&1; then
               if ! cmp --silent "${ASSET}" "${TMP}/${NAME}"; then
-                echo "Published release asset ${NAME} exists with different bytes. Refusing to overwrite it." >&2
+                echo "Refusing to overwrite an immutable release asset: ${NAME}" >&2
                 exit 1
               fi
             else
@@ -311,6 +311,10 @@ jobs:
           done
 
   verify-fdroid-release-parity:
+    strategy:
+      fail-fast: false
+      matrix:
+        abi: [armeabi-v7a, arm64-v8a, x86, x86_64]
     runs-on: ubuntu-latest
     container:
       image: registry.gitlab.com/fdroid/fdroidserver:buildserver-trixie@sha256:9cb68105642ca4e7b295f0ceab10f069f5b3247dc18fa7c36046e9d81aa469a8
@@ -318,6 +322,7 @@ jobs:
     needs: sign-and-publish
     if: needs.sign-and-publish.outputs.release_tag != ''
     env:
+      FDROID_ABI: ${{ matrix.abi }}
       ANDROID_HOME: /opt/android-sdk
       ANDROID_SDK_ROOT: /opt/android-sdk
 
@@ -339,7 +344,7 @@ jobs:
         if: always()
         uses: actions/upload-artifact@v4
         with:
-          name: homelibrary-fdroid-release-parity-${{ github.sha }}
+          name: homelibrary-fdroid-release-parity-${{ matrix.abi }}-${{ github.sha }}
           path: fdroid-buildserver-diagnostics/
           if-no-files-found: warn
           retention-days: 30

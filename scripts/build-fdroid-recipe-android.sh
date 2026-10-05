@@ -67,7 +67,7 @@ sed -i -e '/signingConfig /d' android/app/build.gradle
 
 (
   cd android
-  ./gradlew :app:assembleRelease --no-daemon
+  ./gradlew :app:assembleRelease --no-daemon ${FDROID_ABI:+-PreactNativeArchitectures=$FDROID_ABI}
 )
 
 APK="$ROOT/android/app/build/outputs/apk/release/app-release-unsigned.apk"
@@ -76,6 +76,10 @@ test -f "$APK"
 # Normalize remaining GNU SHA-1 build-id notes with the checked-in helper.
 python3 scripts/normalize-fdroid-apk-build-ids.py "$APK"
 bash scripts/verify-fdroid-apk.sh "$APK"
+if [[ -n "${FDROID_ABI:-}" ]]; then
+  bash scripts/verify-android-abi-apk.sh "$APK" "$FDROID_ABI"
+fi
+test -s android/app/build/outputs/mapping/release/mapping.txt
 bash scripts/scan-fdroid-apk.sh "$APK"
 
 echo "[PASS] F-Droid recipe-compatible unsigned Android build completed."

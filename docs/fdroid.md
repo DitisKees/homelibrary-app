@@ -9,14 +9,15 @@ See [`fdroid-dependencies.md`](./fdroid-dependencies.md) for the dependency/lice
 The next F-Droid candidate is:
 
 ```text
-versionName: 1.0.10
-versionCode: 11
+versionName: 1.0.11
+base versionCode: 12
+ABI versionCodes: 121, 122, 123, 124
 tag: v1.0.10
 ```
 
-`v1.0.7` / versionCode 8 is immutable and its source builds successfully on F-Droid, but its published signed APK does not reproduce F-Droid's buildserver output. The published 1.0.9 APK subsequently failed the binary scanner on disabled Google barcode references. Version 1.0.10 removes those references and adds strict APK scanning gates; all existing tags and APKs remain immutable. For this candidate, upstream will sign the exact unsigned APK produced by the same F-Droid buildserver/scanner path used for official verification.
+`v1.0.7` / versionCode 8 is immutable and its source builds successfully on F-Droid, but its published signed APK does not reproduce F-Droid's buildserver output. The published 1.0.9 APK subsequently failed the binary scanner on disabled Google barcode references. Version 1.0.10 removed those references and added strict APK scanning gates; 1.0.11 adds R8 and ABI-specific packaging; all existing tags and APKs remain immutable. For this candidate, upstream will sign the exact unsigned APK produced by the same F-Droid buildserver/scanner path used for official verification.
 
-`app.json` is the source of truth for Android versionName and versionCode. `package.json` remains the private JavaScript package manifest.
+`app.json` is the source of truth for Android versionName and the base versionCode. Actual APK codes are `10 * base + ABI suffix` (1–4); see [the release process](fdroid-release.md). `package.json` remains the private JavaScript package manifest.
 
 ## Barcode scanning
 
@@ -51,13 +52,13 @@ The production signing workflow keeps signing outside Gradle, but the unsigned a
 1. build the unsigned APK in `buildserver-trixie` using the live scanner and the checked-in fdroid recipe;
 2. export that exact unsigned APK from the buildserver job;
 3. sign it with the permanent upstream key using Android build-tools 34.0.0 `apksigner`;
-4. publish `HomeLibrary-X.Y.Z.apk` for the immutable tag;
+4. publish `HomeLibrary-X.Y.Z-<abi>.apk` for the immutable tag;
 5. run F-Droid again in release mode with `Binaries` and `AllowedAPKSigningKeys` intact, requiring its own signature-copy/reference-binary verification to pass.
 
 The upstream F-Droid recipe contains:
 
 ```text
-Binaries: https://github.com/DitisKees/homelibrary-app/releases/download/v%v/HomeLibrary-%v.apk
+binary: https://github.com/DitisKees/homelibrary-app/releases/download/v%v/HomeLibrary-%v-arm64-v8a.apk
 ```
 
 F-Droid can therefore rebuild the source and compare its output with the versioned upstream APK. The official `fdroiddata` recipe already contains `AllowedAPKSigningKeys` using the independently verified lower-case SHA-256 certificate fingerprint. Keep that signing identity unchanged for 1.0.5 and later updates.
@@ -96,7 +97,7 @@ CI verifies, among other things:
 
 ## F-Droid submission status
 
-The official fdroiddata submission is already open as `fdroid/fdroiddata!48673`. Version 1.0.7 exposed a cross-environment reproducibility gap; version 1.0.10 retains the verified fixes for that gap and removes the barcode references found by the binary scanner before the MR is updated:
+The official fdroiddata submission is already open as `fdroid/fdroiddata!48673`. Version 1.0.7 exposed a cross-environment reproducibility gap; version 1.0.11 retains the verified fixes for that gap and removes the barcode references found by the binary scanner before the MR is updated:
 
 - [x] Public GPL-3.0-or-later source repository
 - [x] Permanent Android application ID
