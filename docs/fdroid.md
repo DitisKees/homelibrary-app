@@ -12,7 +12,7 @@ The next F-Droid candidate is:
 versionName: 1.0.11
 base versionCode: 12
 ABI versionCodes: 121, 122, 123, 124
-tag: v1.0.10
+tag: v1.0.11
 ```
 
 `v1.0.7` / versionCode 8 is immutable and its source builds successfully on F-Droid, but its published signed APK does not reproduce F-Droid's buildserver output. The published 1.0.9 APK subsequently failed the binary scanner on disabled Google barcode references. Version 1.0.10 removed those references and added strict APK scanning gates; 1.0.11 adds R8 and ABI-specific packaging; all existing tags and APKs remain immutable. For this candidate, upstream will sign the exact unsigned APK produced by the same F-Droid buildserver/scanner path used for official verification.
@@ -125,3 +125,8 @@ The official fdroiddata submission is already open as `fdroid/fdroiddata!48673`.
 Never move or recreate a published `v<versionName>` tag. Every Android release gets a new monotonically increasing versionCode and an immutable source tag. If a tagged candidate needs correction, prepare a new version instead.
 
 The F-Droid harness itself is governed by [`fdroid-harness.md`](./fdroid-harness.md). In particular, do not reintroduce regex-based YAML editing, moving `git pull` inputs, `apt dist-upgrade` inside the pinned buildserver, or a combined source/release mode script.
+
+The inclusion/Anti-Features review declares `NonFreeNet` because ISBN metadata
+lookup uses proprietary Google Books as fallback even without an API key.
+A configured key moves Google Books first. Core library/manual entry use the
+self-hostable PocketBase backend; see the release process for this disclosure.

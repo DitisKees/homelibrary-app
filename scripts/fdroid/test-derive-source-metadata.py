@@ -18,7 +18,10 @@ module = importlib.util.module_from_spec(spec)
 assert spec.loader
 spec.loader.exec_module(module)
 
-FIXTURE = """RepoType: git
+FIXTURE = """AntiFeatures:
+  NonFreeNet:
+    en-US: Optional proprietary book metadata service
+RepoType: git
 Repo: https://example.invalid/app.git
 Binaries: 
   https://example.invalid/releases/v%v/App-%v.apk
@@ -46,7 +49,7 @@ CurrentVersionCode: 42
 
 with tempfile.TemporaryDirectory() as temp:
     root = Path(temp)
-    source = root / ".fdroid.yml"
+    source = root / "io.github.ditiskees.homelibrary.yml"
     destination = root / "source.yml"
     source.write_text(FIXTURE, encoding="utf-8")
 
@@ -60,6 +63,7 @@ with tempfile.TemporaryDirectory() as temp:
     assert len(builds) == 1
     assert builds[0].commit == requested
     assert all(not build.binary for build in app["Builds"])
+    assert app.AntiFeatures["NonFreeNet"]["en-US"] == "Optional proprietary book metadata service"
     assert app["Builds"][1].commit == "v1.2.3"
     try:
         module.derive(source, destination, requested, 999)

@@ -51,7 +51,7 @@ Do not disable R8 or add global `-dontwarn`, `-dontoptimize`, or keep-all rules 
 hide a failure. Inspect missing-class reports and runtime behavior first.
 Resource shrinking is disabled: F-Droid documents potential non-determinism and
 recommends enabling it only when its reduction is substantial and verified.
-The existing AGP 8.12 toolchain includes a newer R8 than the versions recommended
+The existing Expo AGP 8.10.1 toolchain includes a newer R8 than the versions recommended
 for older CPU-dependent reproducibility bugs; no toolchain upgrade is needed.
 
 ## Before tagging
@@ -127,9 +127,18 @@ a GitHub build in the same container alone does not establish remote parity.
 - [Submitting to F-Droid: ABI split](https://f-droid.org/en/docs/Submitting_to_F-Droid_Quick_Start_Guide/#setup-abi-split)
 - [Build metadata: VercodeOperation](https://f-droid.org/en/docs/Build_Metadata_Reference/#vercodeoperation)
 - [Reproducible builds: R8, resource shrinking and signatures](https://f-droid.org/en/docs/Reproducible_Builds/)
+- [Inclusion policy](https://f-droid.org/en/docs/Inclusion_Policy/)
+- [Anti-Features: non-free network services](https://f-droid.org/en/docs/Anti-Features/#non-free-network-services)
 - [React Native: other stores and ProGuard](https://reactnative.dev/docs/signed-apk-android)
 
 The existing build-from-source policy, Debian Node/npm, NDK pin, Glide KSP
 ordering fix, localhost dev-server resource, scanner gates and permanent signing
 identity remain part of every architecture's recipe. See `fdroid-harness.md` for
 pinning, diagnostics and the previous reproducibility investigation.
+
+The policy review also found an existing metadata omission: ISBN lookup always
+includes Google Books, even without an API key (Open Library is tried first).
+With a user-provided API key, Google Books is tried first. The canonical recipe
+now declares `NonFreeNet` with that precise explanation. Manual entry and the
+self-hosted PocketBase library remain usable without Google Books. No built-in
+API key or service dependency is added by this change.

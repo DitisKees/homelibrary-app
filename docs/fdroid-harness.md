@@ -65,7 +65,7 @@ The harness intentionally has two entry points. Do not merge them back into a mo
 Entry point:
 
 ```bash
-scripts/fdroid/run-source-build.sh <40-character-source-sha> .fdroid.yml
+FDROID_ABI=arm64-v8a scripts/fdroid/run-source-build.sh <40-character-source-sha> .fdroid.yml
 ```
 
 Purpose:
@@ -386,10 +386,10 @@ unsigned APKs have SHA-256
 The packaged dev-server resource check passed on both runners. No sorted
 directory preload was needed for this production comparison.
 
-This proves cross-runner determinism for that source tree. The next release
-candidate (1.0.10/versionCode 11) still needs its release checks and immutable
-publication, followed by F-Droid's signed-reference verification. The existing
-1.0.8 and 1.0.9 tags and APKs must not be replaced.
+This proves cross-runner determinism for that source tree. Release 1.0.10 subsequently passed source, scanner and signed-reference
+verification and was published immutably. The 1.0.11 candidate introduces R8
+and per-ABI packaging, so each new ABI must pass these gates again. Existing
+tags and APKs must not be replaced.
 
 ## Desired end state
 

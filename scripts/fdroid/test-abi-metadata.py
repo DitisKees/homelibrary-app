@@ -12,6 +12,7 @@ base = config['android']['versionCode']
 expected = [base * 10 + offset for offset in abis.values()]
 assert [build.versionCode for build in app['Builds']] == expected
 assert not app.get('Binaries')
+assert "Google Books" in app.AntiFeatures["NonFreeNet"]["en-US"]
 assert app.CurrentVersionCode == max(expected)
 assert app.VercodeOperation == [f'10 * %c + {offset}' for offset in abis.values()]
 assert min((base + 1) * 10 + offset for offset in abis.values()) > max(expected)

@@ -1,3 +1,8 @@
+AntiFeatures:
+  NonFreeNet:
+    en-US: ISBN metadata lookup uses Google Books as a fallback after Open Library.
+      Google Books is a proprietary network service; entering a Google Books API key
+      makes it the first provider.
 Categories:
   - Inventory
   - Reading

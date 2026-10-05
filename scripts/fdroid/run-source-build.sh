@@ -18,6 +18,8 @@ if [[ ! -f "${METADATA_SOURCE}" ]]; then
   exit 2
 fi
 
+VERSION_CODE="$(fdroid_version_code)"
+
 fdroid_reset
 trap fdroid_collect_diagnostics EXIT
 fdroid_prepare_environment
@@ -27,12 +29,11 @@ fdroid_prepare_environment
 fdroid_install_metadata "${METADATA_SOURCE}"
 fdroid_assert_metadata_canonical
 
-VERSION_CODE="$(fdroid_version_code)"
 DERIVED_METADATA="${WORK_ROOT}/source-metadata.yml"
 
 fdroid_python "${SCRIPT_DIR}/test-derive-source-metadata.py"
 fdroid_python "${SCRIPT_DIR}/test-abi-metadata.py"
-fdroid_python   "${SCRIPT_DIR}/derive-source-metadata.py"   "${METADATA_SOURCE}"   "${DERIVED_METADATA}"   "${SOURCE_REF}"   "${VERSION_CODE}"
+fdroid_python   "${SCRIPT_DIR}/derive-source-metadata.py"   "${CANDIDATE_METADATA}"   "${DERIVED_METADATA}"   "${SOURCE_REF}"   "${VERSION_CODE}"
 
 fdroid_install_metadata "${DERIVED_METADATA}"
 fdroid_assert_metadata_canonical
