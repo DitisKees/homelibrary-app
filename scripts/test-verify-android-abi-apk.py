@@ -25,7 +25,7 @@ class ApkVerificationTest(unittest.TestCase):
             aapt.write_text("#!/bin/sh\necho \"package: name='io.github.ditiskees.homelibrary' versionCode='124' versionName='1.0.11'\"\n")
             aapt.chmod(0o755)
             apk = root / 'app.apk'
-            entries = ['lib/x86_64/libhermes.so', 'lib/x86_64/libreactnative.so', 'assets/index.android.bundle']
+            entries = ['lib/x86_64/libhermesvm.so', 'lib/x86_64/libreactnative.so', 'assets/index.android.bundle']
 
             def write(names):
                 with zipfile.ZipFile(apk, 'w') as archive:
@@ -34,7 +34,7 @@ class ApkVerificationTest(unittest.TestCase):
 
             write(entries)
             module.verify(apk, 'x86_64', root, str(aapt))
-            for names in [entries + ['lib/arm64-v8a/libhermes.so'], entries[1:], entries[:-1]]:
+            for names in [entries + ['lib/arm64-v8a/libhermesvm.so'], entries[1:], entries[:-1]]:
                 write(names)
                 with self.assertRaises(ValueError):
                     module.verify(apk, 'x86_64', root, str(aapt))

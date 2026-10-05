@@ -25,7 +25,7 @@ def verify(apk, abi, root, aapt):
         native = {name.split('/')[1] for name in names if name.startswith('lib/') and name.endswith('.so')}
         if native != {abi}:
             raise ValueError(f'expected only {abi}, found {sorted(native)}')
-        for lib in ['libhermes.so', 'libreactnative.so']:
+        for lib in ['libhermesvm.so', 'libreactnative.so']:
             if f'lib/{abi}/{lib}' not in names:
                 raise ValueError(f'missing runtime library: {lib}')
         if 'assets/index.android.bundle' not in names:
