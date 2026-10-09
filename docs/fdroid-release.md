@@ -59,7 +59,7 @@ for older CPU-dependent reproducibility bugs; no toolchain upgrade is needed.
 Run `npm ci`, the release/metadata validators, native config regression checks,
 `npm run typecheck`, `npm run lint`, `npm test`, and `npm run build:web`.
 
-The normal CI and Android reproducibility checks must pass. F-Droid buildserver
+Normal CI and the F-Droid buildserver reproducibility checks for all four ABIs must pass. F-Droid buildserver
 simulation independently builds **every ABI twice**, scans each APK, verifies
 its package/version/native ABI and bundled JavaScript, and byte-compares matching
 ABIs. A nonempty R8 `mapping.txt` is required and exported with each APK. The

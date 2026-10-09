@@ -134,7 +134,7 @@ android/app/build/outputs/apk/release/app-release.apk
 
 The build intentionally does not inject the maintainer/test signing material used by the separate `Android release smoke` workflow. F-Droid signs repository builds itself; the purpose here is to prove that the public source can produce the release variant without private inputs.
 
-Normal pull-request CI performs the same audit/prebuild/release-build checks from GitHub's clean checkout with read-only repository permissions and no maintainer signing secrets.
+Normal pull-request CI runs the npm audit and configuration checks. The F-Droid buildserver workflow owns source preparation, prebuild, native dependency checks, release compilation and APK scanning for all four ABIs, using read-only repository permissions and no maintainer signing secrets.
 
 ## Deterministic generated assets
 

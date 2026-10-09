@@ -1,16 +1,9 @@
 name: Android reproducibility
 
 on:
+  # Optional alternate-toolchain/checkout-path diagnostic. The automatic
+  # reproducibility gate is the two-copy production F-Droid buildserver matrix.
   workflow_dispatch:
-  pull_request:
-    paths:
-      - '.github/workflows/android-reproducibility.yml'
-      - 'app.json'
-      - 'package.json'
-      - 'package-lock.json'
-      - 'plugins/**'
-      - 'scripts/**'
-      - 'src/**'
 
 permissions:
   contents: read

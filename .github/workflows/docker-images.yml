@@ -4,20 +4,23 @@ on:
   pull_request:
     paths:
       - '.github/workflows/docker-images.yml'
+      - '.dockerignore'
+      - 'App.tsx'
       - 'app.json'
+      - 'babel.config.js'
+      - 'tsconfig.json'
       - 'compose.example.yml'
       - 'docker/**'
       - 'docs/self-hosting.md'
       - 'package.json'
       - 'package-lock.json'
+      - 'assets/**'
+      - 'modules/**'
+      - 'patches/**'
+      - 'plugins/**'
       - 'pocketbase/**'
-      - 'scripts/inject-web-runtime-config.mjs'
-      - 'scripts/test-docker-selfhost.sh'
-      - 'src/context/AuthContext.tsx'
-      - 'src/i18n/serverTranslations.ts'
-      - 'src/screens/ServerSetupScreen.tsx'
-      - 'src/services/settings/pocketbase.ts'
-      - 'src/services/settings/pocketbase.test.ts'
+      - 'scripts/**'
+      - 'src/**'
   push:
     branches:
       - main
@@ -38,41 +41,16 @@ jobs:
       - name: Check out repository
         uses: actions/checkout@v4
 
-      - name: Set up QEMU
-        uses: docker/setup-qemu-action@v3
-
-      - name: Set up Docker Buildx
-        uses: docker/setup-buildx-action@v3
-
       - name: Validate Docker self-hosting stack
         run: bash scripts/test-docker-selfhost.sh
 
-      - name: Validate backend multi-architecture build
-        uses: docker/build-push-action@v6
-        with:
-          context: .
-          file: docker/backend/Dockerfile
-          build-args: |
-            PB_VERSION=${{ env.PB_VERSION }}
-          platforms: linux/amd64,linux/arm64
-          push: false
-          cache-from: type=gha,scope=homelibrary-backend
-          cache-to: type=gha,mode=max,scope=homelibrary-backend
-
-      - name: Validate web multi-architecture build
-        uses: docker/build-push-action@v6
-        with:
-          context: .
-          file: docker/web/Dockerfile
-          platforms: linux/amd64,linux/arm64
-          push: false
-          cache-from: type=gha,scope=homelibrary-web
-          cache-to: type=gha,mode=max,scope=homelibrary-web
-
-  publish:
-    if: github.event_name == 'push'
+  build-and-publish:
     needs: validate
     runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        image: [backend, web]
     permissions:
       contents: read
       packages: write
@@ -100,18 +78,20 @@ jobs:
         uses: docker/setup-buildx-action@v3
 
       - name: Sign in to GitHub Container Registry
+        if: github.event_name == 'push'
         uses: docker/login-action@v3
         with:
           registry: ghcr.io
           username: ${{ github.actor }}
           password: ${{ secrets.GITHUB_TOKEN }}
 
-      - name: Backend image metadata
-        id: backend-meta
+      - name: Image metadata
+        id: meta
         uses: docker/metadata-action@v5
         with:
-          images: ghcr.io/ditiskees/homelibrary-backend
+          images: ghcr.io/ditiskees/homelibrary-${{ matrix.image }}
           tags: |
+            type=ref,event=pr
             type=raw,value=main,enable=${{ github.ref == 'refs/heads/main' }}
             type=sha,prefix=sha-,format=short,enable=${{ github.ref == 'refs/heads/main' }}
             type=semver,pattern={{version}},enable=${{ startsWith(github.ref, 'refs/tags/v') }}
@@ -119,41 +99,17 @@ jobs:
             type=semver,pattern={{major}},enable=${{ startsWith(github.ref, 'refs/tags/v') }}
             type=raw,value=latest,enable=${{ startsWith(github.ref, 'refs/tags/v') && !contains(github.ref_name, '-') }}
 
-      - name: Publish backend image
+      # PRs validate the same multi-architecture build that pushes publish.
+      - name: Build image and publish on push
         uses: docker/build-push-action@v6
         with:
           context: .
-          file: docker/backend/Dockerfile
+          file: docker/${{ matrix.image }}/Dockerfile
           build-args: |
             PB_VERSION=${{ env.PB_VERSION }}
           platforms: linux/amd64,linux/arm64
-          push: true
-          tags: ${{ steps.backend-meta.outputs.tags }}
-          labels: ${{ steps.backend-meta.outputs.labels }}
-          cache-from: type=gha,scope=homelibrary-backend
-          cache-to: type=gha,mode=max,scope=homelibrary-backend
-
-      - name: Web image metadata
-        id: web-meta
-        uses: docker/metadata-action@v5
-        with:
-          images: ghcr.io/ditiskees/homelibrary-web
-          tags: |
-            type=raw,value=main,enable=${{ github.ref == 'refs/heads/main' }}
-            type=sha,prefix=sha-,format=short,enable=${{ github.ref == 'refs/heads/main' }}
-            type=semver,pattern={{version}},enable=${{ startsWith(github.ref, 'refs/tags/v') }}
-            type=semver,pattern={{major}}.{{minor}},enable=${{ startsWith(github.ref, 'refs/tags/v') }}
-            type=semver,pattern={{major}},enable=${{ startsWith(github.ref, 'refs/tags/v') }}
-            type=raw,value=latest,enable=${{ startsWith(github.ref, 'refs/tags/v') && !contains(github.ref_name, '-') }}
-
-      - name: Publish web image
-        uses: docker/build-push-action@v6
-        with:
-          context: .
-          file: docker/web/Dockerfile
-          platforms: linux/amd64,linux/arm64
-          push: true
-          tags: ${{ steps.web-meta.outputs.tags }}
-          labels: ${{ steps.web-meta.outputs.labels }}
-          cache-from: type=gha,scope=homelibrary-web
-          cache-to: type=gha,mode=max,scope=homelibrary-web
+          push: ${{ github.event_name == 'push' }}
+          tags: ${{ steps.meta.outputs.tags }}
+          labels: ${{ steps.meta.outputs.labels }}
+          cache-from: type=gha,scope=homelibrary-${{ matrix.image }}
+          cache-to: type=gha,mode=max,scope=homelibrary-${{ matrix.image }}

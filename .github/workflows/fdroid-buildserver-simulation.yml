@@ -4,26 +4,37 @@ on:
   workflow_dispatch:
   pull_request:
     paths:
-      - '.github/workflows/fdroid-buildserver-simulation.yml'
-      - '.github/workflows/android-release.yml'
+      - '.github/workflows/**'
+      - '.nvmrc'
       - '.fdroid.yml'
+      - 'App.tsx'
       - 'app.json'
+      - 'babel.config.js'
+      - 'tsconfig.json'
       - 'package.json'
       - 'package-lock.json'
+      - 'assets/**'
+      - 'modules/**'
+      - 'patches/**'
       - 'plugins/**'
       - 'scripts/**'
-      - 'scripts/fdroid/**'
       - 'src/**'
   push:
     branches:
       - main
     paths:
-      - '.github/workflows/fdroid-buildserver-simulation.yml'
-      - '.github/workflows/android-release.yml'
+      - '.github/workflows/**'
+      - '.nvmrc'
       - '.fdroid.yml'
+      - 'App.tsx'
       - 'app.json'
+      - 'babel.config.js'
+      - 'tsconfig.json'
       - 'package.json'
       - 'package-lock.json'
+      - 'assets/**'
+      - 'modules/**'
+      - 'patches/**'
       - 'plugins/**'
       - 'scripts/**'
       - 'src/**'
