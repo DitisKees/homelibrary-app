@@ -20,7 +20,7 @@ jobs:
       - name: Set up Node.js
         uses: actions/setup-node@v4
         with:
-          node-version: '22.13.1'
+          node-version-file: .nvmrc
           cache: npm
 
       - name: Install dependencies
@@ -53,33 +53,8 @@ jobs:
       - name: Validate F-Droid metadata and recipe
         run: npm run validate:fdroid-metadata
 
-      - name: Remove bundled Expo Android binaries
-        run: bash scripts/prepare-fdroid-source-tree.sh
-
-      - name: Prebuild clean Android native project
-        run: npx expo prebuild --clean --no-install --platform android
-
-      - name: Guard generated Expo Camera Gradle properties
-        run: bash scripts/prepare-android-gradle-properties.sh
-
-      - name: Check F-Droid Android dependency graph
-        run: bash scripts/check-fdroid-android-dependencies.sh
-
-      - name: Build F-Droid-style release APK
-        run: |
-          cd android
-          ./gradlew :app:assembleRelease --no-daemon
-
-      - name: Verify F-Droid-style release APK
-        run: bash scripts/verify-fdroid-apk.sh
-
-      - name: Install F-Droid APK scanner dependencies
-        run: |
-          sudo apt-get update
-          sudo apt-get install -y --no-install-recommends fdroidserver
-
-      - name: Scan release APK with F-Droid binary scanner
-        run: bash scripts/scan-fdroid-apk.sh android/app/build/outputs/apk/release/app-release.apk
+      # Native builds, dependency checks, APK scanning and startup checks run
+      # in fdroid-buildserver-simulation.yml using the production toolchain.
 
       - name: Typecheck
         run: npm run typecheck

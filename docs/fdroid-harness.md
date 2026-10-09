@@ -183,9 +183,12 @@ If `rewritemeta` changes a file:
 
 1. checks out the exact PR head or main SHA;
 2. verifies Git access inside the pinned container;
-3. runs two independent source-build jobs;
+3. runs two independent source-build jobs for each of the four ABIs;
 4. exports both unsigned APKs;
-5. requires byte-for-byte equality.
+5. requires byte-for-byte equality for each ABI;
+6. signs an ephemeral x86_64 APK and verifies startup on an Android emulator.
+
+This workflow owns automatic native compilation, dependency checks, APK verification and scanning. Normal CI runs the fast source checks and web export. `android-reproducibility.yml` remains a manual alternate-toolchain/two-checkout diagnostic; it does not repeat native builds on every pull request.
 
 This gate proves that the source candidate is buildable through the pinned F-Droid container/tooling path and deterministic on the GitHub-hosted runner. It does **not** prove parity with F-Droid's GitLab SaaS runner. During the 2026 reproducibility investigation, the same container digest, fdroidserver revision, recipe, JDK, locale, and Gradle command produced different APK bytes on GitHub and GitLab runners.
 
@@ -219,8 +222,7 @@ If release infrastructure is fixed after a tag exists:
 Do not update `fdroid/fdroiddata!48673` until all of the following are green:
 
 - normal CI;
-- Android reproducibility;
-- two-copy F-Droid source buildserver simulation;
+- two-copy F-Droid source buildserver simulation, including reproducibility for all ABIs;
 - immutable GitHub release publication;
 - F-Droid signed-reference release verification.
 
@@ -237,7 +239,7 @@ When F-Droid changes its production environment, create a dedicated maintenance 
 3. runs the fast metadata derivation test;
 4. runs both independent source builds;
 5. byte-compares their APKs;
-6. runs normal Android reproducibility;
+6. runs the manual alternate-toolchain Android reproducibility diagnostic;
 7. if a published release is available, runs released-version verification;
 8. only then merges the updated pins.
 

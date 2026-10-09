@@ -99,7 +99,7 @@ For the canonical source-only Android release path:
 npm run build:fdroid-android
 ```
 
-CI runs these checks, verifies all committed PocketBase migrations against PocketBase 0.40.1, validates Docker self-hosting when relevant, and runs two independent F-Droid source builds in a buildserver image pinned by digest. The harness also pins fdroidserver/fdroiddata revisions, derives temporary source metadata structurally with fdroidserver itself, and requires both unsigned APKs to match byte-for-byte.
+CI runs the fast source checks and web export, and verifies all committed PocketBase migrations against PocketBase 0.40.1. For Android changes, the F-Droid buildserver workflow owns native compilation, dependency checks, APK scanning, reproducibility and emulator startup verification. It builds two independent copies of each of the four ABIs in a buildserver image pinned by digest and requires each pair to match byte-for-byte. The harness also pins fdroidserver/fdroiddata revisions and derives temporary source metadata structurally with fdroidserver itself. The alternate Debian forky two-checkout reproducibility workflow remains available manually for diagnosis. Docker self-hosting changes run the backup/restore smoke test, then build each multi-architecture image once; pushes publish those builds to GHCR.
 
 ## Authentication storage
 
