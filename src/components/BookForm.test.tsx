@@ -33,6 +33,8 @@ jest.mock('expo-file-system', () => ({
 
 const mockImagePicker = jest.requireMock('expo-image-picker') as {
   launchImageLibraryAsync: jest.Mock;
+  launchCameraAsync: jest.Mock;
+  requestCameraPermissionsAsync: jest.Mock;
 };
 const mockImageManipulator = jest.requireMock('expo-image-manipulator') as {
   ImageManipulator: { manipulate: jest.Mock };
@@ -83,13 +85,17 @@ describe('<BookForm /> Add Book validation', () => {
   });
 
 
-  test('wraps a processed native cover in an Expo File for upload', async () => {
+  test.each(['Choose cover', 'Take photo'])('prepares a cover from %s for upload', async (action) => {
     const onSubmit = jest.fn().mockResolvedValue(undefined);
     const saveAsync = jest.fn().mockResolvedValue({ uri: 'file:///processed-cover.webp' });
     const renderAsync = jest.fn().mockResolvedValue({ saveAsync });
     const resize = jest.fn();
     mockImageManipulator.ImageManipulator.manipulate.mockReturnValue({ resize, renderAsync });
-    mockImagePicker.launchImageLibraryAsync.mockResolvedValue({
+    mockImagePicker.requestCameraPermissionsAsync.mockResolvedValue({ granted: true });
+    const launch = action === 'Choose cover'
+      ? mockImagePicker.launchImageLibraryAsync
+      : mockImagePicker.launchCameraAsync;
+    launch.mockResolvedValue({
       canceled: false,
       assets: [{ uri: 'file:///camera-photo.jpg', fileName: 'camera-photo.jpg' }],
     });
@@ -106,10 +112,11 @@ describe('<BookForm /> Add Book validation', () => {
     );
 
     fireEvent.changeText(view.getByLabelText('Title'), 'Test book');
-    fireEvent.press(view.getByText('Choose cover'));
+    fireEvent.press(view.getByText(action));
 
     await waitFor(() => {
       expect(view.getByText('camera-photo.jpg')).toBeTruthy();
+      expect(launch).toHaveBeenCalledWith({ mediaTypes: ['images'], allowsEditing: false, quality: 1 });
     });
 
     fireEvent.press(view.getByText('Save book'));

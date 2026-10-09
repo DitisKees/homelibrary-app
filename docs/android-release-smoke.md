@@ -79,3 +79,23 @@ This test key is disposable and is not an application-production identity. If it
 2. replace all four GitHub Actions secrets;
 3. update the pinned certificate fingerprint in the workflow;
 4. uninstall APKs signed with the old test key before installing APKs signed with the replacement.
+
+## Issue #54 permission regression checks
+
+Android 10 (API 29) is now the minimum supported version. API 28 and older
+cannot install new builds; existing installations can keep their older version.
+The release APK verifier enforces API 29 and rejects legacy storage and biometric
+permissions. Camera and internet permissions remain required. These changes take
+effect in the next release; published v1.0.11 artifacts remain unchanged.
+
+On API 29, 32, and 36 devices or emulators, test both a clean install and an
+upgrade from a prior APK signed with the same key:
+
+1. Sign in, force-stop, and reopen; the session should persist without a biometric prompt.
+2. Select an image from the system picker, save the book, and reopen it to verify the prepared cover uploaded successfully. No storage/media permission prompt should appear.
+3. Capture a cover, granting camera permission when prompted, then save and reopen the book. Check cancellation, camera denial, and retry as well.
+4. Verify existing books and covers survive an upgrade and the existing SecureStore session still loads.
+5. Log out, force-stop, and reopen; the session must remain cleared.
+
+SecureStore backup exclusions remain enabled for both legacy backup and Android
+12+ data extraction; credentials continue to use SecureStore without authentication.

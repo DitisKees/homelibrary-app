@@ -71,7 +71,7 @@ jobs:
         run: npm run validate:android-release
 
       - name: Prebuild Android native project
-        run: npx expo prebuild --no-install --platform android
+        run: npx expo prebuild --clean --no-install --platform android
 
       - name: Check F-Droid Android dependency graph
         run: bash scripts/check-fdroid-android-dependencies.sh
@@ -90,6 +90,7 @@ jobs:
           set -euo pipefail
           APK="${GITHUB_WORKSPACE}/android/app/build/outputs/apk/release/app-release.apk"
           test -f "${APK}"
+          bash scripts/verify-fdroid-apk.sh "${APK}"
 
           SDK_ROOT="${ANDROID_HOME:-${ANDROID_SDK_ROOT:-}}"
           APKSIGNER="$(find "${SDK_ROOT}/build-tools" -maxdepth 2 -type f -name apksigner | sort -V | tail -n 1)"

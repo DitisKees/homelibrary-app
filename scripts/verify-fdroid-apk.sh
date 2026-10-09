@@ -43,6 +43,24 @@ if ! grep -Fq "targetSdkVersion:'$EXPECTED_TARGET_SDK'" <<<"$BADGING"; then
   exit 1
 fi
 
+# Validate the final merged manifest packaged in every source-built release.
+if ! grep -Fxq "sdkVersion:'29'" <<<"$BADGING"; then
+  echo "[FAIL] APK must require Android 10 (API 29)." >&2
+  exit 1
+fi
+for permission in READ_EXTERNAL_STORAGE WRITE_EXTERNAL_STORAGE USE_BIOMETRIC USE_FINGERPRINT; do
+  if grep -Fq "name='android.permission.$permission'" <<<"$BADGING"; then
+    echo "[FAIL] APK declares unnecessary permission: $permission" >&2
+    exit 1
+  fi
+done
+for permission in CAMERA INTERNET; do
+  if ! grep -Fq "name='android.permission.$permission'" <<<"$BADGING"; then
+    echo "[FAIL] APK is missing required permission: $permission" >&2
+    exit 1
+  fi
+done
+
 if ! command -v unzip >/dev/null 2>&1; then
   echo "[FAIL] unzip is required to audit APK contents." >&2
   exit 2

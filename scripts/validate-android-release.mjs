@@ -34,9 +34,15 @@ for (const permission of [
   'android.permission.RECORD_AUDIO',
   'android.permission.SYSTEM_ALERT_WINDOW',
   'android.permission.VIBRATE',
+  'android.permission.READ_EXTERNAL_STORAGE',
+  'android.permission.WRITE_EXTERNAL_STORAGE',
+  'android.permission.USE_BIOMETRIC',
+  'android.permission.USE_FINGERPRINT',
 ]) {
   expect(blockedPermissions.has(permission), `${permission} must be blocked`);
 }
+
+expect((expo.plugins ?? []).includes('./plugins/with-android-permissions'), 'Android permission plugin must require Android 10 or newer');
 
 const pluginConfig = (name) => {
   const entry = (expo.plugins ?? []).find((plugin) => Array.isArray(plugin) && plugin[0] === name);
