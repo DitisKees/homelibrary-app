@@ -6,11 +6,20 @@ on:
     branches:
       - main
 
+concurrency:
+  group: ${{ github.workflow }}-${{ github.event_name }}-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: true
+
 permissions:
   contents: read
 
 jobs:
-  validate:
+  changes:
+    uses: ./.github/workflows/changes.yml
+
+  source-checks:
+    needs: changes
+    if: needs.changes.outputs.source == 'true'
     runs-on: ubuntu-latest
 
     steps:
@@ -68,7 +77,9 @@ jobs:
       - name: Export web app
         run: npm run build:web
 
-  validate-pocketbase:
+  pocketbase-checks:
+    needs: changes
+    if: needs.changes.outputs.pocketbase == 'true'
     runs-on: ubuntu-latest
 
     steps:
@@ -85,3 +96,37 @@ jobs:
 
       - name: Validate PocketBase schema and book sorting
         run: bash scripts/test-pocketbase-schema.sh
+
+  validate:
+    if: always()
+    needs: [changes, source-checks]
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check relevant job results
+        env:
+          DETECTION: ${{ needs.changes.result }}
+          REQUIRED: ${{ needs.changes.outputs.source }}
+          CHECKS: ${{ needs.source-checks.result }}
+        run: |
+          test "$DETECTION" = success
+          test "$REQUIRED" = true || test "$REQUIRED" = false
+          if [ "$REQUIRED" = true ]; then
+            test "$CHECKS" = success
+          fi
+
+  validate-pocketbase:
+    if: always()
+    needs: [changes, pocketbase-checks]
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check relevant job results
+        env:
+          DETECTION: ${{ needs.changes.result }}
+          REQUIRED: ${{ needs.changes.outputs.pocketbase }}
+          CHECKS: ${{ needs.pocketbase-checks.result }}
+        run: |
+          test "$DETECTION" = success
+          test "$REQUIRED" = true || test "$REQUIRED" = false
+          if [ "$REQUIRED" = true ]; then
+            test "$CHECKS" = success
+          fi

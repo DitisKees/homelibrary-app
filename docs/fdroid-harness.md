@@ -177,6 +177,8 @@ If `rewritemeta` changes a file:
 
 ## Workflow gates
 
+The shared [CI routing policy](ci-workflows.md) determines when source changes require this gate. Documentation and isolated diagnostics skip native compilation; manual dispatch always runs it.
+
 ### Pull request / main source gate
 
 `.github/workflows/fdroid-buildserver-simulation.yml`:
