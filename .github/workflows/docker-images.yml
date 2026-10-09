@@ -2,30 +2,15 @@ name: Docker self-hosting
 
 on:
   pull_request:
-    paths:
-      - '.github/workflows/docker-images.yml'
-      - '.dockerignore'
-      - 'App.tsx'
-      - 'app.json'
-      - 'babel.config.js'
-      - 'tsconfig.json'
-      - 'compose.example.yml'
-      - 'docker/**'
-      - 'docs/self-hosting.md'
-      - 'package.json'
-      - 'package-lock.json'
-      - 'assets/**'
-      - 'modules/**'
-      - 'patches/**'
-      - 'plugins/**'
-      - 'pocketbase/**'
-      - 'scripts/**'
-      - 'src/**'
   push:
     branches:
       - main
     tags:
       - 'v*.*.*'
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.event_name }}-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
 
 permissions:
   contents: read
@@ -34,7 +19,12 @@ env:
   PB_VERSION: '0.40.1'
 
 jobs:
+  changes:
+    uses: ./.github/workflows/changes.yml
+
   validate:
+    needs: changes
+    if: needs.changes.outputs.docker == 'true'
     runs-on: ubuntu-latest
 
     steps:
@@ -113,3 +103,23 @@ jobs:
           labels: ${{ steps.meta.outputs.labels }}
           cache-from: type=gha,scope=homelibrary-${{ matrix.image }}
           cache-to: type=gha,mode=max,scope=homelibrary-${{ matrix.image }}
+
+  docker-gate:
+    name: Docker self-hosting gate
+    if: always()
+    needs: [changes, validate, build-and-publish]
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check relevant job results
+        env:
+          DETECTION: ${{ needs.changes.result }}
+          REQUIRED: ${{ needs.changes.outputs.docker }}
+          VALIDATION: ${{ needs.validate.result }}
+          BUILD: ${{ needs.build-and-publish.result }}
+        run: |
+          test "$DETECTION" = success
+          test "$REQUIRED" = true || test "$REQUIRED" = false
+          if [ "$REQUIRED" = true ]; then
+            test "$VALIDATION" = success
+            test "$BUILD" = success
+          fi

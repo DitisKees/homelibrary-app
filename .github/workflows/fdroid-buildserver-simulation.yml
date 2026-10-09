@@ -3,47 +3,24 @@ name: F-Droid buildserver simulation
 on:
   workflow_dispatch:
   pull_request:
-    paths:
-      - '.github/workflows/**'
-      - '.nvmrc'
-      - '.fdroid.yml'
-      - 'App.tsx'
-      - 'app.json'
-      - 'babel.config.js'
-      - 'tsconfig.json'
-      - 'package.json'
-      - 'package-lock.json'
-      - 'assets/**'
-      - 'modules/**'
-      - 'patches/**'
-      - 'plugins/**'
-      - 'scripts/**'
-      - 'src/**'
   push:
     branches:
       - main
-    paths:
-      - '.github/workflows/**'
-      - '.nvmrc'
-      - '.fdroid.yml'
-      - 'App.tsx'
-      - 'app.json'
-      - 'babel.config.js'
-      - 'tsconfig.json'
-      - 'package.json'
-      - 'package-lock.json'
-      - 'assets/**'
-      - 'modules/**'
-      - 'patches/**'
-      - 'plugins/**'
-      - 'scripts/**'
-      - 'src/**'
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.event_name }}-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: true
 
 permissions:
   contents: read
 
 jobs:
+  changes:
+    uses: ./.github/workflows/changes.yml
+
   fdroid-buildserver:
+    needs: changes
+    if: needs.changes.outputs.android == 'true'
     name: fdroid-buildserver-${{ matrix.abi }}-${{ matrix.copy }}
     runs-on: ubuntu-latest
     container:
@@ -177,3 +154,23 @@ jobs:
           name: r8-startup-${{ github.sha }}
           path: android-startup.log
           if-no-files-found: warn
+
+  android-gate:
+    name: Android source gate
+    if: always()
+    needs: [changes, fdroid-buildserver, compare-buildserver-apks]
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check relevant job results
+        env:
+          DETECTION: ${{ needs.changes.result }}
+          REQUIRED: ${{ needs.changes.outputs.android }}
+          BUILD: ${{ needs.fdroid-buildserver.result }}
+          COMPARISON: ${{ needs.compare-buildserver-apks.result }}
+        run: |
+          test "$DETECTION" = success
+          test "$REQUIRED" = true || test "$REQUIRED" = false
+          if [ "$REQUIRED" = true ]; then
+            test "$BUILD" = success
+            test "$COMPARISON" = success
+          fi

@@ -101,6 +101,8 @@ npm run build:fdroid-android
 
 CI runs the fast source checks and web export, and verifies all committed PocketBase migrations against PocketBase 0.40.1. For Android changes, the F-Droid buildserver workflow owns native compilation, dependency checks, APK scanning, reproducibility and emulator startup verification. It builds two independent copies of each of the four ABIs in a buildserver image pinned by digest and requires each pair to match byte-for-byte. The harness also pins fdroidserver/fdroiddata revisions and derives temporary source metadata structurally with fdroidserver itself. The alternate Debian forky two-checkout reproducibility workflow remains available manually for diagnosis. Docker self-hosting changes run the backup/restore smoke test, then build each multi-architecture image once; pushes publish those builds to GHCR.
 
+Workflow routing, stable status checks, cancellation and diagnostic conventions are documented in [docs/ci-workflows.md](docs/ci-workflows.md). Documentation-only and diagnostic-only changes run lightweight entry checks without starting the application build suites.
+
 ## Authentication storage
 
 Native Android/iOS builds persist PocketBase authentication state using Expo SecureStore (Android Keystore / iOS Keychain) rather than ordinary AsyncStorage. Existing native installs from before this change deliberately discard the old plain `pb_auth` entry and require one sign-in after upgrading.

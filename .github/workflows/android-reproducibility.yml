@@ -5,6 +5,10 @@ on:
   # reproducibility gate is the two-copy production F-Droid buildserver matrix.
   workflow_dispatch:
 
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
 permissions:
   contents: read
 

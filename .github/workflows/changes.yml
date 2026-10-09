@@ -1,0 +1,41 @@
+name: Detect relevant changes
+
+on:
+  workflow_call:
+    outputs:
+      source:
+        value: ${{ jobs.changes.outputs.source }}
+      pocketbase:
+        value: ${{ jobs.changes.outputs.pocketbase }}
+      android:
+        value: ${{ jobs.changes.outputs.android }}
+      docker:
+        value: ${{ jobs.changes.outputs.docker }}
+
+permissions:
+  contents: read
+
+jobs:
+  changes:
+    runs-on: ubuntu-latest
+    outputs:
+      source: ${{ steps.detect.outputs.source }}
+      pocketbase: ${{ steps.detect.outputs.pocketbase }}
+      android: ${{ steps.detect.outputs.android }}
+      docker: ${{ steps.detect.outputs.docker }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - name: Check patch whitespace
+        env:
+          BASE_SHA: ${{ github.event.pull_request.base.sha || github.event.before }}
+        run: |
+          if [[ "$BASE_SHA" =~ ^[0-9a-f]{40}$ && ! "$BASE_SHA" =~ ^0+$ ]]; then
+            git diff --check "$BASE_SHA" HEAD
+          fi
+      - name: Test change detection
+        run: node --test scripts/ci/changes.test.mjs
+      - name: Detect relevant changes
+        id: detect
+        run: node scripts/ci/changes.mjs
