@@ -31,6 +31,8 @@ io.github.ditiskees.homelibrary
 
 ## Prerequisites
 
+Android builds require Android 10 (API 29) or newer. Cover selection uses the system picker; cover capture requires camera access.
+
 For application development:
 
 - Node.js 22.13 or newer, but below Node 23
