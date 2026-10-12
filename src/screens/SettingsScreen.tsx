@@ -1,5 +1,5 @@
 import React from 'react';
-import { Pressable, ScrollView, StyleSheet, Text, TextInput, View } from 'react-native';
+import { Pressable, ScrollView, StyleSheet, Switch, Text, TextInput, View } from 'react-native';
 import { useTranslation } from 'react-i18next';
 import AppButton from '@/components/AppButton';
 import { supportedLanguages, useLanguage, type SupportedLocale } from '@/i18n';
@@ -8,6 +8,8 @@ import { EndpointConfigurationError, getBuildTimePocketBaseEndpoint, testPocketB
 import {
   clearGoogleBooksApiKey,
   getGoogleBooksApiKey,
+  getGoogleBooksEnabled,
+  setGoogleBooksEnabled,
   setGoogleBooksApiKey,
 } from '@/services/settings/googleBooks';
 
@@ -20,6 +22,8 @@ export default function SettingsScreen() {
   const { t } = useTranslation();
   const { language, setLanguage } = useLanguage();
   const { endpoint, changeEndpoint, resetEndpoint } = useAuth();
+  const [googleBooksEnabled, setEnabled] = React.useState(false);
+  const [isSavingEnabled, setIsSavingEnabled] = React.useState(false);
   const [apiKey, setApiKey] = React.useState('');
   const [isLoading, setIsLoading] = React.useState(true);
   const [isSaving, setIsSaving] = React.useState(false);
@@ -33,9 +37,12 @@ export default function SettingsScreen() {
 
   React.useEffect(() => {
     let active = true;
-    void getGoogleBooksApiKey()
-      .then((key) => {
-        if (active) setApiKey(key ?? '');
+    void Promise.all([getGoogleBooksApiKey(), getGoogleBooksEnabled()])
+      .then(([key, enabled]) => {
+        if (active) {
+          setApiKey(key ?? '');
+          setEnabled(enabled);
+        }
       })
       .catch((loadError: unknown) => {
         if (active) setError(errorMessage(loadError, t('settings.updateError')));
@@ -47,6 +54,20 @@ export default function SettingsScreen() {
       active = false;
     };
   }, [t]);
+
+  const toggleGoogleBooks = async (enabled: boolean) => {
+    if (isLoading || isSavingEnabled) return;
+    setIsSavingEnabled(true);
+    setError(undefined);
+    try {
+      await setGoogleBooksEnabled(enabled);
+      setEnabled(enabled);
+    } catch (saveError) {
+      setError(errorMessage(saveError, t('settings.updateError')));
+    } finally {
+      setIsSavingEnabled(false);
+    }
+  };
 
   const changeLanguage = React.useCallback(
     async (nextLanguage: SupportedLocale) => {
@@ -208,6 +229,16 @@ export default function SettingsScreen() {
         <Text style={styles.heading}>{t('settings.bookMetadataHeading')}</Text>
         <Text style={styles.help}>{t('settings.bookMetadataHelp')}</Text>
 
+        <View style={styles.toggle}>
+          <Text style={styles.label}>{t('settings.googleBooksEnabled')}</Text>
+          <Switch
+            value={googleBooksEnabled}
+            disabled={isLoading || isSavingEnabled}
+            onValueChange={(enabled) => void toggleGoogleBooks(enabled)}
+            accessibilityLabel={t('settings.googleBooksEnabled')}
+          />
+        </View>
+
         <Text style={styles.label}>{t('settings.googleBooksKey')}</Text>
         <TextInput
           value={apiKey}
@@ -274,6 +305,7 @@ const styles = StyleSheet.create({
     backgroundColor: '#fff',
     padding: 20,
   },
+  toggle: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', gap: 12 },
   heading: { fontSize: 24, fontWeight: '700', color: '#111827' },
   help: { fontSize: 15, lineHeight: 22, color: '#4b5563' },
   languageOptions: { flexDirection: 'row', flexWrap: 'wrap', gap: 10, marginTop: 4 },

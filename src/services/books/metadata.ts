@@ -1,6 +1,6 @@
 import { createGoogleBooksProvider } from './googleBooks';
 import { openLibraryProvider } from './openLibrary';
-import { getGoogleBooksApiKey } from '../settings/googleBooks';
+import { getGoogleBooksApiKey, getGoogleBooksEnabled } from '../settings/googleBooks';
 
 export type BookMetadata = {
   title?: string;
@@ -16,7 +16,8 @@ export interface IsbnMetadataProvider {
   lookup(isbn: string): Promise<BookMetadata | null>;
 }
 
-export function getMetadataProviders(googleBooksApiKey?: string): IsbnMetadataProvider[] {
+export function getMetadataProviders(googleBooksApiKey?: string, googleBooksEnabled = false): IsbnMetadataProvider[] {
+  if (!googleBooksEnabled) return [openLibraryProvider];
   const googleBooksProvider = createGoogleBooksProvider(googleBooksApiKey);
   return googleBooksApiKey
     ? [googleBooksProvider, openLibraryProvider]
@@ -47,6 +48,7 @@ export async function lookupWithProviders(
 }
 
 export async function lookupBookMetadata(isbn: string): Promise<BookMetadata | null> {
-  const googleBooksApiKey = await getGoogleBooksApiKey();
-  return lookupWithProviders(isbn, getMetadataProviders(googleBooksApiKey));
+  const googleBooksEnabled = await getGoogleBooksEnabled();
+  const googleBooksApiKey = googleBooksEnabled ? await getGoogleBooksApiKey() : undefined;
+  return lookupWithProviders(isbn, getMetadataProviders(googleBooksApiKey, googleBooksEnabled));
 }

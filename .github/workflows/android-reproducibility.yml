@@ -25,6 +25,7 @@ jobs:
       ANDROID_HOME: /opt/android-sdk
       ANDROID_SDK_ROOT: /opt/android-sdk
       JAVA_HOME: /usr/lib/jvm/java-21-openjdk-amd64
+      HOMELIBRARY_GLIDE_SOURCE: /tmp/homelibrary-glide-srclib
       GRADLE_OPTS: -Dorg.gradle.jvmargs=-Xmx3g\ -XX:MaxMetaspaceSize=1g\ -Dfile.encoding=UTF-8 -Dorg.gradle.workers.max=2 -Dkotlin.compiler.execution.strategy=in-process
     steps:
       - name: Check out repository twice
@@ -52,6 +53,17 @@ jobs:
           "$JAVA_HOME/bin/java" -version
           node --version
           npm --version
+
+      - name: Prepare pinned Glide source and processor Gradle toolchain
+        run: |
+          set -euo pipefail
+          git init -q "$HOMELIBRARY_GLIDE_SOURCE"
+          git -C "$HOMELIBRARY_GLIDE_SOURCE" remote add origin https://github.com/bumptech/glide.git
+          git -C "$HOMELIBRARY_GLIDE_SOURCE" fetch --depth 1 origin ebbf7e2680e0a5812bdb428034aa38fb9260dba7
+          git -C "$HOMELIBRARY_GLIDE_SOURCE" checkout --detach FETCH_HEAD
+          curl -fsSL https://services.gradle.org/distributions/gradle-8.14.3-bin.zip -o /tmp/glide-gradle.zip
+          unzip -q /tmp/glide-gradle.zip -d /opt
+          echo /opt/gradle-8.14.3/bin >> "$GITHUB_PATH"
 
       - name: Build first unsigned APK with F-Droid recipe
         working-directory: source-a

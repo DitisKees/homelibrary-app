@@ -80,6 +80,12 @@ fdroid_prepare_environment() {
 
   fdroid_clone_exact     "https://gitlab.com/fdroid/fdroiddata.git"     "${FDROIDDATA_DIR}"     "${FDROIDDATA_COMMIT}"
 
+  # Install the new srclib alongside the pinned fdroiddata checkout. The same
+  # definition is submitted to fdroiddata after upstream release verification.
+  mkdir -p "${home_vagrant}/srclibs"
+  cp "${REPO_ROOT}/scripts/fdroid/srclibs/Glide.yml" "${FDROIDDATA_DIR}/srclibs/Glide.yml"
+  cp "${REPO_ROOT}/scripts/fdroid/srclibs/Glide.yml" "${home_vagrant}/srclibs/Glide.yml"
+
   mkdir -p     "${home_vagrant}/build"     "${home_vagrant}/logs"     "${home_vagrant}/tmp"     "${home_vagrant}/unsigned"     "${home_vagrant}/.android"     "${home_vagrant}/.gradle"     "${home_vagrant}/metadata"
 
   if [[ ! -d "${home_vagrant}/gradlew-fdroid" ]]; then

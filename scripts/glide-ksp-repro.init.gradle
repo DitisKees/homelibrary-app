@@ -1,7 +1,7 @@
 // HomeLibrary reproducibility backport for Glide 5.0.5 KSP.
 //
 // F-Droid's scanner explicitly allows the Debian system Maven repository at
-// file:///usr/share/maven-repo. The F-Droid init phase copies only the patched
+// file:///usr/share/maven-repo. After source scanning, the build copies only the patched
 // Glide KSP 5.0.5 JAR and its unmodified upstream POM into that repository.
 
 def repoDir = new File("/usr/share/maven-repo")
