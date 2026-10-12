@@ -1,0 +1,1 @@
+F-Droid-builds gebruiken nu vastgepinde, gescande Glide-bronnen en alleen Java 21. Google Books staat standaard uit en is optioneel in te schakelen. Ongebruikte Android-rechten verwijderd; Android 10 of nieuwer vereist.

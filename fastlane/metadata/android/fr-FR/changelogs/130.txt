@@ -1,0 +1,1 @@
+Les builds F-Droid utilisent les sources Glide épinglées et analysées, avec Java 21 uniquement. Google Books est désactivé par défaut et peut être activé. Permissions Android inutilisées supprimées ; Android 10 ou plus récent requis.

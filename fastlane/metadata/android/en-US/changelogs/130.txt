@@ -1,0 +1,1 @@
+F-Droid builds now use commit-pinned, scanned Glide sources and Java 21 only. Google Books is opt-in and disabled by default. Removed unused Android permissions; Android 10 or newer is required.

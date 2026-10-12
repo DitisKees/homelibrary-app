@@ -1,8 +1,9 @@
 # F-Droid release process
 
-The next candidate is **1.0.11**, base Android code **12**. Published releases,
-including 1.0.10, and their tags/assets remain immutable. The 2026-10-05
-maintainer review of `fdroid/fdroiddata!48673` requests R8 and ABI-specific APKs.
+The next candidate is **1.0.12**, base Android code **13**. Published releases,
+including 1.0.11, and their tags/assets remain immutable. Issue #55 addresses the remaining source integration, Java, permission and
+Google Books review findings in `fdroid/fdroiddata!48673`. The accepted R8, ABI
+and reproducibility configuration remains in place.
 
 ## Version and APK identity
 
@@ -11,16 +12,16 @@ maintainer review of `fdroid/fdroiddata!48673` requests R8 and ABI-specific APKs
 `plugins/with-android-release-packaging.js` generates release configuration
 upstream; fdroiddata does not patch the generated Gradle version or optimizer.
 
-| ABI | Code (`10 * base + suffix`) | Asset for 1.0.11 |
+| ABI | Code (`10 * base + suffix`) | Asset for 1.0.12 |
 | --- | --- | --- |
-| armeabi-v7a | 121 | HomeLibrary-1.0.11-armeabi-v7a.apk |
-| arm64-v8a | 122 | HomeLibrary-1.0.11-arm64-v8a.apk |
-| x86 | 123 | HomeLibrary-1.0.11-x86.apk |
-| x86_64 | 124 | HomeLibrary-1.0.11-x86_64.apk |
+| armeabi-v7a | 131 | HomeLibrary-1.0.12-armeabi-v7a.apk |
+| arm64-v8a | 132 | HomeLibrary-1.0.12-arm64-v8a.apk |
+| x86 | 133 | HomeLibrary-1.0.12-x86.apk |
+| x86_64 | 134 | HomeLibrary-1.0.12-x86_64.apk |
 
 Each is a standalone installable APK, built with React Native's supported
 `-PreactNativeArchitectures=<abi>` property. These are not APK-set fragments.
-An ordinary all-ABI developer/smoke build retains a universal APK, code 120.
+An ordinary all-ABI developer/smoke build retains a universal APK, code 130.
 The production workflow publishes the four smaller ABI APKs.
 
 For each new release:
@@ -78,8 +79,8 @@ Once the PR is merged and main is green, create the **new** immutable tag:
 ```bash
 git switch main
 git pull --ff-only
-git tag v1.0.11
-git push origin v1.0.11
+git tag v1.0.12
+git push origin v1.0.12
 ```
 
 Never move/recreate an existing tag or replace an existing APK with different
@@ -116,7 +117,7 @@ Copy canonical `.fdroid.yml` to `metadata/io.github.ditiskees.homelibrary.yml` i
 the fdroiddata fork, resolving all four `commit` entries to the full new tag SHA.
 Retain the four `binary` URLs, `VercodeOperation`, production signer and reviewed
 scanner exceptions. Run `fdroid rewritemeta`, `fdroid lint`, `fdroid checkupdates`
-and each of the four build specifications (121, 122, 123, 124).
+and each of the four build specifications (131, 132, 133, 134).
 
 Report the exact immutable source, per-ABI codes, sizes, SHA-256 values, signer
 and verification runs. The remote F-Droid runner remains the final parity check;
