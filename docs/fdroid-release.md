@@ -136,9 +136,10 @@ ordering fix, localhost dev-server resource, scanner gates and permanent signing
 identity remain part of every architecture's recipe. See `fdroid-harness.md` for
 pinning, diagnostics and the previous reproducibility investigation.
 
-The policy review also found an existing metadata omission: ISBN lookup always
-includes Google Books, even without an API key (Open Library is tried first).
-With a user-provided API key, Google Books is tried first. The canonical recipe
-now declares `NonFreeNet` with that precise explanation. Manual entry and the
+ISBN lookup
+can include Google Books when enabled in Settings. It is disabled by default,
+including on upgrades with a saved key. When enabled without a key, Open Library
+is tried first; with a user-provided API key, Google Books is tried first. The canonical recipe
+retains `NonFreeNet` to disclose the optional proprietary service. Manual entry and the
 self-hosted PocketBase library remain usable without Google Books. No built-in
 API key or service dependency is added by this change.

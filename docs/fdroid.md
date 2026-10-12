@@ -131,6 +131,7 @@ Never move or recreate a published `v<versionName>` tag. Every Android release g
 The F-Droid harness itself is governed by [`fdroid-harness.md`](./fdroid-harness.md). In particular, do not reintroduce regex-based YAML editing, moving `git pull` inputs, `apt dist-upgrade` inside the pinned buildserver, or a combined source/release mode script.
 
 The inclusion/Anti-Features review declares `NonFreeNet` because ISBN metadata
-lookup uses proprietary Google Books as fallback even without an API key.
-A configured key moves Google Books first. Core library/manual entry use the
+lookup can use proprietary Google Books when explicitly enabled in Settings.
+It is disabled by default, including on upgrades with a saved key. When enabled,
+Google Books is the fallback without a key; a configured key moves it first. Core library/manual entry use the
 self-hostable PocketBase backend; see the release process for this disclosure.
