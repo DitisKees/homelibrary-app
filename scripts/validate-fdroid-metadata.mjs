@@ -122,7 +122,7 @@ if (fs.existsSync(fdroidPath)) {
   expect(!/^\s*subdir:/m.test(fdroid), '.fdroid.yml must not declare subdir because Expo generates android/ after checkout');
   expect(fdroid.includes('output: android/app/build/outputs/apk/release/app-release-unsigned.apk'), '.fdroid.yml must declare the generated unsigned APK output');
   expect(fdroid.includes('cd android/app'), '.fdroid.yml must build from the generated Android app directory');
-  expect(fdroid.includes('gradle assembleRelease'), '.fdroid.yml must use F-Droid system Gradle after scanner removes the wrapper');
+  expect(/gradle (?:-I \S+ )?assembleRelease/.test(fdroid), '.fdroid.yml must use F-Droid system Gradle after scanner removes the wrapper');
   expect(fdroid.includes("jvmToolchain\\|JavaVersion/s/17/21/"), '.fdroid.yml must apply F-Droid React Native Java 17-to-21 toolchain compatibility');
   expect(fdroid.indexOf('sed -i -e \'s/"node"') < fdroid.indexOf('npm ci'), '.fdroid.yml must relax the Node engine ceiling before npm ci');
   expect(fdroid.includes('bash scripts/prepare-android-gradle-properties.sh'), '.fdroid.yml must guard Expo Camera Gradle properties before and after appending build settings');
@@ -220,7 +220,7 @@ if (fs.existsSync(fdroidReleaseRunnerPath)) {
 
 if (fs.existsSync(buildScriptPath)) {
   const buildScript = fs.readFileSync(buildScriptPath, 'utf8');
-  expect(buildScript.includes('./gradlew :app:assembleRelease --no-daemon'), 'F-Droid recipe build script must assemble the release APK');
+  expect(buildScript.includes('./gradlew -I ../scripts/glide-ksp-repro.init.gradle :app:assembleRelease --no-daemon'), 'F-Droid recipe build script must assemble the release APK');
   expect(buildScript.includes('android/app/build/outputs/apk/release/app-release-unsigned.apk'), 'F-Droid recipe build script must use the exact unsigned release APK path');
   expect(!/python3\s+-[^\n]*<<['"]?PY/m.test(buildScript), 'F-Droid recipe build script must not embed Python scripts');
   expect(buildScript.includes('bash scripts/prepare-android-gradle-properties.sh'), 'F-Droid recipe build script must guard generated Expo Camera Gradle properties');

@@ -17,6 +17,11 @@ assert app.CurrentVersionCode == max(expected)
 assert app.VercodeOperation == [f'10 * %c + {offset}' for offset in abis.values()]
 assert min((base + 1) * 10 + offset for offset in abis.values()) > max(expected)
 for (abi, offset), build in zip(abis.items(), app['Builds']):
+    assert build.srclibs == ['Glide@ebbf7e2680e0a5812bdb428034aa38fb9260dba7']
+    assert build.prebuild[0] == 'bash scripts/prepare-glide-ksp-source.sh $$Glide$$'
+    assert 'build-glide-ksp-repro' not in '\n'.join(build.init)
+    assert build.build[0] == 'bash scripts/build-glide-ksp-repro.sh'
+    assert not any('openjdk-' in command or 'bullseye' in command or 'bookworm' in command for command in build.sudo)
     assert build.versionName == config['version']
     assert build.commit == 'v' + config['version']
     assert build.binary.endswith(f'/HomeLibrary-%v-{abi}.apk')

@@ -1,12 +1,15 @@
+import { getGoogleBooksEnabled, getGoogleBooksApiKey } from '../settings/googleBooks';
 import {
   getMetadataProviders,
   lookupWithProviders,
+  lookupBookMetadata,
   type BookMetadata,
   type IsbnMetadataProvider,
 } from './metadata';
 
 jest.mock('../settings/googleBooks', () => ({
   getGoogleBooksApiKey: jest.fn(async () => undefined),
+  getGoogleBooksEnabled: jest.fn(async () => false),
 }));
 
 function provider(
@@ -18,14 +21,14 @@ function provider(
 
 describe('metadata provider ordering and fallback', () => {
   test('uses Google Books first when an API key is configured', () => {
-    expect(getMetadataProviders('configured-key').map((item) => item.name)).toEqual([
+    expect(getMetadataProviders('configured-key', true).map((item) => item.name)).toEqual([
       'Google Books',
       'Open Library',
     ]);
   });
 
   test('uses Open Library first when no API key is configured', () => {
-    expect(getMetadataProviders().map((item) => item.name)).toEqual([
+    expect(getMetadataProviders(undefined, true).map((item) => item.name)).toEqual([
       'Open Library',
       'Google Books',
     ]);
@@ -84,5 +87,50 @@ describe('metadata provider ordering and fallback', () => {
         }),
       ])
     ).rejects.toThrow('second failed');
+  });
+});
+
+describe('metadata network privacy', () => {
+  const fetchMock = jest.fn();
+  const originalFetch = globalThis.fetch;
+  beforeEach(() => {
+    jest.clearAllMocks();
+    globalThis.fetch = fetchMock;
+    jest.mocked(getGoogleBooksApiKey).mockResolvedValue('saved-key');
+    jest.mocked(getGoogleBooksEnabled).mockResolvedValue(false);
+  });
+  afterAll(() => { globalThis.fetch = originalFetch; });
+
+  test('defaults to Open Library even with a saved key', () => {
+    expect(getMetadataProviders('saved-key').map((item) => item.name)).toEqual(['Open Library']);
+  });
+
+  test.each(['empty', 'error'])('disabled Google Books receives no request after an Open Library %s', async (outcome) => {
+    if (outcome === 'empty') fetchMock.mockResolvedValue({ ok: true, json: async () => ({ docs: [] }) });
+    else fetchMock.mockRejectedValue(new Error('offline'));
+    if (outcome === 'empty') await expect(lookupBookMetadata('9780306406157')).resolves.toBeNull();
+    else await expect(lookupBookMetadata('9780306406157')).rejects.toThrow();
+    expect(fetchMock).toHaveBeenCalledTimes(1);
+    expect(String(fetchMock.mock.calls[0][0])).toContain('openlibrary.org');
+    expect(getGoogleBooksApiKey).not.toHaveBeenCalled();
+  });
+
+  test('successful Open Library lookup skips enabled Google Books', async () => {
+    jest.mocked(getGoogleBooksEnabled).mockResolvedValue(true);
+    jest.mocked(getGoogleBooksApiKey).mockResolvedValue(undefined);
+    fetchMock.mockResolvedValue({ ok: true, json: async () => ({ docs: [{ title: 'Open Library result' }] }) });
+    await expect(lookupBookMetadata('9780306406157')).resolves.toMatchObject({ title: 'Open Library result' });
+    expect(fetchMock).toHaveBeenCalledTimes(1);
+    expect(String(fetchMock.mock.calls[0][0])).toContain('openlibrary.org');
+  });
+
+  test('enabled Google Books is contacted after an empty Open Library result', async () => {
+    jest.mocked(getGoogleBooksEnabled).mockResolvedValue(true);
+    jest.mocked(getGoogleBooksApiKey).mockResolvedValue(undefined);
+    fetchMock.mockResolvedValueOnce({ ok: true, json: async () => ({ docs: [] }) })
+      .mockResolvedValueOnce({ ok: true, json: async () => ({ items: [{ volumeInfo: { title: 'Google result' } }] }) });
+    await expect(lookupBookMetadata('9780306406157')).resolves.toMatchObject({ title: 'Google result' });
+    expect(fetchMock).toHaveBeenCalledTimes(2);
+    expect(String(fetchMock.mock.calls[1][0])).toContain('www.googleapis.com');
   });
 });

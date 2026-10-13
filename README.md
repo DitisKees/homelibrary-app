@@ -126,8 +126,10 @@ Translations live under `src/i18n/locales/`, with server/security translations i
 
 ISBN lookup supports Open Library and Google Books through a provider abstraction:
 
-- without a Google Books API key, Open Library is tried first;
-- with a locally configured Google Books API key, Google Books is tried first;
+- Google Books is disabled by default, including on upgrades; enable it in Settings to allow requests;
+- while disabled, ISBN lookup uses only Open Library, even if an API key is saved;
+- when enabled without an API key, Open Library is tried first and Google Books is the fallback;
+- when enabled with a locally configured API key, Google Books is tried first;
 - recoverable provider/network/rate-limit failures fall through to the other provider;
 - metadata lookup failures never prevent manual book entry.
 

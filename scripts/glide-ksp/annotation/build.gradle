@@ -1,0 +1,7 @@
+plugins { id 'java-library' }
+java {
+    toolchain { languageVersion = JavaLanguageVersion.of(21) }
+    // JDK 21 no longer compiles Java 7; these build-time annotations need Java 8.
+    sourceCompatibility = JavaVersion.VERSION_1_8
+    targetCompatibility = JavaVersion.VERSION_1_8
+}

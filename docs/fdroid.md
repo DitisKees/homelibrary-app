@@ -41,7 +41,11 @@ Upstream CI runs two independent F-Droid buildserver source builds for each ABI 
 
 Expo Image resolves Glide 5.0.5's KSP processor. Cross-runner diagnostics isolated a nondeterministic iteration in Glide's `LibraryGlideModules.parseUnique`: the generated `GlideIndexer` could enumerate library modules in a different order on GitHub and GitLab, changing downstream DEX output.
 
-HomeLibrary keeps the stock Glide 5.0.5 runtime and backports only deterministic ordering to the KSP processor. `scripts/build-glide-ksp-repro.sh` checks out the immutable Glide 5.0.5 tag, applies the one-line ordering fix, builds the processor from source, normalizes only JAR ZIP metadata, and creates a local Maven mirror using Glide's unmodified published POM. `scripts/glide-ksp-repro.init.gradle` restricts that mirror to `com.github.bumptech.glide:ksp:5.0.5`, so no other dependency can be shadowed.
+HomeLibrary keeps the stock Glide 5.0.5 runtime and backports only deterministic ordering to its KSP processor. Maven's unpatched processor enumerates modules in host-dependent order, which changes generated code and APK bytes. F-Droid fetches the Glide srclib at release commit `ebbf7e2680e0a5812bdb428034aa38fb9260dba7`. `scripts/prepare-glide-ksp-source.sh` checks the revision and copies all annotation/processor compilation inputs into `build/glide-source` during prebuild, before F-Droid scans the app tree. Only the processor sources are needed; unrelated Android integrations, samples, tests and publishing plugins are excluded. The checked-in processor-only Gradle project retains upstream Kotlin, KSP and dependency versions and the existing one-line ordering backport.
+
+After scanning, `scripts/build-glide-ksp-repro.sh` compiles those staged sources using the buildserver's `gradle` command. It performs no source fetch and invokes no dependency wrapper. The upstream text Gradle version declaration selects buildserver-managed Gradle 8.14.3. One JDK, buildserver Java 21, runs both the processor and application builds; the processor retains Java 11 bytecode, while its compile-time annotation project uses Java 8 because JDK 21 no longer accepts Java 7 source. No JDK 11/17 packages or obsolete Debian releases are needed.
+
+JAR ZIP normalization and exclusive Maven resolution remain unchanged. The unmodified upstream KSP POM is checked in at `scripts/glide-ksp/ksp-5.0.5.pom` (SHA-256 `f182a3aba6a4574dc484fb3b4e534ab9460b19f94a031a0172b544d3acd51376`), preserving its transitive dependency graph without a build-time POM download. `scripts/glide-ksp-repro.init.gradle` restricts the system mirror to `com.github.bumptech.glide:ksp:5.0.5`. The srclib definition in `scripts/fdroid/srclibs/Glide.yml` must accompany the app metadata in fdroiddata; the GitHub harness installs the same file before fetching srclibs.
 
 The focused proof generated the same Glide indexer on independent GitHub and GitLab environments, SHA-256 `bb57a537b3084dc8845d11f01e167df3c61675a22ffbc7655f1f9de60e41627a`. The production F-Droid recipe builds this processor during the network-enabled init phase using explicit Debian JDK 11/17 toolchains; the Android release itself remains on the buildserver's Java 21 baseline.
 
@@ -127,6 +131,7 @@ Never move or recreate a published `v<versionName>` tag. Every Android release g
 The F-Droid harness itself is governed by [`fdroid-harness.md`](./fdroid-harness.md). In particular, do not reintroduce regex-based YAML editing, moving `git pull` inputs, `apt dist-upgrade` inside the pinned buildserver, or a combined source/release mode script.
 
 The inclusion/Anti-Features review declares `NonFreeNet` because ISBN metadata
-lookup uses proprietary Google Books as fallback even without an API key.
-A configured key moves Google Books first. Core library/manual entry use the
+lookup can use proprietary Google Books when explicitly enabled in Settings.
+It is disabled by default, including on upgrades with a saved key. When enabled,
+Google Books is the fallback without a key; a configured key moves it first. Core library/manual entry use the
 self-hostable PocketBase backend; see the release process for this disclosure.

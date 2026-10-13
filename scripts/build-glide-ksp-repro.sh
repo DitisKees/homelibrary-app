@@ -1,35 +1,20 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
-GLIDE_TAG=v5.0.5
-WORK="${TMPDIR:-/tmp}/homelibrary-glide-ksp"
-ROOT="$(pwd)"
+ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd -P)"
+WORK="$ROOT/build/glide-source"
 TOOLS="$ROOT/build/repro-tools"
 MAVEN_DIR="$ROOT/build/repro-maven/com/github/bumptech/glide/ksp/5.0.5"
-
-rm -rf "$WORK" "$TOOLS" "$MAVEN_DIR"
+test "$(cat "$WORK/upstream-commit.txt")" = ebbf7e2680e0a5812bdb428034aa38fb9260dba7
+# Sources must already have been staged before F-Droid's source scan.
+test -f "$WORK/ksp/src/main/kotlin/com/bumptech/glide/annotation/ksp/LibraryGlideModules.kt"
+command -v gradle >/dev/null
+rm -rf "$TOOLS" "$MAVEN_DIR"
 mkdir -p "$TOOLS" "$MAVEN_DIR"
-
-git clone --quiet --depth 1 --branch "$GLIDE_TAG" https://github.com/bumptech/glide.git "$WORK"
-FILE="$WORK/annotation/ksp/src/main/kotlin/com/bumptech/glide/annotation/ksp/LibraryGlideModules.kt"
-
-python3 - "$FILE" <<'PY'
-from pathlib import Path
-import sys
-p = Path(sys.argv[1])
-s = p.read_text()
-old = "allLibraryGlideModules.associateBy { it.name }.values.toList()"
-new = "allLibraryGlideModules.associateBy { it.name }.values.sortedBy { it.name.qualifiedName }"
-if s.count(old) != 1:
-    raise SystemExit("unexpected Glide 5.0.5 parseUnique source")
-p.write_text(s.replace(old, new))
-PY
-grep -F 'values.sortedBy { it.name.qualifiedName }' "$FILE"
-
 cd "$WORK"
-./gradlew --no-daemon --max-workers=1 :annotation:ksp:jar
+gradle --no-daemon --max-workers=1 -Dorg.gradle.jvmargs=-Xmx1g :ksp:jar
 
-RAW="$(find annotation/ksp/build/libs -maxdepth 1 -type f -name '*.jar' ! -name '*sources*' ! -name '*javadoc*' | head -1)"
+RAW="$(find ksp/build/libs -maxdepth 1 -type f -name '*.jar' ! -name '*sources*' ! -name '*javadoc*' | head -1)"
 test -n "$RAW"
 cp "$RAW" "$TOOLS/glide-ksp-5.0.5-homelibrary-repro1.raw.jar"
 
@@ -81,8 +66,7 @@ sha256sum "$TOOLS/glide-ksp-5.0.5-homelibrary-repro1.raw.jar" "$NORMALIZED"
 # Use Glide's published 5.0.5 POM verbatim so Gradle retains the exact
 # transitive processor dependency graph; replace only the main processor JAR.
 cp "$NORMALIZED" "$MAVEN_DIR/ksp-5.0.5.jar"
-POM_URL="https://repo1.maven.org/maven2/com/github/bumptech/glide/ksp/5.0.5/ksp-5.0.5.pom"
-curl --fail --location --silent --show-error "$POM_URL" -o "$MAVEN_DIR/ksp-5.0.5.pom"
+cp "$ROOT/scripts/glide-ksp/ksp-5.0.5.pom" "$MAVEN_DIR/ksp-5.0.5.pom"
 test -s "$MAVEN_DIR/ksp-5.0.5.pom"
 grep -F '<artifactId>kotlinpoet</artifactId>' "$MAVEN_DIR/ksp-5.0.5.pom"
 echo "Upstream Glide KSP POM SHA-256:"

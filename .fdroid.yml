@@ -1,8 +1,8 @@
 AntiFeatures:
   NonFreeNet:
-    en-US: ISBN metadata lookup uses Google Books as a fallback after Open Library.
-      Google Books is a proprietary network service; entering a Google Books API key
-      makes it the first provider.
+    en-US: ISBN metadata lookup optionally uses Google Books, a proprietary network
+      service. It is disabled by default and can be enabled in Settings. An optional
+      API key makes Google Books the first provider when enabled.
 Categories:
   - Inventory
   - Reading
@@ -16,36 +16,26 @@ RepoType: git
 Repo: https://github.com/DitisKees/homelibrary-app.git
 
 Builds:
-  - versionName: 1.0.11
-    versionCode: 121
-    commit: v1.0.11
+  - versionName: 1.0.12
+    versionCode: 131
+    commit: v1.0.12
     sudo:
       - echo "deb https://deb.debian.org/debian forky main" > /etc/apt/sources.list.d/forky.list
-      - echo "deb https://deb.debian.org/debian bookworm main" > /etc/apt/sources.list.d/bookworm.list
-      - echo "deb https://deb.debian.org/debian bullseye main" > /etc/apt/sources.list.d/bullseye.list
       - apt-get -o Acquire::Retries=3 update
       - apt-get -o Acquire::Retries=3 install -y -t forky npm
-      - apt-get -o Acquire::Retries=3 install -y -t bookworm openjdk-17-jdk-headless
-      - apt-get -o Acquire::Retries=3 install -y -t bullseye openjdk-11-jdk-headless
       - install -d -o vagrant -g vagrant /usr/share/maven-repo/com/github/bumptech/glide/ksp/5.0.5
     init:
       - node --version
       - npm --version
       - sed -i -e 's/"node":\ ">=22.13.0 <23"/"node":\ ">=22.13.0"/' package.json
-      - mkdir -p "$HOME/.gradle"
-      - echo 
-        'org.gradle.java.installations.paths=/usr/lib/jvm/java-11-openjdk-amd64,/usr/lib/jvm/java-17-openjdk-amd64,/usr/lib/jvm/java-21-openjdk-amd64'
-        >> "$HOME/.gradle/gradle.properties"
-      - JAVA_HOME=/usr/lib/jvm/java-17-openjdk-amd64 bash scripts/build-glide-ksp-repro.sh
-      - mkdir -p /usr/share/maven-repo/com/github/bumptech/glide/ksp/5.0.5
-      - cp build/repro-maven/com/github/bumptech/glide/ksp/5.0.5/ksp-5.0.5.jar /usr/share/maven-repo/com/github/bumptech/glide/ksp/5.0.5/
-      - cp build/repro-maven/com/github/bumptech/glide/ksp/5.0.5/ksp-5.0.5.pom /usr/share/maven-repo/com/github/bumptech/glide/ksp/5.0.5/
-      - rm -rf build/repro-maven build/repro-tools
       - npm ci
     output: android/app/build/outputs/apk/release/app-release-unsigned.apk
     binary: 
       https://github.com/DitisKees/homelibrary-app/releases/download/v%v/HomeLibrary-%v-armeabi-v7a.apk
+    srclibs:
+      - Glide@ebbf7e2680e0a5812bdb428034aa38fb9260dba7
     prebuild:
+      - bash scripts/prepare-glide-ksp-source.sh $$Glide$$
       - find node_modules -type d -name local-maven-repo -prune -exec rm -rf {} +
       - sed -i '/jvmToolchain\|JavaVersion/s/17/21/' node_modules/@react-native/gradle-plugin/*/build.gradle.kts
         node_modules/@react-native/gradle-plugin/react-native-gradle-plugin/src/main/kotlin/com/facebook/react/utils/JdkConfiguratorUtils.kt
@@ -67,6 +57,8 @@ Builds:
     scandelete:
       - node_modules
     build:
+      - bash scripts/build-glide-ksp-repro.sh
+      - cp build/repro-maven/com/github/bumptech/glide/ksp/5.0.5/* /usr/share/maven-repo/com/github/bumptech/glide/ksp/5.0.5/
       - cd android/app
       - gradle -I ../../scripts/glide-ksp-repro.init.gradle assembleRelease -PreactNativeArchitectures=armeabi-v7a
     ndk: r27b
@@ -77,36 +69,26 @@ Builds:
         armeabi-v7a
       - test -s android/app/build/outputs/mapping/release/mapping.txt
 
-  - versionName: 1.0.11
-    versionCode: 122
-    commit: v1.0.11
+  - versionName: 1.0.12
+    versionCode: 132
+    commit: v1.0.12
     sudo:
       - echo "deb https://deb.debian.org/debian forky main" > /etc/apt/sources.list.d/forky.list
-      - echo "deb https://deb.debian.org/debian bookworm main" > /etc/apt/sources.list.d/bookworm.list
-      - echo "deb https://deb.debian.org/debian bullseye main" > /etc/apt/sources.list.d/bullseye.list
       - apt-get -o Acquire::Retries=3 update
       - apt-get -o Acquire::Retries=3 install -y -t forky npm
-      - apt-get -o Acquire::Retries=3 install -y -t bookworm openjdk-17-jdk-headless
-      - apt-get -o Acquire::Retries=3 install -y -t bullseye openjdk-11-jdk-headless
       - install -d -o vagrant -g vagrant /usr/share/maven-repo/com/github/bumptech/glide/ksp/5.0.5
     init:
       - node --version
       - npm --version
       - sed -i -e 's/"node":\ ">=22.13.0 <23"/"node":\ ">=22.13.0"/' package.json
-      - mkdir -p "$HOME/.gradle"
-      - echo 
-        'org.gradle.java.installations.paths=/usr/lib/jvm/java-11-openjdk-amd64,/usr/lib/jvm/java-17-openjdk-amd64,/usr/lib/jvm/java-21-openjdk-amd64'
-        >> "$HOME/.gradle/gradle.properties"
-      - JAVA_HOME=/usr/lib/jvm/java-17-openjdk-amd64 bash scripts/build-glide-ksp-repro.sh
-      - mkdir -p /usr/share/maven-repo/com/github/bumptech/glide/ksp/5.0.5
-      - cp build/repro-maven/com/github/bumptech/glide/ksp/5.0.5/ksp-5.0.5.jar /usr/share/maven-repo/com/github/bumptech/glide/ksp/5.0.5/
-      - cp build/repro-maven/com/github/bumptech/glide/ksp/5.0.5/ksp-5.0.5.pom /usr/share/maven-repo/com/github/bumptech/glide/ksp/5.0.5/
-      - rm -rf build/repro-maven build/repro-tools
       - npm ci
     output: android/app/build/outputs/apk/release/app-release-unsigned.apk
     binary: 
       https://github.com/DitisKees/homelibrary-app/releases/download/v%v/HomeLibrary-%v-arm64-v8a.apk
+    srclibs:
+      - Glide@ebbf7e2680e0a5812bdb428034aa38fb9260dba7
     prebuild:
+      - bash scripts/prepare-glide-ksp-source.sh $$Glide$$
       - find node_modules -type d -name local-maven-repo -prune -exec rm -rf {} +
       - sed -i '/jvmToolchain\|JavaVersion/s/17/21/' node_modules/@react-native/gradle-plugin/*/build.gradle.kts
         node_modules/@react-native/gradle-plugin/react-native-gradle-plugin/src/main/kotlin/com/facebook/react/utils/JdkConfiguratorUtils.kt
@@ -128,6 +110,8 @@ Builds:
     scandelete:
       - node_modules
     build:
+      - bash scripts/build-glide-ksp-repro.sh
+      - cp build/repro-maven/com/github/bumptech/glide/ksp/5.0.5/* /usr/share/maven-repo/com/github/bumptech/glide/ksp/5.0.5/
       - cd android/app
       - gradle -I ../../scripts/glide-ksp-repro.init.gradle assembleRelease -PreactNativeArchitectures=arm64-v8a
     ndk: r27b
@@ -138,36 +122,26 @@ Builds:
         arm64-v8a
       - test -s android/app/build/outputs/mapping/release/mapping.txt
 
-  - versionName: 1.0.11
-    versionCode: 123
-    commit: v1.0.11
+  - versionName: 1.0.12
+    versionCode: 133
+    commit: v1.0.12
     sudo:
       - echo "deb https://deb.debian.org/debian forky main" > /etc/apt/sources.list.d/forky.list
-      - echo "deb https://deb.debian.org/debian bookworm main" > /etc/apt/sources.list.d/bookworm.list
-      - echo "deb https://deb.debian.org/debian bullseye main" > /etc/apt/sources.list.d/bullseye.list
       - apt-get -o Acquire::Retries=3 update
       - apt-get -o Acquire::Retries=3 install -y -t forky npm
-      - apt-get -o Acquire::Retries=3 install -y -t bookworm openjdk-17-jdk-headless
-      - apt-get -o Acquire::Retries=3 install -y -t bullseye openjdk-11-jdk-headless
       - install -d -o vagrant -g vagrant /usr/share/maven-repo/com/github/bumptech/glide/ksp/5.0.5
     init:
       - node --version
       - npm --version
       - sed -i -e 's/"node":\ ">=22.13.0 <23"/"node":\ ">=22.13.0"/' package.json
-      - mkdir -p "$HOME/.gradle"
-      - echo 
-        'org.gradle.java.installations.paths=/usr/lib/jvm/java-11-openjdk-amd64,/usr/lib/jvm/java-17-openjdk-amd64,/usr/lib/jvm/java-21-openjdk-amd64'
-        >> "$HOME/.gradle/gradle.properties"
-      - JAVA_HOME=/usr/lib/jvm/java-17-openjdk-amd64 bash scripts/build-glide-ksp-repro.sh
-      - mkdir -p /usr/share/maven-repo/com/github/bumptech/glide/ksp/5.0.5
-      - cp build/repro-maven/com/github/bumptech/glide/ksp/5.0.5/ksp-5.0.5.jar /usr/share/maven-repo/com/github/bumptech/glide/ksp/5.0.5/
-      - cp build/repro-maven/com/github/bumptech/glide/ksp/5.0.5/ksp-5.0.5.pom /usr/share/maven-repo/com/github/bumptech/glide/ksp/5.0.5/
-      - rm -rf build/repro-maven build/repro-tools
       - npm ci
     output: android/app/build/outputs/apk/release/app-release-unsigned.apk
     binary: 
       https://github.com/DitisKees/homelibrary-app/releases/download/v%v/HomeLibrary-%v-x86.apk
+    srclibs:
+      - Glide@ebbf7e2680e0a5812bdb428034aa38fb9260dba7
     prebuild:
+      - bash scripts/prepare-glide-ksp-source.sh $$Glide$$
       - find node_modules -type d -name local-maven-repo -prune -exec rm -rf {} +
       - sed -i '/jvmToolchain\|JavaVersion/s/17/21/' node_modules/@react-native/gradle-plugin/*/build.gradle.kts
         node_modules/@react-native/gradle-plugin/react-native-gradle-plugin/src/main/kotlin/com/facebook/react/utils/JdkConfiguratorUtils.kt
@@ -189,6 +163,8 @@ Builds:
     scandelete:
       - node_modules
     build:
+      - bash scripts/build-glide-ksp-repro.sh
+      - cp build/repro-maven/com/github/bumptech/glide/ksp/5.0.5/* /usr/share/maven-repo/com/github/bumptech/glide/ksp/5.0.5/
       - cd android/app
       - gradle -I ../../scripts/glide-ksp-repro.init.gradle assembleRelease -PreactNativeArchitectures=x86
     ndk: r27b
@@ -199,36 +175,26 @@ Builds:
         x86
       - test -s android/app/build/outputs/mapping/release/mapping.txt
 
-  - versionName: 1.0.11
-    versionCode: 124
-    commit: v1.0.11
+  - versionName: 1.0.12
+    versionCode: 134
+    commit: v1.0.12
     sudo:
       - echo "deb https://deb.debian.org/debian forky main" > /etc/apt/sources.list.d/forky.list
-      - echo "deb https://deb.debian.org/debian bookworm main" > /etc/apt/sources.list.d/bookworm.list
-      - echo "deb https://deb.debian.org/debian bullseye main" > /etc/apt/sources.list.d/bullseye.list
       - apt-get -o Acquire::Retries=3 update
       - apt-get -o Acquire::Retries=3 install -y -t forky npm
-      - apt-get -o Acquire::Retries=3 install -y -t bookworm openjdk-17-jdk-headless
-      - apt-get -o Acquire::Retries=3 install -y -t bullseye openjdk-11-jdk-headless
       - install -d -o vagrant -g vagrant /usr/share/maven-repo/com/github/bumptech/glide/ksp/5.0.5
     init:
       - node --version
       - npm --version
       - sed -i -e 's/"node":\ ">=22.13.0 <23"/"node":\ ">=22.13.0"/' package.json
-      - mkdir -p "$HOME/.gradle"
-      - echo 
-        'org.gradle.java.installations.paths=/usr/lib/jvm/java-11-openjdk-amd64,/usr/lib/jvm/java-17-openjdk-amd64,/usr/lib/jvm/java-21-openjdk-amd64'
-        >> "$HOME/.gradle/gradle.properties"
-      - JAVA_HOME=/usr/lib/jvm/java-17-openjdk-amd64 bash scripts/build-glide-ksp-repro.sh
-      - mkdir -p /usr/share/maven-repo/com/github/bumptech/glide/ksp/5.0.5
-      - cp build/repro-maven/com/github/bumptech/glide/ksp/5.0.5/ksp-5.0.5.jar /usr/share/maven-repo/com/github/bumptech/glide/ksp/5.0.5/
-      - cp build/repro-maven/com/github/bumptech/glide/ksp/5.0.5/ksp-5.0.5.pom /usr/share/maven-repo/com/github/bumptech/glide/ksp/5.0.5/
-      - rm -rf build/repro-maven build/repro-tools
       - npm ci
     output: android/app/build/outputs/apk/release/app-release-unsigned.apk
     binary: 
       https://github.com/DitisKees/homelibrary-app/releases/download/v%v/HomeLibrary-%v-x86_64.apk
+    srclibs:
+      - Glide@ebbf7e2680e0a5812bdb428034aa38fb9260dba7
     prebuild:
+      - bash scripts/prepare-glide-ksp-source.sh $$Glide$$
       - find node_modules -type d -name local-maven-repo -prune -exec rm -rf {} +
       - sed -i '/jvmToolchain\|JavaVersion/s/17/21/' node_modules/@react-native/gradle-plugin/*/build.gradle.kts
         node_modules/@react-native/gradle-plugin/react-native-gradle-plugin/src/main/kotlin/com/facebook/react/utils/JdkConfiguratorUtils.kt
@@ -250,6 +216,8 @@ Builds:
     scandelete:
       - node_modules
     build:
+      - bash scripts/build-glide-ksp-repro.sh
+      - cp build/repro-maven/com/github/bumptech/glide/ksp/5.0.5/* /usr/share/maven-repo/com/github/bumptech/glide/ksp/5.0.5/
       - cd android/app
       - gradle -I ../../scripts/glide-ksp-repro.init.gradle assembleRelease -PreactNativeArchitectures=x86_64
     ndk: r27b
@@ -263,54 +231,29 @@ Builds:
 AllowedAPKSigningKeys: 99115557adc7601e8d71adbf8884b0d359ab3f720cbec10c17828c36b7bdd813
 
 MaintainerNotes: |
-  HomeLibrary uses Expo/React Native and does not commit android/. Expo prebuild
-  therefore generates the Android project after checkout. Because fdroidserver
-  validates subdir before init/prebuild, no subdir is declared; output points to
-  the generated APK and the build command runs Gradle from android/app.
+  Expo generates android/ during prebuild, so no subdir is declared.
+  Bundled Expo AARs are removed and native modules are built from source.
+  The React Native Java 17 toolchain declarations are adjusted to the
+  buildserver JDK 21. Glide KSP also builds on JDK 21, targeting Java 11.
 
-  Node.js/npm are installed from Debian forky as requested by the F-Droid
-  maintainer. The conservative upstream Node <23 engine ceiling is relaxed
-  before npm ci because current forky supplies Node 24. The React Native Gradle
-  plugin still declares a Java 17 toolchain,
-  while the current F-Droid build image supplies Java 21. The prebuild applies
-  the same 17-to-21 toolchain adjustment used by F-Droid's React Native template.
+  Glide 5.0.5 KSP has nondeterministic module ordering. The commit-pinned
+  Glide srclib supplies annotation and processor sources, copied into
+  build/glide-source before scanning. The processor-only Gradle project
+  avoids unrelated samples and publishing plugins. The one-line ordering
+  backport is applied before scanning; compilation uses buildserver Gradle.
+  Only the processor JAR is replaced in the system Maven repository; its
+  checked-in upstream POM retains the original transitive dependencies.
+  The runtime Glide dependency is unchanged.
 
-  Expo SDK 57 bundles precompiled AARs in local-maven-repo directories. Expo
-  autolinking is configured upstream to build all native modules from source and
-  bundled local Maven repositories are removed before Android generation.
+  Reviewed React Native Gradle files use scanignore to preserve their
+  legacy Maven declarations from scanner rewriting. The upstream Expo
+  plugin fixes the dev-server resource to localhost, maps native source
+  paths and disables dependency metadata. Native build IDs are normalized
+  by the checked-in helper. Resource shrinking stays disabled for
+  reproducibility.
 
-  F-Droid's scanner recognizes legacy/relative Maven repository declarations in
-  several React Native module Gradle files as unknown repositories and rewrites
-  those files. Existing accepted React Native recipes preserve those reviewed
-  Gradle files with scanignore; HomeLibrary does the same for AsyncStorage,
-  Safe Area Context, and Screens.
-
-  Native React Native/Expo builds can embed absolute checkout paths and varying
-  GNU build IDs in source-built ELF libraries. The checked-in upstream Expo
-  config plugin adds app-level externalNativeBuild C/C++ prefix-map flags during
-  Expo prebuild. APK build-id normalization is implemented by the checked-in
-  scripts/normalize-fdroid-apk-build-ids.py helper.
-
-  React Native 0.86 is built with the Expo SDK 57 NDK baseline, pinned here as
-  Android NDK r27b.
-
-  Version 1.0.7 fixed a release-build regression where release Gradle settings
-  could be concatenated onto Expo Camera's generated
-  expo.camera.barcode-scanner-enabled=false property. The recipe normalizes and
-  validates that property, audits the release dependency graph, and rejects
-  ML Kit/Barhopper artifacts in the built APK.
-
-  Version 1.0.8 is a build-system release that makes the F-Droid buildserver
-  path authoritative for the unsigned production APK. Upstream CI builds the
-  candidate in the same buildserver image, verifies independent buildserver
-  reproducibility, and performs F-Droid's signed-reference comparison after
-  publication before fdroiddata is updated.
-
-    Release 1.0.11 enables R8 upstream. Each ABI is a standalone APK built with
-    reactNativeArchitectures, using versionCode 10 * base + ABI (1 through 4).
-    Per-build binary URLs preserve ABI identity when auto-updates copy builds.
-    app.json stores the base code; VercodeOperation expands all four updates.
-    Resource shrinking remains disabled for reproducibility.
+  app.json stores the base versionCode. VercodeOperation expands it for
+  the four standalone ABIs; per-build binary URLs preserve ABI identity.
 
 AutoUpdateMode: Version
 UpdateCheckMode: Tags ^v[0-9]+\.[0-9]+\.[0-9]+$
@@ -320,5 +263,5 @@ VercodeOperation:
   - 10 * %c + 3
   - 10 * %c + 4
 UpdateCheckData: app.json|"versionCode":\s*(\d+)|app.json|"version":\s*"([\d.]+)"
-CurrentVersion: 1.0.11
-CurrentVersionCode: 124
+CurrentVersion: 1.0.12
+CurrentVersionCode: 134
