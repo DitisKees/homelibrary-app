@@ -19,12 +19,28 @@ jobs:
     if: vars.KOYEB_APP != '' && vars.KOYEB_SERVICE != ''
     runs-on: ubuntu-latest
     steps:
-      - name: Install Koyeb CLI
-        uses: koyeb-community/koyeb-actions@v2
-        with:
-          api_token: ${{ secrets.KOYEB_TOKEN }}
+      - name: Install pinned official Koyeb CLI
+        shell: bash
+        run: |
+          set -euo pipefail
+          archive="${RUNNER_TEMP}/koyeb-cli.tar.gz"
+          curl -fLsS --retry 3 --output "${archive}" \
+            https://github.com/koyeb/koyeb-cli/releases/download/v5.12.0/koyeb-cli_5.12.0_linux_amd64.tar.gz
+          echo "c39ce972e48c641368d4c09e98fbe6f3b7ae210687db2ed1de706299b7a8534a  ${archive}" | sha256sum -c -
+          mkdir -p "${RUNNER_TEMP}/koyeb-extract"
+          tar -xzf "${archive}" -C "${RUNNER_TEMP}/koyeb-extract"
+          binary="$(find "${RUNNER_TEMP}/koyeb-extract" -type f -name koyeb -print -quit)"
+          test -n "${binary}"
+          install -m 755 "${binary}" "${RUNNER_TEMP}/koyeb"
+          echo "${RUNNER_TEMP}" >> "${GITHUB_PATH}"
       - name: Restart disposable demo without rebuilding
         env:
+          KOYEB_TOKEN: ${{ secrets.KOYEB_TOKEN }}
           KOYEB_APP: ${{ vars.KOYEB_APP }}
           KOYEB_SERVICE: ${{ vars.KOYEB_SERVICE }}
-        run: koyeb services redeploy --skip-build --app "${KOYEB_APP}" "${KOYEB_SERVICE}"
+        shell: bash
+        run: |
+          set -euo pipefail
+          test -n "${KOYEB_TOKEN}"
+          koyeb --token "${KOYEB_TOKEN}" services redeploy --skip-build \
+            --app "${KOYEB_APP}" "${KOYEB_SERVICE}"
