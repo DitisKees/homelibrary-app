@@ -52,7 +52,12 @@ CREATED="$(curl -fsS -H "Authorization: ${TOKEN}" -H 'Content-Type: application/
   -d '{"title":"Temporary test book","author":"Demo Tester"}' \
   "${URL}/api/collections/books/records")"
 CREATED_ID="$(jq -er '.id' <<<"${CREATED}")"
+OLD_TOKEN="${TOKEN}"
 echo "Stopping demo and restarting against the SAME volume"
+# A token issued by the previous database should no longer authorize reads.
+# PocketBase represents an unsatisfied listRule as 200 with zero results,
+# which is why the app must verify stale credentials instead of showing an
+# empty library.
 docker rm -f "${CONTAINER}" >/dev/null
 start
 TOKEN="$(auth)"
@@ -62,4 +67,13 @@ STATUS="$(curl -sS -o /dev/null -w '%{http_code}' -H "Authorization: ${TOKEN}" \
 COUNT="$(curl -fsS -H "Authorization: ${TOKEN}" \
   "${URL}/api/collections/books/records?perPage=50" | jq -er '.totalItems')"
 [ "${COUNT}" = 16 ] || fail "Fresh database was not re-seeded"
+
+STALE_BOOKS="$(curl -fsS -H "Authorization: ${OLD_TOKEN}" \
+  "${URL}/api/collections/books/records?perPage=50" | jq -er '.totalItems')"
+[ "${STALE_BOOKS}" = 0 ] || fail "Stale token unexpectedly sees seeded books"
+STALE_REFRESH_STATUS="$(curl -sS -o /dev/null -w '%{http_code}' -X POST \
+  -H "Authorization: ${OLD_TOKEN}" \
+  "${URL}/api/collections/users/auth-refresh")"
+[ "${STALE_REFRESH_STATUS}" = 401 ] || fail "Stale token refresh did not return 401"
+
 echo "[PASS] Demo startup, seeded login, permissions, writes and reset"

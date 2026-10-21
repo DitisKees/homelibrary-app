@@ -1,3 +1,5 @@
+const mockAuthRefresh = jest.fn();
+
 jest.mock('pocketbase', () => {
   class MockAsyncAuthStore {
     token = '';
@@ -25,6 +27,10 @@ jest.mock('pocketbase', () => {
       getToken: jest.fn(),
       getUrl: jest.fn(),
     };
+
+    collection = jest.fn(() => ({
+      authRefresh: mockAuthRefresh,
+    }));
 
     constructor(_endpoint: string, authStore: MockAsyncAuthStore) {
       this.authStore = authStore;
@@ -58,6 +64,7 @@ import {
   fileUrl,
   hydrateAuthStore,
   initializePocketBase,
+  validateServerSession,
   pb,
 } from '@/lib/pocketbase';
 
@@ -155,5 +162,60 @@ describe('fileUrl', () => {
       '80x120'
     );
     expect(getToken).toHaveBeenCalledTimes(1);
+  });
+});
+
+describe('Remote PocketBase session validation', () => {
+  beforeEach(() => {
+    jest.clearAllMocks();
+    initializePocketBase('https://books.example.com');
+    pb.authStore.save('valid-token', { id: 'user-before-reset' });
+  });
+
+  it('preserves a valid session when the server accepts it', async () => {
+    mockAuthRefresh.mockResolvedValueOnce({ record: { id: 'user-before-reset' } });
+    await expect(validateServerSession()).resolves.toBe(true);
+    expect(pb.authStore.model?.id).toBe('user-before-reset');
+    expect(clearPersistedAuthMock).not.toHaveBeenCalled();
+  });
+
+  it('discards stale credentials after an HTTP 401 from a reset backend', async () => {
+    mockAuthRefresh.mockRejectedValueOnce(Object.assign(new Error('Invalid token'), { status: 401 }));
+    await expect(validateServerSession()).resolves.toBe(false);
+    expect(pb.authStore.model).toBeNull();
+    expect(clearPersistedAuthMock).toHaveBeenCalledTimes(1);
+  });
+
+  it('does not discard a login because a sleeping server is unavailable', async () => {
+    mockAuthRefresh.mockRejectedValueOnce(Object.assign(new Error('Network unavailable'), { status: 0 }));
+    await expect(validateServerSession()).rejects.toThrow('Network unavailable');
+    expect(pb.authStore.model?.id).toBe('user-before-reset');
+    expect(clearPersistedAuthMock).not.toHaveBeenCalled();
+  });
+
+  it('does not clear credentials for a new endpoint when an old check finishes', async () => {
+    let rejectOld: ((error: Error) => void) | undefined;
+    mockAuthRefresh.mockImplementationOnce(() => new Promise((_, reject) => {
+      rejectOld = reject;
+    }));
+    const validation = validateServerSession();
+    initializePocketBase('https://another.example.com');
+    pb.authStore.save('valid-token-new', { id: 'user-on-new-server' });
+    rejectOld?.(Object.assign(new Error('Old endpoint unauthorized'), { status: 401 }));
+    await expect(validation).resolves.toBe(false);
+    expect(pb.authStore.model?.id).toBe('user-on-new-server');
+    expect(clearPersistedAuthMock).not.toHaveBeenCalled();
+  });
+
+  it('shares one in-flight validation between simultaneous callers', async () => {
+    let finish: (() => void) | undefined;
+    mockAuthRefresh.mockImplementationOnce(() => new Promise((resolve) => {
+      finish = () => resolve({ record: { id: 'user-before-reset' } });
+    }));
+    const first = validateServerSession();
+    const second = validateServerSession();
+    expect(mockAuthRefresh).toHaveBeenCalledTimes(1);
+    finish?.();
+    await expect(Promise.all([first, second])).resolves.toEqual([true, true]);
   });
 });
