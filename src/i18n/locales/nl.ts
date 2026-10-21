@@ -36,6 +36,8 @@ const nl = {
     email: 'E-mail',
     emailAddress: 'E-mailadres',
     password: 'Wachtwoord',
+    showPassword: 'Wachtwoord tonen',
+    hidePassword: 'Wachtwoord verbergen',
     signIn: 'Aanmelden',
     signingIn: 'Aanmelden…',
     signInError: 'Aanmelden is niet gelukt. Controleer je e-mailadres en wachtwoord.',

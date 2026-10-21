@@ -1,5 +1,5 @@
 import type { RecordModel } from 'pocketbase';
-import { fileUrl, pb } from '@/lib/pocketbase';
+import { fileUrl, pb, validateServerSession } from '@/lib/pocketbase';
 import type { Book, BookInput, BookUpdate } from '@/types/domain';
 import { equivalentIsbns } from '@/utils/isbn';
 
@@ -98,6 +98,21 @@ export async function listBooksPage(
     : { sort: 'title,author,created' };
 
   const result = await pb.collection(COLLECTION).getList(page, perPage, options);
+
+  // An invalid auth token may result in HTTP 200 with an empty list because
+  // PocketBase treats it as an anonymous request. Validate an unexpected empty
+  // first page before presenting it as a genuinely empty household library.
+  if (page === 1 && !normalizedSearch && result.totalItems === 0 && pb.authStore.isValid) {
+    try {
+      const valid = await validateServerSession();
+      if (!valid) throw new Error('Session expired. Please sign in again.');
+    } catch (error) {
+      // A free-tier backend can be temporarily unreachable as it wakes.
+      // Only a confirmed invalid session should force the login screen;
+      // ordinary networking errors must not remove a legitimate empty list.
+      if (!pb.authStore.isValid) throw error;
+    }
+  }
 
   return {
     items: result.items.map(mapBookRecord),

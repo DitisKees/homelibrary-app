@@ -2,6 +2,8 @@ import React, { useState } from 'react';
 import {
   KeyboardAvoidingView,
   Platform,
+  Pressable,
+  ScrollView,
   StyleSheet,
   Text,
   TextInput,
@@ -16,6 +18,7 @@ export default function LoginScreen() {
   const { login } = useAuth();
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
+  const [passwordVisible, setPasswordVisible] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
   const canSubmit = email.trim().length > 0 && password.length > 0 && !loading;
@@ -38,64 +41,84 @@ export default function LoginScreen() {
       style={styles.container}
       behavior={Platform.OS === 'ios' ? 'padding' : undefined}
     >
-      <View style={styles.card}>
-        <View style={styles.heading}>
-          <Text style={styles.title} accessibilityRole="header">
-            {t('common.appName')}
-          </Text>
-          <Text style={styles.subtitle}>{t('auth.subtitle')}</Text>
-        </View>
+      <ScrollView
+        testID="login-form-scroll"
+        contentContainerStyle={styles.scrollContent}
+        keyboardShouldPersistTaps="handled"
+        keyboardDismissMode={Platform.OS === 'ios' ? 'interactive' : 'on-drag'}
+      >
+        <View style={styles.card}>
+          <View style={styles.heading}>
+            <Text style={styles.title} accessibilityRole="header">
+              {t('common.appName')}
+            </Text>
+            <Text style={styles.subtitle}>{t('auth.subtitle')}</Text>
+          </View>
 
-        <View style={styles.field}>
-          <Text style={styles.label}>{t('auth.email')}</Text>
-          <TextInput
-            style={styles.input}
-            placeholder={t('auth.email')}
-            autoCapitalize="none"
-            autoCorrect={false}
-            autoComplete="email"
-            textContentType="emailAddress"
-            keyboardType="email-address"
-            returnKeyType="next"
-            accessibilityLabel={t('auth.emailAddress')}
-            value={email}
-            onChangeText={setEmail}
+          <View style={styles.field}>
+            <Text style={styles.label}>{t('auth.email')}</Text>
+            <TextInput
+              style={styles.input}
+              placeholder={t('auth.email')}
+              autoCapitalize="none"
+              autoCorrect={false}
+              autoComplete="email"
+              textContentType="emailAddress"
+              keyboardType="email-address"
+              returnKeyType="next"
+              accessibilityLabel={t('auth.emailAddress')}
+              value={email}
+              onChangeText={setEmail}
+            />
+          </View>
+
+          <View style={styles.field}>
+            <View style={styles.passwordHeader}>
+              <Text style={styles.label}>{t('auth.password')}</Text>
+              <Pressable
+                onPress={() => setPasswordVisible((visible) => !visible)}
+                accessibilityRole="button"
+                accessibilityLabel={passwordVisible ? t('auth.hidePassword') : t('auth.showPassword')}
+                hitSlop={8}
+                style={styles.visibilityToggle}
+              >
+                <Text style={styles.visibilityText}>
+                  {passwordVisible ? t('auth.hidePassword') : t('auth.showPassword')}
+                </Text>
+              </Pressable>
+            </View>
+            <TextInput
+              style={styles.input}
+              placeholder={t('auth.password')}
+              autoCapitalize="none"
+              autoCorrect={false}
+              autoComplete="current-password"
+              textContentType="password"
+              secureTextEntry={!passwordVisible}
+              returnKeyType="go"
+              accessibilityLabel={t('auth.password')}
+              value={password}
+              onChangeText={setPassword}
+              onSubmitEditing={() => void handleSubmit()}
+            />
+          </View>
+
+          {!!error && (
+            <Text style={styles.error} accessibilityRole="alert" accessibilityLiveRegion="assertive">
+              {error}
+            </Text>
+          )}
+
+          <AppButton
+            label={t('auth.signIn')}
+            loadingLabel={t('auth.signingIn')}
+            loading={loading}
+            disabled={!email.trim() || !password}
+            onPress={() => void handleSubmit()}
+            style={styles.button}
           />
         </View>
-
-        <View style={styles.field}>
-          <Text style={styles.label}>{t('auth.password')}</Text>
-          <TextInput
-            style={styles.input}
-            placeholder={t('auth.password')}
-            autoCapitalize="none"
-            autoCorrect={false}
-            autoComplete="current-password"
-            textContentType="password"
-            secureTextEntry
-            returnKeyType="go"
-            accessibilityLabel={t('auth.password')}
-            value={password}
-            onChangeText={setPassword}
-            onSubmitEditing={() => void handleSubmit()}
-          />
-        </View>
-
-        {!!error && (
-          <Text style={styles.error} accessibilityRole="alert" accessibilityLiveRegion="assertive">
-            {error}
-          </Text>
-        )}
-
-        <AppButton
-          label={t('auth.signIn')}
-          loadingLabel={t('auth.signingIn')}
-          loading={loading}
-          disabled={!email.trim() || !password}
-          onPress={() => void handleSubmit()}
-          style={styles.button}
-        />
-      </View>
+      </ScrollView>
     </KeyboardAvoidingView>
   );
 }
@@ -103,9 +126,12 @@ export default function LoginScreen() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
+    backgroundColor: '#f3f4f6',
+  },
+  scrollContent: {
+    flexGrow: 1,
     justifyContent: 'center',
     padding: 20,
-    backgroundColor: '#f3f4f6',
   },
   card: {
     width: '100%',
@@ -121,6 +147,21 @@ const styles = StyleSheet.create({
   subtitle: { fontSize: 14, lineHeight: 20, color: '#6b7280', textAlign: 'center' },
   field: { gap: 6 },
   label: { fontSize: 14, fontWeight: '600', color: '#374151' },
+  passwordHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+  },
+  visibilityToggle: {
+    minHeight: 44,
+    justifyContent: 'center',
+    paddingHorizontal: 8,
+  },
+  visibilityText: {
+    fontSize: 14,
+    fontWeight: '600',
+    color: '#1f6feb',
+  },
   input: {
     minHeight: 48,
     borderWidth: 1,

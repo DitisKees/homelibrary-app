@@ -36,6 +36,8 @@ const fr = {
     email: 'E-mail',
     emailAddress: 'Adresse e-mail',
     password: 'Mot de passe',
+    showPassword: 'Afficher le mot de passe',
+    hidePassword: 'Masquer le mot de passe',
     signIn: 'Se connecter',
     signingIn: 'Connexion…',
     signInError: 'Connexion impossible. Vérifiez votre e-mail et votre mot de passe.',

@@ -65,6 +65,52 @@ export async function hydrateAuthStore(): Promise<void> {
   }
 }
 
+// A locally unexpired JWT may no longer authenticate after a server restore
+// (notably the intentionally disposable demo). PocketBase list rules respond
+// with HTTP 200 + zero items when an invalid token is treated as anonymous.
+// Only invalidate a session on an explicit authorization failure; networking
+// errors (e.g. a sleeping Render service) must leave the login untouched.
+let sessionCheck: {
+  client: PocketBase;
+  token: string;
+  promise: Promise<boolean>;
+} | null = null;
+
+export function validateServerSession(): Promise<boolean> {
+  const client = pb;
+  const token = client.authStore.token;
+  if (!token || !client.authStore.isValid) return Promise.resolve(false);
+  if (sessionCheck?.client === client && sessionCheck.token === token) {
+    return sessionCheck.promise;
+  }
+
+  const promise = (async () => {
+    try {
+      await client.collection('users').authRefresh();
+      return true;
+    } catch (error) {
+      // An unrelated endpoint change, logout, or new sign-in must not be
+      // invalidated by a response from the old session.
+      if (client !== pb || token !== client.authStore.token) return false;
+      const status = error && typeof error === 'object' && 'status' in error
+        ? (error as { status: unknown }).status
+        : undefined;
+      if (status === 401 || status === 403) {
+        await clearPocketBaseSession();
+        return false;
+      }
+      throw error;
+    }
+  })();
+
+  sessionCheck = { client, token, promise };
+  const cleanup = () => {
+    if (sessionCheck?.promise === promise) sessionCheck = null;
+  };
+  void promise.then(cleanup, cleanup);
+  return promise;
+}
+
 let cachedFileToken: { token: string; fetchedAt: number } | null = null;
 let fileTokenRequest: Promise<string> | null = null;
 const FILE_TOKEN_TTL_MS = 5 * 60 * 1000;
