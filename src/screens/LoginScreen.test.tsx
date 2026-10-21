@@ -32,6 +32,26 @@ describe('<LoginScreen />', () => {
     consoleError.mockRestore();
   });
 
+  test('toggles password visibility without changing the entered password', () => {
+    const view = render(<LoginScreen />);
+
+    fireEvent.changeText(view.getByPlaceholderText('Password'), 'demo-password');
+    expect(view.getByPlaceholderText('Password').props.secureTextEntry).toBe(true);
+
+    fireEvent.press(view.getByLabelText('Show password'));
+    expect(view.getByPlaceholderText('Password').props.secureTextEntry).toBe(false);
+    expect(view.getByPlaceholderText('Password').props.value).toBe('demo-password');
+
+    fireEvent.press(view.getByLabelText('Hide password'));
+    expect(view.getByPlaceholderText('Password').props.secureTextEntry).toBe(true);
+    expect(view.getByPlaceholderText('Password').props.value).toBe('demo-password');
+  });
+
+  test('keeps the form scrollable when the keyboard reduces available space', () => {
+    const view = render(<LoginScreen />);
+    expect(view.getByTestId('login-form-scroll').props.keyboardShouldPersistTaps).toBe('handled');
+  });
+
   test('renders representative UI in the selected language', async () => {
     await i18n.changeLanguage('nl');
     const view = render(<LoginScreen />);
@@ -39,6 +59,7 @@ describe('<LoginScreen />', () => {
     expect(view.getByText('HomeLibrary')).toBeTruthy();
     expect(view.getByPlaceholderText('E-mail')).toBeTruthy();
     expect(view.getByPlaceholderText('Wachtwoord')).toBeTruthy();
+    expect(view.getByLabelText('Wachtwoord tonen')).toBeTruthy();
     expect(view.getByText('Aanmelden')).toBeTruthy();
   });
 });

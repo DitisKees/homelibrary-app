@@ -36,6 +36,8 @@ const en = {
     email: 'Email',
     emailAddress: 'Email address',
     password: 'Password',
+    showPassword: 'Show password',
+    hidePassword: 'Hide password',
     signIn: 'Sign in',
     signingIn: 'Signing in…',
     signInError: 'Could not sign in. Check your email and password.',

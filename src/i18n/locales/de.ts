@@ -36,6 +36,8 @@ const de = {
     email: 'E-Mail',
     emailAddress: 'E-Mail-Adresse',
     password: 'Passwort',
+    showPassword: 'Passwort anzeigen',
+    hidePassword: 'Passwort verbergen',
     signIn: 'Anmelden',
     signingIn: 'Anmeldung…',
     signInError: 'Anmeldung fehlgeschlagen. Prüfe E-Mail-Adresse und Passwort.',
