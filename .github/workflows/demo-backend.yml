@@ -1,0 +1,25 @@
+name: Disposable demo backend
+
+on:
+  pull_request:
+    paths:
+      - 'demo/**'
+      - 'docker/backend/Dockerfile'
+      - 'pocketbase/pb_migrations/**'
+      - '.github/workflows/demo-backend.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: demo-backend-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  smoke:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Build and test disposable demo
+        run: bash demo/test.sh
