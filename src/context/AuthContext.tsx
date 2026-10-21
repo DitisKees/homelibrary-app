@@ -37,12 +37,10 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         initializePocketBase(configuredEndpoint);
         await hydrateAuthStore();
         if (pb.authStore.isValid) {
-          try {
-            await validateServerSession();
-          } catch {
-            // Keep the locally valid session while a backend is unavailable.
-            // This is common when a free-tier backend wakes from sleep.
-          }
+          // Verify remotely without blocking app startup for a sleeping
+          // free-tier backend. A server-revoked session is cleared once
+          // validation responds; connectivity errors leave it intact.
+          void validateServerSession().catch(() => {});
         }
         if (!active) return;
         setEndpoint(configuredEndpoint);
