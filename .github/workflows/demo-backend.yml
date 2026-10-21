@@ -3,7 +3,7 @@ name: Disposable demo backend
 on:
   pull_request:
     paths:
-      - 'demo/**'
+      - 'docker/demo/**'
       - 'docker/backend/Dockerfile'
       - 'pocketbase/pb_migrations/**'
       - '.github/workflows/demo-backend.yml'
@@ -22,4 +22,4 @@ jobs:
     steps:
       - uses: actions/checkout@v4
       - name: Build and test disposable demo
-        run: bash demo/test.sh
+        run: bash docker/demo/test.sh

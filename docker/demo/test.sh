@@ -15,7 +15,7 @@ fail() { echo "[FAIL] $*" >&2; exit 1; }
 
 echo "Building current backend and disposable demo images"
 docker build -f docker/backend/Dockerfile -t "${BASE_IMAGE}" .
-docker build -f demo/Dockerfile --build-arg "BASE_IMAGE=${BASE_IMAGE}" -t "${DEMO_IMAGE}" .
+docker build -f docker/demo/Dockerfile --build-arg "BASE_IMAGE=${BASE_IMAGE}" -t "${DEMO_IMAGE}" .
 docker volume create "${VOLUME}" >/dev/null
 start() {
   docker run -d --name "${CONTAINER}" -p 127.0.0.1::8090 \
@@ -40,7 +40,7 @@ start
 TOKEN="$(auth)"
 BOOKS="$(curl -fsS -H "Authorization: ${TOKEN}" "${URL}/api/collections/books/records?perPage=50")"
 jq -e '.totalItems == 16' <<<"${BOOKS}" >/dev/null || fail "Missing demo catalog"
-USER_ID="$(curl -fsS -H "Authorization: ${TOKEN}" "${URL}/api/collections/users/auth-refresh" | jq -er '.record.id')"
+USER_ID="$(curl -fsS -X POST -H "Authorization: ${TOKEN}" "${URL}/api/collections/users/auth-refresh" | jq -er '.record.id')"
 # Explicitly test public account cannot change its known credentials.
 STATUS="$(curl -sS -o /dev/null -w '%{http_code}' -X PATCH \
   -H "Authorization: ${TOKEN}" -H 'Content-Type: application/json' \
