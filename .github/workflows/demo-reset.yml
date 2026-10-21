@@ -1,0 +1,30 @@
+name: Nightly public demo reset
+
+on:
+  schedule:
+    # GitHub cron uses UTC: 03:00 CET / 04:00 CEST.
+    - cron: '0 2 * * *'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: public-demo-reset
+  cancel-in-progress: false
+
+jobs:
+  redeploy:
+    # The workflow is safe to merge before Koyeb has been configured.
+    if: vars.KOYEB_APP != '' && vars.KOYEB_SERVICE != ''
+    runs-on: ubuntu-latest
+    steps:
+      - name: Install Koyeb CLI
+        uses: koyeb-community/koyeb-actions@v2
+        with:
+          api_token: ${{ secrets.KOYEB_TOKEN }}
+      - name: Restart disposable demo without rebuilding
+        env:
+          KOYEB_APP: ${{ vars.KOYEB_APP }}
+          KOYEB_SERVICE: ${{ vars.KOYEB_SERVICE }}
+        run: koyeb services redeploy --skip-build --app "${KOYEB_APP}" "${KOYEB_SERVICE}"
