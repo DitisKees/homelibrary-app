@@ -1,0 +1,69 @@
+name: Nightly public demo reset
+
+on:
+  schedule:
+    # UTC: 03:00 CET / 04:00 CEST. GitHub scheduled runs are best-effort.
+    - cron: '0 2 * * *'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: public-demo-reset
+  cancel-in-progress: false
+
+jobs:
+  render-restart:
+    # A restart avoids consuming free build minutes on a nightly Docker build.
+    # Configure the repository variable and secret only after creating the service.
+    if: vars.RENDER_SERVICE_ID != ''
+    runs-on: ubuntu-latest
+    steps:
+      - name: Restart disposable Render demo
+        shell: bash
+        env:
+          RENDER_API_KEY: ${{ secrets.RENDER_API_KEY }}
+          RENDER_SERVICE_ID: ${{ vars.RENDER_SERVICE_ID }}
+        run: |
+          set -euo pipefail
+          test -n "${RENDER_API_KEY}"
+          test "${RENDER_SERVICE_ID#srv-}" != "${RENDER_SERVICE_ID}"
+          curl --fail-with-body --show-error --silent --retry 3 \
+            -X POST \
+            -H "Authorization: Bearer ${RENDER_API_KEY}" \
+            -H "Accept: application/json" \
+            "https://api.render.com/v1/services/${RENDER_SERVICE_ID}/restart" \
+            >/dev/null
+
+  koyeb-redeploy:
+    # Backward compatibility for existing grandfathered Starter organizations.
+    # If Render is configured, only Render resets to avoid duplicate schedules.
+    if: vars.RENDER_SERVICE_ID == '' && vars.KOYEB_APP != '' && vars.KOYEB_SERVICE != ''
+    runs-on: ubuntu-latest
+    steps:
+      - name: Install pinned official Koyeb CLI
+        shell: bash
+        run: |
+          set -euo pipefail
+          archive="${RUNNER_TEMP}/koyeb-cli.tar.gz"
+          curl -fLsS --retry 3 --output "${archive}" \
+            https://github.com/koyeb/koyeb-cli/releases/download/v5.12.0/koyeb-cli_5.12.0_linux_amd64.tar.gz
+          echo "c39ce972e48c641368d4c09e98fbe6f3b7ae210687db2ed1de706299b7a8534a  ${archive}" | sha256sum -c -
+          mkdir -p "${RUNNER_TEMP}/koyeb-extract"
+          tar -xzf "${archive}" -C "${RUNNER_TEMP}/koyeb-extract"
+          binary="$(find "${RUNNER_TEMP}/koyeb-extract" -type f -name koyeb -print -quit)"
+          test -n "${binary}"
+          install -m 755 "${binary}" "${RUNNER_TEMP}/koyeb"
+          echo "${RUNNER_TEMP}" >> "${GITHUB_PATH}"
+      - name: Redeploy disposable demo without rebuilding
+        env:
+          KOYEB_TOKEN: ${{ secrets.KOYEB_TOKEN }}
+          KOYEB_APP: ${{ vars.KOYEB_APP }}
+          KOYEB_SERVICE: ${{ vars.KOYEB_SERVICE }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          test -n "${KOYEB_TOKEN}"
+          koyeb --token "${KOYEB_TOKEN}" services redeploy --skip-build \
+            --app "${KOYEB_APP}" "${KOYEB_SERVICE}"

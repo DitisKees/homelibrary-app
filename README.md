@@ -51,6 +51,8 @@ nvm use
 
 See [`docs/self-hosting.md`](docs/self-hosting.md) for installation, first-superuser creation, household users, HTTPS/reverse proxy setup, upgrades, backups, restore drills, and Android first-run server configuration.
 
+An optional **disposable public demo backend** for testers is documented in [`docs/demo-render.md`](docs/demo-render.md) (Render Free) and [`docs/demo-hosting.md`](docs/demo-hosting.md) (legacy Koyeb). It is not a hosted household service and must never be used for permanent data.
+
 The manual PocketBase procedure remains available in [`pocketbase/README.md`](pocketbase/README.md).
 
 Public self-registration is intentionally disabled. Household members are provisioned by the PocketBase administrator.
