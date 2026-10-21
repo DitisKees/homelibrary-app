@@ -1,4 +1,4 @@
-import { pb, validateServerSession } from '@/lib/pocketbase';
+import { pb } from '@/lib/pocketbase';
 import { listBooksPage } from './books';
 
 const mockGetList = jest.fn();
@@ -15,7 +15,6 @@ jest.mock('@/lib/pocketbase', () => ({
 }));
 
 const auth = pb.authStore as { isValid: boolean };
-const validate = validateServerSession as jest.MockedFunction<typeof validateServerSession>;
 
 describe('book listing and reset sessions', () => {
   beforeEach(() => {
@@ -34,7 +33,7 @@ describe('book listing and reset sessions', () => {
     });
     const result = await listBooksPage();
     expect(result.items).toHaveLength(1);
-    expect(validate).not.toHaveBeenCalled();
+    expect(mockValidateServerSession).not.toHaveBeenCalled();
   });
 
   it('checks the session when a list unexpectedly appears empty', async () => {
@@ -43,7 +42,7 @@ describe('book listing and reset sessions', () => {
     });
     mockValidateServerSession.mockResolvedValueOnce(true);
     await expect(listBooksPage()).resolves.toMatchObject({ totalItems: 0, items: [] });
-    expect(validate).toHaveBeenCalledTimes(1);
+    expect(mockValidateServerSession).toHaveBeenCalledTimes(1);
   });
 
   it('refuses to display an empty library from a revoked token', async () => {
@@ -72,6 +71,6 @@ describe('book listing and reset sessions', () => {
     });
     (pb.filter as jest.Mock).mockReturnValueOnce('title ~ "xyz"');
     await expect(listBooksPage(1, 30, 'xyz')).resolves.toMatchObject({ totalItems: 0 });
-    expect(validate).not.toHaveBeenCalled();
+    expect(mockValidateServerSession).not.toHaveBeenCalled();
   });
 });
