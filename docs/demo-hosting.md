@@ -1,8 +1,14 @@
-# Public, disposable HomeLibrary test backend (Koyeb Free)
+# Public, disposable HomeLibrary test backend
+
+**Recommended deployment: [Render Free](demo-render.md).** Koyeb's Starter free plan stopped accepting new organizations in February 2026, so the Koyeb steps below are retained only for accounts that still have an eligible existing organization.
 
 This deploys a **public, untrusted test service**, not a managed household library.
 It is independent of normal self-hosting. There is **no permanent data**,
 guaranteed uptime or privacy between demo accounts. Do not use real personal data.
+
+## Legacy Koyeb setup (eligible existing Starter organizations only)
+
+For the current supported free-provider instructions, see [Render](demo-render.md).
 
 ## What is deployed
 

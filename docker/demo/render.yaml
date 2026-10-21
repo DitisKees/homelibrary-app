@@ -1,0 +1,17 @@
+# Render Blueprint: select this file when creating a new Blueprint instance.
+# Disposable demo ONLY, never attach a persistent disk or use household data.
+services:
+  - type: web
+    name: homelibrary-demo
+    runtime: docker
+    plan: free
+    region: frankfurt
+    repo: https://github.com/DitisKees/homelibrary-app
+    branch: main
+    autoDeployTrigger: checksPass
+    dockerfilePath: ./docker/demo/Dockerfile
+    dockerContext: .
+    healthCheckPath: /api/health
+    envVars:
+      - key: PORT
+        value: "8090"
