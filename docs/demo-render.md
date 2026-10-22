@@ -49,6 +49,8 @@ Public accounts (the exact same credentials for everyone who chooses an account)
 | `demo1@example.invalid` | `HomeLibrary-Demo-2026!` |
 | `demo2@example.invalid` | `HomeLibrary-Demo-2026!` |
 
+URL: https://homelibrary-demo.onrender.com
+
 On first startup, PocketBase initializes 16 sample books, example reading
 statuses and loans. Any authenticated tester can add, edit and delete books,
 and see data written by other testers. Demo accounts cannot change their
