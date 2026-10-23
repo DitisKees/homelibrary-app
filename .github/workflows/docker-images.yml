@@ -16,7 +16,7 @@ permissions:
   contents: read
 
 env:
-  PB_VERSION: '0.40.1'
+  PB_VERSION: '0.40.6'
 
 jobs:
   changes:
