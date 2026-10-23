@@ -55,6 +55,26 @@ For an internet-reachable HomeLibrary server:
 
 PocketBase's production guidance currently recommends rate limiting and supports superuser IP restrictions and MFA; see https://pocketbase.io/docs/going-to-production/.
 
+## October 2026 CA and runtime security updates
+
+- HomeLibrary's backend uses a prebuilt **Go-based PocketBase** executable;
+  it does not run PHP or Node.js as its API server.
+- PocketBase **0.40.6** was built with the Go crypto/x509 mitigations for
+  the eMudhra certificate compromise. The backend container and web container
+  explicitly require Alpine `ca-certificates>=20261020-r0` during builds.
+- The web bundle is compiled with **Node.js 22.23.4** (patched for the
+  October 21, 2026 security advisories), but nginx serves static assets
+  without Node.js at runtime.
+- After the patch is merged and container images are published, operators
+  must upgrade their pinned production images; rebuilding the source code
+  alone does not update already running instances. Render demo instances must
+  **rebuild** after the new backend image is published; a restart alone
+  continues to use the old image.
+- Independently patch and maintain the host OS, reverse proxy, other
+  services, and trusted certificate stores. Check certificate chains if a
+  privately issued eMudhra chain is used. The PHP security advisories
+  require action only on separately hosted PHP applications.
+
 ## PocketBase version and upgrades
 
 The repository's CI currently validates the committed migrations against the PocketBase version pinned by the workflow. Treat a PocketBase upgrade as an application change:
