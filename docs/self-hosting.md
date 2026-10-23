@@ -166,6 +166,25 @@ For more detail and the filesystem-level fallback procedure, see [`security-and-
 
 ## 9. Upgrade HomeLibrary
 
+### Security maintenance before the next tagged release
+
+The October 2026 Node.js/eMudhra security update updates PocketBase to 0.40.6
+and refreshes the backend/web certificate bundles. The production backend is
+a Go binary, and the production web container serves static content with nginx:
+Node.js is used to **build**, not to serve, the production web client.
+
+If the fix has merged to `main` but no new application release tag exists,
+use the immutable `sha-<short-commit>` image tag from the **successful
+Docker self-hosting** workflow on `main`. Both backend and web must use the
+same tag. Do not assume that `latest` contains security fixes from `main`;
+`latest` is only updated on version tags. Inspect both packages in GHCR and
+confirm the desired `sha-` tag exists before changing `HOMELIBRARY_VERSION`.
+
+A security rebuild does **not** change or delete the persistent `pb_data`
+volume. However, back up and verify an off-host copy before upgrading, as
+PocketBase migrations are forward-only.
+
+
 Before changing versions:
 
 1. confirm the latest scheduled backup exists;
