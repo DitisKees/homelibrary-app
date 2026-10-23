@@ -91,6 +91,30 @@ The API key is an account-level secret. Restrict who can edit your GitHub
 Actions workflows and rotate/revoke the key if exposed. A missing API key makes
 the scheduled job fail rather than pretending the reset succeeded.
 
+## 5. Roll out security fixes and new backend versions
+
+The demo Dockerfile now uses
+`ghcr.io/ditiskees/homelibrary-backend:main` instead of the release-only
+`latest` tag. This lets it receive patched PocketBase images without
+waiting for a new Android release.
+
+**A nightly restart does not fetch an updated image.** Render's automatic
+deployment may also begin before GitHub finishes publishing the new
+multi-architecture `main` image to GHCR. After merging a backend/security
+change:
+
+1. Verify the **Docker self-hosting** GitHub Actions workflow is green on
+   `main` and that `ghcr.io/ditiskees/homelibrary-backend:main` was published.
+2. In Render choose **Manual Deploy → Clear build cache & deploy** for
+   `homelibrary-demo`, rebuilding the demo against the patched base image.
+3. Check Render's logs, `/api/health`, and login to confirm the 16 seeded
+   books are present. This redeploy intentionally wipes all demo changes.
+4. After the patched image is deployed, nightly resets can continue to
+   use the much cheaper service-restart API.
+
+For a security-sensitive rollout, do not rely solely on
+`autoDeployTrigger: checksPass` or on the nightly restart.
+
 ## 5. Limitations and privacy warning
 
 - This is **not** a reliable hosted service. Render Free may suspend it,
