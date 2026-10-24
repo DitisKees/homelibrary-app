@@ -18,13 +18,24 @@ jobs:
   changes:
     uses: ./.github/workflows/changes.yml
 
-  fdroid-buildserver:
+  image-preflight:
+    name: Verify pinned F-Droid container
     needs: changes
+    if: needs.changes.outputs.android == 'true'
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v4
+      - name: Check pinned manifest exists before build matrix
+        run: bash scripts/fdroid/preflight-image.sh
+
+  fdroid-buildserver:
+    needs: [changes, image-preflight]
     if: needs.changes.outputs.android == 'true'
     name: fdroid-buildserver-${{ matrix.abi }}-${{ matrix.copy }}
     runs-on: ubuntu-latest
     container:
-      image: registry.gitlab.com/fdroid/fdroidserver:buildserver-trixie@sha256:9cb68105642ca4e7b295f0ceab10f069f5b3247dc18fa7c36046e9d81aa469a8
+      image: registry.gitlab.com/fdroid/fdroidserver:buildserver-trixie@sha256:1ea8bef1820bff06c2974e31b4fc4c79c364cd24231b86e71fa4b926797e0dac
     timeout-minutes: 90
     strategy:
       fail-fast: false
@@ -158,19 +169,21 @@ jobs:
   android-gate:
     name: Android source gate
     if: always()
-    needs: [changes, fdroid-buildserver, compare-buildserver-apks]
+    needs: [changes, image-preflight, fdroid-buildserver, compare-buildserver-apks]
     runs-on: ubuntu-latest
     steps:
       - name: Check relevant job results
         env:
           DETECTION: ${{ needs.changes.result }}
           REQUIRED: ${{ needs.changes.outputs.android }}
+          PREFLIGHT: ${{ needs.image-preflight.result }}
           BUILD: ${{ needs.fdroid-buildserver.result }}
           COMPARISON: ${{ needs.compare-buildserver-apks.result }}
         run: |
           test "$DETECTION" = success
           test "$REQUIRED" = true || test "$REQUIRED" = false
           if [ "$REQUIRED" = true ]; then
+            test "$PREFLIGHT" = success
             test "$BUILD" = success
             test "$COMPARISON" = success
           fi

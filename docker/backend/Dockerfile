@@ -1,10 +1,10 @@
 # syntax=docker/dockerfile:1.7
 
 FROM --platform=$BUILDPLATFORM alpine:3.22 AS pocketbase-download
-ARG PB_VERSION=0.40.1
+ARG PB_VERSION=0.40.6
 ARG TARGETARCH=amd64
 
-RUN apk add --no-cache ca-certificates curl unzip \
+RUN apk add --no-cache 'ca-certificates>=20261020-r0' curl unzip \
     && case "${TARGETARCH}" in \
          amd64) pb_arch="amd64" ;; \
          arm64) pb_arch="arm64" ;; \
@@ -17,13 +17,13 @@ RUN apk add --no-cache ca-certificates curl unzip \
     && /tmp/pocketbase/pocketbase --version
 
 FROM alpine:3.22
-ARG PB_VERSION=0.40.1
+ARG PB_VERSION=0.40.6
 
 LABEL org.opencontainers.image.source="https://github.com/DitisKees/homelibrary-app" \
       org.opencontainers.image.description="HomeLibrary PocketBase backend" \
       io.homelibrary.pocketbase.version="${PB_VERSION}"
 
-RUN apk add --no-cache ca-certificates \
+RUN apk add --no-cache 'ca-certificates>=20261020-r0' \
     && addgroup -S -g 10001 homelibrary \
     && adduser -S -D -H -u 10001 -G homelibrary homelibrary \
     && mkdir -p /pb_data /pb_migrations \

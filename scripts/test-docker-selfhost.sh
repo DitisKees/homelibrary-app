@@ -3,7 +3,7 @@ set -euo pipefail
 
 BACKEND_IMAGE="${BACKEND_IMAGE:-homelibrary-backend:ci}"
 WEB_IMAGE="${WEB_IMAGE:-homelibrary-web:ci}"
-PB_VERSION="${PB_VERSION:-0.40.1}"
+PB_VERSION="${PB_VERSION:-0.40.6}"
 
 suffix="$(date +%s)-$$"
 source_volume="homelibrary-ci-source-${suffix}"
@@ -98,6 +98,10 @@ docker build \
   -f docker/backend/Dockerfile \
   -t "${BACKEND_IMAGE}" \
   .
+
+echo "Verifying the backend executable version is the patched release..."
+docker run --rm "${BACKEND_IMAGE}" --version | grep -F "${PB_VERSION}" >/dev/null \
+  || fail "Backend version does not match PB_VERSION=${PB_VERSION}"
 
 echo "Building web image..."
 docker build \

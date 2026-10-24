@@ -35,6 +35,9 @@ jobs:
       - name: Install dependencies
         run: npm ci
 
+      - name: Verify patched build-tool and certificate pins
+        run: node --test scripts/test-security-toolchain.mjs
+
       - name: Check reproducible Gradle configuration
         run: node --test scripts/test-reproducible-gradle.mjs scripts/test-android-release-packaging.mjs scripts/test-android-permissions.mjs scripts/test-glide-source.mjs
 
@@ -89,10 +92,10 @@ jobs:
       - name: Check out repository
         uses: actions/checkout@v4
 
-      - name: Download PocketBase 0.40.1
+      - name: Download PocketBase 0.40.6
         run: |
           curl -fsSL \
-            https://github.com/pocketbase/pocketbase/releases/download/v0.40.1/pocketbase_0.40.1_linux_amd64.zip \
+            https://github.com/pocketbase/pocketbase/releases/download/v0.40.6/pocketbase_0.40.6_linux_amd64.zip \
             -o /tmp/pocketbase.zip
           unzip -q /tmp/pocketbase.zip -d /tmp/pocketbase
           chmod +x /tmp/pocketbase/pocketbase

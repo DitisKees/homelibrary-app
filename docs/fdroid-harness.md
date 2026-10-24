@@ -136,6 +136,43 @@ GitHub workflows use the image from `pins.env` by digest, not only by tag.
 
 GitHub Actions requires the container image before checkout, so the image string is duplicated in workflow YAML. `scripts/validate-fdroid-metadata.mjs` verifies that the workflow uses the expected digest.
 
+**Registry-GC incident (24 October 2026, issue #64):** GitLab's registry no
+longer served the old `sha256:9cb68105642ca4e7b295f0ceab10f069f5b3247dc18fa7c36046e9d81aa469a8`
+manifest. The official upstream `buildserver-trixie` tag resolved in GitHub
+Actions to
+`sha256:1ea8bef1820bff06c2974e31b4fc4c79c364cd24231b86e71fa4b926797e0dac`.
+We updated all container declarations without replacing immutable pins with a
+moving tag.
+
+The source simulation and Android release workflow now run a single inexpensive
+`scripts/fdroid/preflight-image.sh` job on `ubuntu-latest`. It verifies
+consistency of **all** image declarations and checks the pinned registry
+manifest using `docker buildx imagetools inspect` before scheduling the
+eight source builds (or four release builds). The preflight inspects manifests
+only; it does not download Android SDK layers, run Gradle, or consume GitLab CI
+minutes. A missing digest fails the gate with a diagnostic of the current
+official tag instead of starting every job and failing during container setup.
+
+#### Recover from a removed container digest
+
+1. Inspect the authoritative upstream image tag with
+   `docker buildx imagetools inspect registry.gitlab.com/fdroid/fdroidserver:buildserver-trixie`.
+   Record the exact digest, media type, and supported platform.
+2. Verify that the digest can be inspected directly with the same command and
+   the `@sha256:...` suffix. Do **not** pin a guessed value.
+3. Update `scripts/fdroid/pins.env`, the source simulation workflow, and
+   **both** container references in `android-release.yml` to the same digest.
+4. Run `bash scripts/fdroid/preflight-image.sh` and fast metadata validation
+   before allowing the complete two-copy ABI matrix to run.
+5. Compare independently built APKs, verify the scanner and startup smoke
+   checks, and use the full signed-reference parity check for actual releases.
+6. If GitLab regularly garbage-collects the digest, evaluate retaining an
+   immutable, provenance-recorded mirror in GHCR; **do not** repoint silently
+   to a third-party image or drop digest pinning.
+
+The preflight proves registry availability, **not** reproduction or signed
+release parity. The remaining build and release gates are still mandatory.
+
 ### fdroidserver and fdroiddata
 
 The harness checks out exact commits.

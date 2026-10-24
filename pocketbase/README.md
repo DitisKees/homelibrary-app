@@ -6,11 +6,11 @@ For production/self-hosted installations, **Docker Compose is the recommended pa
 
 ## Supported PocketBase version
 
-This repository currently targets **PocketBase 0.40.1**. PocketBase is pre-1.0 and its migration API can change between releases, so update the migration files and CI validation deliberately when upgrading PocketBase.
+This repository currently targets **PocketBase 0.40.6**. PocketBase is pre-1.0 and its migration API can change between releases, so update the migration files and CI validation deliberately when upgrading PocketBase.
 
 ## Manual setup
 
-1. Download and extract PocketBase 0.40.1 for your platform.
+1. Download and extract PocketBase 0.40.6 for your platform.
 2. From the repository root, apply the committed migrations:
 
    ```bash
