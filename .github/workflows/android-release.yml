@@ -15,14 +15,24 @@ permissions:
   contents: write
 
 jobs:
+  image-preflight:
+    name: Verify pinned F-Droid release container
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v4
+      - name: Check pinned manifest before release build matrix
+        run: bash scripts/fdroid/preflight-image.sh
+
   build-fdroid-unsigned:
     strategy:
       fail-fast: false
       matrix:
         abi: [armeabi-v7a, arm64-v8a, x86, x86_64]
     runs-on: ubuntu-latest
+    needs: image-preflight
     container:
-      image: registry.gitlab.com/fdroid/fdroidserver:buildserver-trixie@sha256:9cb68105642ca4e7b295f0ceab10f069f5b3247dc18fa7c36046e9d81aa469a8
+      image: registry.gitlab.com/fdroid/fdroidserver:buildserver-trixie@sha256:1ea8bef1820bff06c2974e31b4fc4c79c364cd24231b86e71fa4b926797e0dac
     timeout-minutes: 90
     env:
       FDROID_ABI: ${{ matrix.abi }}
@@ -317,7 +327,7 @@ jobs:
         abi: [armeabi-v7a, arm64-v8a, x86, x86_64]
     runs-on: ubuntu-latest
     container:
-      image: registry.gitlab.com/fdroid/fdroidserver:buildserver-trixie@sha256:9cb68105642ca4e7b295f0ceab10f069f5b3247dc18fa7c36046e9d81aa469a8
+      image: registry.gitlab.com/fdroid/fdroidserver:buildserver-trixie@sha256:1ea8bef1820bff06c2974e31b4fc4c79c364cd24231b86e71fa4b926797e0dac
     timeout-minutes: 90
     needs: sign-and-publish
     if: needs.sign-and-publish.outputs.release_tag != ''
