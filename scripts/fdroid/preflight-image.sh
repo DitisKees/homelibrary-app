@@ -15,12 +15,17 @@ if [[ ! "${pinned}" =~ ^registry\.gitlab\.com/fdroid/fdroidserver:buildserver-tr
   exit 1
 fi
 
-# The same digest must be used for independent builds and signed release APKs.
-for workflow in \
-  ".github/workflows/fdroid-buildserver-simulation.yml" \
-  ".github/workflows/android-release.yml"; do
-  if ! grep -Fqx "      image: ${pinned}" "${root}/${workflow}"; then
-    echo "[FAIL] ${workflow} does not match scripts/fdroid/pins.env" >&2
+# The same digest must be used in every container declaration, including
+# the signed-reference parity stage. A partial update must fail before any build.
+for item in \
+  ".github/workflows/fdroid-buildserver-simulation.yml:1" \
+  ".github/workflows/android-release.yml:2"; do
+  workflow="${item%:*}"
+  expected="${item##*:}"
+  actual="$(grep -Fc "      image: ${pinned}" "${root}/${workflow}" || true)"
+  total="$(grep -Ec '^[[:space:]]+image: registry[.]gitlab[.]com/fdroid/fdroidserver:buildserver-trixie@' "${root}/${workflow}" || true)"
+  if [[ "${actual}" != "${expected}" || "${total}" != "${expected}" ]]; then
+    echo "[FAIL] ${workflow}: expected ${expected} exact pinned image reference(s), got ${actual} correct out of ${total}." >&2
     exit 1
   fi
 done
