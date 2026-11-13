@@ -99,3 +99,12 @@ upgrade from a prior APK signed with the same key:
 
 SecureStore backup exclusions remain enabled for both legacy backup and Android
 12+ data extraction; credentials continue to use SecureStore without authentication.
+
+### Server setup keyboard regression (#67)
+
+On a small/medium Android screen with the software keyboard enabled, open a
+fresh server setup screen and focus the URL field. Verify the field stays
+visible, scroll to the test/save button, and submit without dismissing the
+keyboard first. Test an unreachable URL: its error must remain reachable by
+scrolling, and retry must work. Repeat on iOS and check the centered card on a
+large screen. Login's existing show/hide-password control must still work.

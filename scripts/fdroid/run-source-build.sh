@@ -23,6 +23,7 @@ VERSION_CODE="$(fdroid_version_code)"
 fdroid_reset
 trap fdroid_collect_diagnostics EXIT
 fdroid_prepare_environment
+fdroid_python "${SCRIPT_DIR}/test-recipe-hardening.py"
 
 # Validate the checked-in release recipe before derivation can reformat it.
 # This is the same pinned rewritemeta gate used by release verification.

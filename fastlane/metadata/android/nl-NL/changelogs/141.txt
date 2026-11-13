@@ -1,0 +1,1 @@
+Verbeter reproduceerbare F-Droid-builds met vastgezette Debian-tools, een lokale Glide-processor en gerichte broncontroles. Beveiligingsupdates voor afhankelijkheden.

@@ -1,0 +1,1 @@
+Harden F-Droid reproducible builds with pinned Debian tools, a build-local Glide processor, and targeted source scanning. Update dependency security fixes. Keep server setup scrollable while entering the URL with the keyboard open.

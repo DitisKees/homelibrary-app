@@ -16,18 +16,151 @@ RepoType: git
 Repo: https://github.com/DitisKees/homelibrary-app.git
 
 Builds:
-  - versionName: 1.0.12
-    versionCode: 131
-    commit: v1.0.12
+  - versionName: 1.0.13
+    versionCode: 141
+    commit: v1.0.13
     sudo:
       - echo "deb https://deb.debian.org/debian forky main" > /etc/apt/sources.list.d/forky.list
+      - "printf 'Package: *\\nPin: release n=forky\\nPin-Priority: -1\\n' > /etc/apt/preferences.d/homelibrary-forky"
+      - "printf '%s\\n' eslint=6.4.0~dfsg+~6.1.9-14 gyp=0.16.2-3 handlebars=3:4.7.10-1
+        libada-url0-3=3.4.4-1+b1 libc-bin=2.43-7 libc-dev-bin=2.43-7 libc-gconv-modules-extra=2.43-7
+        libc6=2.43-7 libc6-dev=2.43-7 libc6-i386=2.43-7 libc6-x32=2.43-7 libhdr-histogram6=0.11.8-4+b2
+        libicu78=78.3-2 libjs-esprima=4.0.1+ds+~4.0.6-3 libjs-events=3.3.0+~3.0.3-1
+        libjs-inherits=2.0.4-9 libjs-prettify=2015.12.04+dfsg-3 libjs-regenerate=1.4.2-4
+        libjs-sprintf-js=1.1.3+ds1+~1.1.4-2 libjs-util=0.12.5+~1.0.10-2 libllhttp9.4=9.4.3+~cs12.11.9-2
+        libnode-dev=24.22.2+dfsg+~cs24.19.2-1 libnode137=24.22.2+dfsg+~cs24.19.2-1
+        libsimdjson33=4.6.11-1 libsimdutf35=9.3.0+really9.1.2-1 libuv1-dev=1.53.0-1
+        libuv1t64=1.53.0-1 node-abbrev=1.1.1+~1.1.2-3 node-acorn=8.17.0+ds+~cs28.27.25-1
+        node-agent-base=7.1.4~0~2025070717+~cs16.2.9-1 node-ajv=8.20.0~ds+~cs7.2.4-1
+        node-ajv-keywords=5.1.0-8 node-ampproject-remapping=2.3.0+~cs5.17.39-1 node-ansi-escapes=5.0.0+really.4.3.1-1
+        node-ansi-regex=6.2.2+~cs4.0.2-1 node-ansi-styles=6.2.3-2 node-anymatch=3.1.3+~cs8.0.6-1
+        node-aproba=2.1.0-4 node-archy=1.0.0-10 node-are-we-there-yet=4.0.2+~1.1.2-4
+        node-argparse=2.0.1-3 node-arrify=2.0.1-6 node-assert=2.1.0+~cs3.9.13-1 node-async=3.2.6+dfsg-3
+        node-babel-helper-define-polyfill-provider=1.0.0~20260618+ds1-4 node-babel-plugin-polyfill-corejs3=1.0.0~20260618+ds1-4
+        node-babel7=8.1.1+ds1+~cs177.303.116-1 node-babel7-runtime=8.1.1+ds1+~cs177.303.116-1
+        node-balanced-match=2.0.0-1 node-base64-js=1.5.1+dfsg+~1.5.0-2 node-binary-extensions=2.3.0-1
+        node-bl=5.1.0-4 node-brace-expansion=2.1.7+~1.1.2-1 node-braces=3.0.3+~3.0.5-1
+        node-browserslist=4.28.7+~cs8.16.65-1 node-buffer=6.0.3-6 node-builtins=5.1.0-1
+        node-cacache=20.0.4+~cs30.1.8-3 node-call-bind-apply-helpers=1.2.2+~cs4.3.9-2
+        node-call-bound=1.2.2+~cs4.3.9-2 node-camelcase=9.0.0-1 node-caniuse-lite=1.0.30001812+dfsg+~1.0.5-1
+        node-chalk=5.6.2+dfsg-5 node-chokidar=4.0.3+~cs4.1.2-4 node-chownr=3.0.0-5
+        node-chrome-trace-event=1.0.3-3 node-ci-info=4.4.0+~cs8.2.0-4 node-cli-cursor=4.0.0-4
+        node-cli-spinners=2.9.2-1 node-cli-table=0.3.11+~cs0.13.4-4 node-cli-width=3.0.0-5
+        node-cliui=9.0.1-3 node-clone=2.1.2+~2.1.4-1 node-clone-deep=4.0.1+~cs7.0.2-1
+        node-color-convert=2.0.1+~cs2.0.0-2 node-color-name=1.1.4+~1.1.1-2 node-colors=1.4.0-4
+        node-columnify=1.6.0+~1.5.4-1 node-commander=14.0.3-7 node-commondir=1.0.1+~1.0.2-1
+        node-concat-stream=2.0.0+~2.0.3-2 node-console-control-strings=1.1.0-5 node-convert-source-map=2.0.0+~2.0.3-4
+        node-copy-concurrently=1.0.5-13 node-core-js=3.33.2-1 node-core-js-compat=3.33.2-1
+        node-core-js-pure=3.33.2-1 node-corepack=0.35.0-2 node-cspotcode-source-map-support=0.8.1+ds-3
+        node-css-loader=6.11.0+~cs15.5.7-3 node-css-selector-tokenizer=0.8.0+~cs4.8.3-1
+        node-data-uri-to-buffer=6.0.2~0~2025070717+~cs16.2.9-1 node-debbundle-es-to-primitive=1.2.1+~cs9.7.25-5
+        node-debug=4.4.3+~4.1.13-1 node-decamelize=4.0.0-3 node-decompress-response=6.0.0-3
+        node-deep-equal=2.2.3+ds1+~cs43.15.94-1 node-deep-is=0.1.4-1 node-defaults=1.0.4+~1.0.3-4
+        node-define-properties=1.2.1+~cs6.2.14-1 node-define-property=2.0.2+really+2.0.2-3
+        node-defined=1.0.1+~1.0.2-1 node-del=7.1.0-2 node-delegates=1.0.0-3 node-diff=8.0.4~dfsg-4
+        node-doctrine=3.0.0-4 node-electron-to-chromium=1.5.458-1 node-empathic=2.0.1-2
+        node-encoding=0.1.13-2 node-enhanced-resolve=5.25.1-1 node-env-paths=3.0.0-3
+        node-envinfo=7.11.0+~cs14.3.0-9 node-err-code=2.0.3+dfsg-3 node-errno=1.0.0-3
+        node-error-ex=1.3.4-1 node-es-abstract=1.24.2+~cs59.63.124-1 node-es-errors=1.3.0~1.2.2+~cs4.3.9-2
+        node-es-module-lexer=2.1.0+dfsg-2 node-es6-error=4.1.1-5 node-escape-string-regexp=4.0.0-2
+        node-escodegen=2.1.0+dfsg+~0.0.10-2 node-eslint-scope=7.1.1+~3.7.4-1 node-eslint-utils=3.0.0-4
+        node-eslint-visitor-keys=3.3.0+ds1-3 node-espree=9.4.1~dfsg-2 node-esprima=4.0.1+ds+~4.0.6-3
+        node-esquery=1.6.0~ds-1 node-esrecurse=4.3.0-2 node-estraverse=5.3.0+ds+~5.1.7-1
+        node-esutils=2.0.3+~2.0.2-3 node-events=3.3.0+~3.0.3-1 node-execa=9.6.1+dfsg1+~cs23.2.2-1
+        node-external-editor=3.1.0+dfsg-5 node-fancy-log=1.3.3+~cs1.3.1-2 node-fast-deep-equal=3.1.3-3
+        node-fast-levenshtein=2.0.6+ds-3 node-fdir=6.5.0-2 node-fetch=3.3.2+~cs11.4.11-4
+        node-file-entry-cache=6.0.1+~3.0.4+~2.0.0+~1.0.0+~2.0.1-6 node-fill-range=7.1.1+~7.0.3-1
+        node-find-cache-dir=3.3.2+~3.2.1-1 node-find-up=6.3.0-8 node-flat-cache=3.0.4~6.0.1+~3.0.4+~2.0.0+~1.0.0+~2.0.1-6
+        node-flatted=3.4.4~ds-1 node-for-in=1.0.2-5 node-for-own=1.0.0-3 node-foreground-child=4.0.3-2
+        node-fs-write-stream-atomic=1.0.10-8 node-function-bind=1.1.2+~cs2.1.14-6
+        node-functional-red-black-tree=1.0.1+20181105-8 node-gauge=4.0.4-5 node-get-caller-file=2.0.5+~cs1.1.1-7
+        node-get-stream=8.0.1-11 node-glob=13.0.6+~cs0.4.15-2 node-glob-parent=6.0.2+~5.1.3-1
+        node-globals=13.23.0-1 node-globby=13.1.3+~cs16.25.40-5 node-got=11.8.6+~cs58.13.36-1
+        node-graceful-fs=4.2.11-4 node-gyp=13.1.0+~7.0.0-1 node-has-flag=5.0.1-2 node-has-unicode=2.0.1-8
+        node-hosted-git-info=9.0.2-3 node-http-proxy-agent=7.0.2~0~2025070717+~cs16.2.9-1
+        node-https-proxy-agent=7.0.6~0~2025070717+~cs16.2.9-1 node-iconv-lite=0.6.3-3
+        node-icss-utils=5.1.0+~5.1.2-1 node-ieee754=1.2.1-6 node-iferr=1.0.2+~1.0.4-1
+        node-ignore=5.2.1-3 node-import-local=3.2.0+~cs2.0.3-3 node-import-meta-resolve=4.2.0-2
+        node-imurmurhash=0.1.4+dfsg+~0.1.4-1 node-indent-string=4.0.0-2 node-inherits=2.0.4-9
+        node-ini=7.0.0+~4.1.1-1 node-inquirer=8.2.5+~cs35.10.17-2 node-interpret=2.2.0+~1.1.4-1
+        node-ip-address=10.7.6-1 node-ip-regex=4.3.0+~4.1.1-1 node-is-arrayish=0.3.4-1
+        node-is-buffer=2.0.5-2 node-is-descriptor=3.0.0-2 node-is-extendable=1.0.1-3
+        node-is-extglob=2.1.1-5 node-is-glob=4.0.3-2 node-is-number=7.0.0-4 node-is-path-cwd=2.2.0-2
+        node-is-path-inside=3.0.3-2 node-is-plain-obj=4.1.0-3 node-is-plain-object=5.1.0-1
+        node-is-stream=3.0.0-5 node-is-windows=1.0.2+~cs1.0.0-1 node-isarray=2.0.5-7
+        node-isexe=2.0.0+~2.0.1-8 node-isobject=4.1.1-1 node-istanbul=0.4.5+repack10+~cs98.25.59-13
+        node-jackspeak=4.2.3-3 node-jest-worker=29.6.2~ds7+~cs73.45.28-8 node-js-tokens=8.0.0-3
+        node-js-yaml=4.3.2+~4.0.9-1 node-jschardet=3.0.0+dfsg+~1.4.0-4 node-jsesc=3.1.0+~3.0.3-1
+        node-json-buffer=3.0.1+~3.0.2-1 node-json-parse-better-errors=1.0.2+~cs3.3.1-5
+        node-json-schema=0.4.0+~7.0.15-1 node-json-schema-traverse=1.0.0-3 node-json-stable-stringify=1.0.2+repack1+~cs1.0.34-2
+        node-json5=2.2.3+dfsg-8 node-jsonify=0.0.1-1 node-jsonparse=1.3.1-10 node-kind-of=6.0.3+dfsg-2
+        node-levn=0.4.1+dfsg-2 node-llhttp=9.4.3+~cs12.11.9-2 node-loader-runner=4.3.2-1
+        node-locate-path=7.1.1-2 node-lodash=4.18.1+dfsg1-2 node-lodash-packages=4.18.1+dfsg1-2
+        node-long=5.3.2-1 node-lowercase-keys=2.0.0-2 node-lru-cache=11.2.7-7 node-make-dir=3.1.0-3
+        node-memfs=3.4.12+~cs1.0.3-3 node-memory-fs=0.5.0+~0.3.7-1 node-merge-stream=2.0.0+~cs6.0.0-1
+        node-micromatch=4.0.8+~4.0.10-2 node-mime=4.1.0+dfsg+~cs8.97.10-7 node-mime-types=3.0.2+~3.0.1-1
+        node-mimic-fn=4.0.0-6 node-mimic-response=3.1.0-9 node-minimatch=9.0.7-2 node-minimist=1.2.8+~cs5.3.5-4
+        node-minipass=7.1.3+~cs21.1.8-4 node-mkdirp=3.0.1+~cs5.2.1-4 node-move-concurrently=1.0.1-8
+        node-ms=2.1.3+~cs0.7.31-3 node-mute-stream=3.0.0+~0.0.4-4 node-n3=1.16.3+~1.2.3+~1.10.4-3
+        node-negotiator=0.6.4+~0.6.4-1 node-neo-async=2.6.2+~cs3.0.0-3 node-nopt=9.0.0-2
+        node-normalize-package-data=8.0.0+~2.4.4-5 node-normalize-path=3.0.0+~3.0.2-1
+        node-npm-bundled=2.0.1-5 node-npm-package-arg=13.0.2+~6.1.0-6 node-npm-run-path=6.0.0+~cs4.4.0-1
+        node-npmlog=7.0.1+~4.1.4-4 node-object-assign=4.1.1-7 node-object-inspect=1.12.2+~cs1.8.1-4
+        node-obug=2.1.4-3 node-once=1.4.1-4 node-optimist=0.6.1+~0.0.33-4 node-optionator=0.9.1+dfsg+~cs1.2.3-1
+        node-osenv=0.1.5+~0.1.3-4 node-p-cancelable=2.1.1-1 node-p-limit=4.0.0+~cs4.0.0-5
+        node-p-locate=6.0.0-14 node-p-map=4.0.0+~3.1.0+~3.0.1-2 node-parse-json=5.2.0+~cs5.1.7-2
+        node-parse-ms=4.0.0-2 node-path-dirname=1.0.2-2 node-path-exists=5.0.0-9 node-path-is-inside=1.0.2+~1.0.3-1
+        node-path-scurry=2.0.2-2 node-path-type=4.0.0-3 node-picocolors=1.1.1-1 node-pify=5.0.0+~cs5.0.1-1
+        node-pkg-dir=5.0.0-2 node-postcss=8.5.31+~cs10.2.26-1 node-postcss-modules-extract-imports=3.1.0-1
+        node-postcss-modules-values=4.0.0+~4.0.2-1 node-postcss-value-parser=4.2.0-1
+        node-prelude-ls=1.2.1+dfsg-3 node-pretty-ms=9.3.1-1 node-process=0.11.10-3
+        node-progress=2.0.3-2 node-promise-inflight=1.0.1+~1.0.3-1 node-promise-retry=2.0.1-4
+        node-promzard=3.0.1-4 node-prr=1.0.1-6 node-quick-lru=6.1.1-4 node-randombytes=2.1.0+~2.0.3-4
+        node-read=5.0.1-4 node-read-package-json=5.0.2+~2.0.0-6 node-read-pkg=10.1.0+~5.10.0-1
+        node-readable-stream=4.7.0+~cs9.0.2-8 node-rechoir=0.8.0+~0.6.4-1 node-regenerate=1.4.2-4
+        node-regenerate-unicode-properties=10.2.2+ds-4 node-regenerator-runtime=0.15.2+~0.10.8-3
+        node-regexpp=3.2.0-9 node-regexpu-core=6.4.0-1 node-regjsgen=0.8.0+ds-1 node-regjsparser=0.13.1+ds-1
+        node-repeat-string=1.6.1+repack-1 node-require-directory=2.1.1+~2.1.7-1 node-resolve=1.22.12+~cs5.38.14-1
+        node-resolve-cwd=3.0.0-2 node-resolve-from=5.0.0+~3.1.0+~3.3.0+~2.0.0-1 node-resolve-import=2.4.0+~4.0.0-4
+        node-restore-cursor=4.0.0-4 node-resumer=0.0.0-7 node-retry=0.13.1.+~cs2.19.16-2
+        node-rimraf=6.1.3-2 node-run-async=2.4.1-2 node-run-queue=2.0.0-6 node-safe-buffer=5.2.1+~cs2.1.2-6
+        node-schema-utils=4.3.3~ds-3 node-semver=7.7.4+~cs9.7.4-2 node-serialize-javascript=7.1.4+~5.0.4-1
+        node-set-blocking=2.0.0-2 node-shebang-command=2.0.0+~cs4.0.0-1 node-signal-exit=4.1.0-11
+        node-slash=5.1.0-2 node-slice-ansi=5.0.0+~cs9.0.0-5 node-smart-buffer=4.2.0-5
+        node-socks=2.8.10-1 node-socks-proxy-agent=8.0.5~0~2025070717+~cs16.2.9-1
+        node-source-list-map=2.0.1+dfsg+~0.1.6-1 node-source-map=0.8.0+dfsg-2 node-spdx-correct=3.2.0+~3.1.3-1
+        node-spdx-exceptions=2.5.0-1 node-spdx-expression-parse=4.0.0+~cs24.1.1-1
+        node-spdx-license-ids=3.26.0-1 node-sprintf-js=1.1.3+ds1+~1.1.4-2 node-ssri=9.0.1-6
+        node-string-decoder=1.3.0-9 node-string-width=4.2.3+~cs13.2.3-1 node-strip-ansi=7.2.0+~cs7.0.1-2
+        node-strip-bom=4.0.0-2 node-strip-eof=3.0.0-6 node-strip-json-comments=4.0.0-7
+        node-supports-color=10.2.2+ds-3 node-tapable=2.3.3-1 node-tape=5.6.1+~cs8.20.19-6
+        node-tar=7.5.22+~4.0.1-1 node-terser=5.51.2-2 node-text-table=0.2.0-5 node-through=2.3.8+~cs0.0.33-1
+        node-time-stamp=2.2.0-2 node-tmp=0.2.7+dfsg+~0.2.6-1 node-to-regex-range=5.0.1-4
+        node-tslib=2.8.1-1 node-type-check=0.4.0+dfsg-3 node-typed-array-buffer=1.2.2+~cs4.3.9-2
+        node-typedarray=0.0.7-4 node-undici=8.12.2+dfsg+~cs3.2.3-2 node-unicode-canonical-property-names-ecmascript=2.0.1-1
+        node-unicode-match-property-ecmascript=2.0.0-2 node-unicode-match-property-value-ecmascript=2.2.1+ds-1
+        node-unicode-property-aliases-ecmascript=2.2.0+ds-1 node-unique-filename=6.0.0+~cs7.0.0-5
+        node-util=0.12.5+~1.0.10-2 node-util-deprecate=1.0.2-4 node-v8flags=3.2.0+~3.1.1-1
+        node-validate-npm-package-license=3.0.4-3 node-validate-npm-package-name=5.0.0+~4.0.0-4
+        node-verkit=0.5.0-1 node-watchpack=2.5.2-4 node-wcwidth.js=1.0.2-2 node-webassemblyjs=1.14.1+dfsg3+~cs1.2.7-4
+        node-webpack-sources=3.4.1+~3.2.3-1 node-which=2.0.2+~cs1.3.2-8 node-which-typed-array=1.1.20+~cs3.2.22-3
+        node-wide-align=1.1.3-7 node-wordwrap=1.0.0-5 node-wrap-ansi=8.0.1+~8.0.1-3
+        node-wrappy=1.0.2-6 node-write=2.0.0~6.0.1+~3.0.4+~2.0.0+~1.0.0+~2.0.1-6 node-write-file-atomic=7.0.1+~4.0.3-1
+        node-xtend=4.0.2-3 node-y18n=5.0.8+~5.0.0-5 node-yallist=5.0.0-4 node-yargs=17.7.3+~17.0.35-3
+        node-yargs-parser=21.1.1+~21.0.0-5 nodejs=24.22.2+dfsg+~cs24.19.2-1 npm=12.2.0+ds1-1
+        terser=5.51.2-2 webpack=5.108.0+dfsg1+~cs14.7.20-3 | while IFS='=' read -r
+        package version; do printf '\\nPackage: %s\\nPin: version %s\\nPin-Priority:
+        1001\\n' \"$package\" \"$version\" >> /etc/apt/preferences.d/homelibrary-forky;
+        done"
       - apt-get -o Acquire::Retries=3 update
-      - apt-get -o Acquire::Retries=3 install -y -t forky npm
-      - install -d -o vagrant -g vagrant /usr/share/maven-repo/com/github/bumptech/glide/ksp/5.0.5
+      - apt-get -o Acquire::Retries=3 install --no-install-recommends -y nodejs=24.22.2+dfsg+~cs24.19.2-1
+        libnode137=24.22.2+dfsg+~cs24.19.2-1 npm=12.2.0+ds1-1
+      - test "$(dpkg-query -W -f='${Version}' nodejs)" = '24.22.2+dfsg+~cs24.19.2-1'
+      - test "$(dpkg-query -W -f='${Version}' npm)" = '12.2.0+ds1-1'
     init:
       - node --version
       - npm --version
-      - sed -i -e 's/"node":\ ">=22.13.0 <23"/"node":\ ">=22.13.0"/' package.json
+      - dpkg-query -W nodejs libnode137 npm
       - npm ci
     output: android/app/build/outputs/apk/release/app-release-unsigned.apk
     binary: 
@@ -54,13 +187,41 @@ Builds:
       - node_modules/@react-native-async-storage/async-storage/android/build.gradle
       - node_modules/react-native-safe-area-context/android/build.gradle
       - node_modules/react-native-screens/android/build.gradle
+      - scripts/glide-ksp-repro.init.gradle
     scandelete:
-      - node_modules
+      - node_modules/@expo/expo-modules-macros-plugin/apple/ExpoModulesMacros-tool
+      - node_modules/@react-native/gradle-plugin/react-native-gradle-plugin/build
+      - node_modules/@react-native/gradle-plugin/settings-plugin/build
+      - node_modules/@react-native/gradle-plugin/shared/build
+      - node_modules/expo-camera/prebuilds
+      - node_modules/expo-file-system/prebuilds
+      - node_modules/expo-font/prebuilds
+      - node_modules/expo-image-manipulator/prebuilds
+      - node_modules/expo-image/prebuilds
+      - node_modules/expo-modules-autolinking/android/expo-gradle-plugin/expo-autolinking-plugin-shared/build
+      - node_modules/expo-modules-autolinking/android/expo-gradle-plugin/expo-autolinking-plugin/build
+      - node_modules/expo-modules-autolinking/android/expo-gradle-plugin/expo-autolinking-settings-plugin/build
+      - node_modules/expo-modules-autolinking/android/expo-gradle-plugin/expo-max-sdk-override-plugin/build
+      - node_modules/expo-modules-core/expo-module-gradle-plugin/build
+      - node_modules/expo-modules-core/prebuilds
+      - node_modules/expo/template.tgz
+      - node_modules/fb-dotslash/bin/linux-musl.aarch64/dotslash
+      - node_modules/fb-dotslash/bin/linux-musl.x86_64/dotslash
+      - node_modules/fb-dotslash/bin/macos/dotslash
+      - node_modules/fb-dotslash/bin/windows-arm64/dotslash.exe
+      - node_modules/fb-dotslash/bin/windows/dotslash.exe
+      - node_modules/hermes-compiler/hermesc/osx-bin/hermesc
+      - node_modules/hermes-compiler/hermesc/win64-bin/hermesc.exe
+      - node_modules/react-native/React/I18n/strings/*/fbt_language_pack.bin
+      - node_modules/react-native/ReactAndroid/publish.gradle
+      - node_modules/zxing-wasm/dist/full/zxing_full.wasm
+      - node_modules/zxing-wasm/dist/reader/zxing_reader.wasm
+      - node_modules/zxing-wasm/dist/writer/zxing_writer.wasm
     build:
       - bash scripts/build-glide-ksp-repro.sh
-      - cp build/repro-maven/com/github/bumptech/glide/ksp/5.0.5/* /usr/share/maven-repo/com/github/bumptech/glide/ksp/5.0.5/
       - cd android/app
-      - gradle -I ../../scripts/glide-ksp-repro.init.gradle assembleRelease -PreactNativeArchitectures=armeabi-v7a
+      - gradle -I ../../scripts/glide-ksp-repro.init.gradle :expo-image:homeLibraryGlideKspResolution
+        assembleRelease -PreactNativeArchitectures=armeabi-v7a
     ndk: r27b
     postbuild:
       - python3 scripts/normalize-fdroid-apk-build-ids.py android/app/build/outputs/apk/release/app-release-unsigned.apk
@@ -69,18 +230,151 @@ Builds:
         armeabi-v7a
       - test -s android/app/build/outputs/mapping/release/mapping.txt
 
-  - versionName: 1.0.12
-    versionCode: 132
-    commit: v1.0.12
+  - versionName: 1.0.13
+    versionCode: 142
+    commit: v1.0.13
     sudo:
       - echo "deb https://deb.debian.org/debian forky main" > /etc/apt/sources.list.d/forky.list
+      - "printf 'Package: *\\nPin: release n=forky\\nPin-Priority: -1\\n' > /etc/apt/preferences.d/homelibrary-forky"
+      - "printf '%s\\n' eslint=6.4.0~dfsg+~6.1.9-14 gyp=0.16.2-3 handlebars=3:4.7.10-1
+        libada-url0-3=3.4.4-1+b1 libc-bin=2.43-7 libc-dev-bin=2.43-7 libc-gconv-modules-extra=2.43-7
+        libc6=2.43-7 libc6-dev=2.43-7 libc6-i386=2.43-7 libc6-x32=2.43-7 libhdr-histogram6=0.11.8-4+b2
+        libicu78=78.3-2 libjs-esprima=4.0.1+ds+~4.0.6-3 libjs-events=3.3.0+~3.0.3-1
+        libjs-inherits=2.0.4-9 libjs-prettify=2015.12.04+dfsg-3 libjs-regenerate=1.4.2-4
+        libjs-sprintf-js=1.1.3+ds1+~1.1.4-2 libjs-util=0.12.5+~1.0.10-2 libllhttp9.4=9.4.3+~cs12.11.9-2
+        libnode-dev=24.22.2+dfsg+~cs24.19.2-1 libnode137=24.22.2+dfsg+~cs24.19.2-1
+        libsimdjson33=4.6.11-1 libsimdutf35=9.3.0+really9.1.2-1 libuv1-dev=1.53.0-1
+        libuv1t64=1.53.0-1 node-abbrev=1.1.1+~1.1.2-3 node-acorn=8.17.0+ds+~cs28.27.25-1
+        node-agent-base=7.1.4~0~2025070717+~cs16.2.9-1 node-ajv=8.20.0~ds+~cs7.2.4-1
+        node-ajv-keywords=5.1.0-8 node-ampproject-remapping=2.3.0+~cs5.17.39-1 node-ansi-escapes=5.0.0+really.4.3.1-1
+        node-ansi-regex=6.2.2+~cs4.0.2-1 node-ansi-styles=6.2.3-2 node-anymatch=3.1.3+~cs8.0.6-1
+        node-aproba=2.1.0-4 node-archy=1.0.0-10 node-are-we-there-yet=4.0.2+~1.1.2-4
+        node-argparse=2.0.1-3 node-arrify=2.0.1-6 node-assert=2.1.0+~cs3.9.13-1 node-async=3.2.6+dfsg-3
+        node-babel-helper-define-polyfill-provider=1.0.0~20260618+ds1-4 node-babel-plugin-polyfill-corejs3=1.0.0~20260618+ds1-4
+        node-babel7=8.1.1+ds1+~cs177.303.116-1 node-babel7-runtime=8.1.1+ds1+~cs177.303.116-1
+        node-balanced-match=2.0.0-1 node-base64-js=1.5.1+dfsg+~1.5.0-2 node-binary-extensions=2.3.0-1
+        node-bl=5.1.0-4 node-brace-expansion=2.1.7+~1.1.2-1 node-braces=3.0.3+~3.0.5-1
+        node-browserslist=4.28.7+~cs8.16.65-1 node-buffer=6.0.3-6 node-builtins=5.1.0-1
+        node-cacache=20.0.4+~cs30.1.8-3 node-call-bind-apply-helpers=1.2.2+~cs4.3.9-2
+        node-call-bound=1.2.2+~cs4.3.9-2 node-camelcase=9.0.0-1 node-caniuse-lite=1.0.30001812+dfsg+~1.0.5-1
+        node-chalk=5.6.2+dfsg-5 node-chokidar=4.0.3+~cs4.1.2-4 node-chownr=3.0.0-5
+        node-chrome-trace-event=1.0.3-3 node-ci-info=4.4.0+~cs8.2.0-4 node-cli-cursor=4.0.0-4
+        node-cli-spinners=2.9.2-1 node-cli-table=0.3.11+~cs0.13.4-4 node-cli-width=3.0.0-5
+        node-cliui=9.0.1-3 node-clone=2.1.2+~2.1.4-1 node-clone-deep=4.0.1+~cs7.0.2-1
+        node-color-convert=2.0.1+~cs2.0.0-2 node-color-name=1.1.4+~1.1.1-2 node-colors=1.4.0-4
+        node-columnify=1.6.0+~1.5.4-1 node-commander=14.0.3-7 node-commondir=1.0.1+~1.0.2-1
+        node-concat-stream=2.0.0+~2.0.3-2 node-console-control-strings=1.1.0-5 node-convert-source-map=2.0.0+~2.0.3-4
+        node-copy-concurrently=1.0.5-13 node-core-js=3.33.2-1 node-core-js-compat=3.33.2-1
+        node-core-js-pure=3.33.2-1 node-corepack=0.35.0-2 node-cspotcode-source-map-support=0.8.1+ds-3
+        node-css-loader=6.11.0+~cs15.5.7-3 node-css-selector-tokenizer=0.8.0+~cs4.8.3-1
+        node-data-uri-to-buffer=6.0.2~0~2025070717+~cs16.2.9-1 node-debbundle-es-to-primitive=1.2.1+~cs9.7.25-5
+        node-debug=4.4.3+~4.1.13-1 node-decamelize=4.0.0-3 node-decompress-response=6.0.0-3
+        node-deep-equal=2.2.3+ds1+~cs43.15.94-1 node-deep-is=0.1.4-1 node-defaults=1.0.4+~1.0.3-4
+        node-define-properties=1.2.1+~cs6.2.14-1 node-define-property=2.0.2+really+2.0.2-3
+        node-defined=1.0.1+~1.0.2-1 node-del=7.1.0-2 node-delegates=1.0.0-3 node-diff=8.0.4~dfsg-4
+        node-doctrine=3.0.0-4 node-electron-to-chromium=1.5.458-1 node-empathic=2.0.1-2
+        node-encoding=0.1.13-2 node-enhanced-resolve=5.25.1-1 node-env-paths=3.0.0-3
+        node-envinfo=7.11.0+~cs14.3.0-9 node-err-code=2.0.3+dfsg-3 node-errno=1.0.0-3
+        node-error-ex=1.3.4-1 node-es-abstract=1.24.2+~cs59.63.124-1 node-es-errors=1.3.0~1.2.2+~cs4.3.9-2
+        node-es-module-lexer=2.1.0+dfsg-2 node-es6-error=4.1.1-5 node-escape-string-regexp=4.0.0-2
+        node-escodegen=2.1.0+dfsg+~0.0.10-2 node-eslint-scope=7.1.1+~3.7.4-1 node-eslint-utils=3.0.0-4
+        node-eslint-visitor-keys=3.3.0+ds1-3 node-espree=9.4.1~dfsg-2 node-esprima=4.0.1+ds+~4.0.6-3
+        node-esquery=1.6.0~ds-1 node-esrecurse=4.3.0-2 node-estraverse=5.3.0+ds+~5.1.7-1
+        node-esutils=2.0.3+~2.0.2-3 node-events=3.3.0+~3.0.3-1 node-execa=9.6.1+dfsg1+~cs23.2.2-1
+        node-external-editor=3.1.0+dfsg-5 node-fancy-log=1.3.3+~cs1.3.1-2 node-fast-deep-equal=3.1.3-3
+        node-fast-levenshtein=2.0.6+ds-3 node-fdir=6.5.0-2 node-fetch=3.3.2+~cs11.4.11-4
+        node-file-entry-cache=6.0.1+~3.0.4+~2.0.0+~1.0.0+~2.0.1-6 node-fill-range=7.1.1+~7.0.3-1
+        node-find-cache-dir=3.3.2+~3.2.1-1 node-find-up=6.3.0-8 node-flat-cache=3.0.4~6.0.1+~3.0.4+~2.0.0+~1.0.0+~2.0.1-6
+        node-flatted=3.4.4~ds-1 node-for-in=1.0.2-5 node-for-own=1.0.0-3 node-foreground-child=4.0.3-2
+        node-fs-write-stream-atomic=1.0.10-8 node-function-bind=1.1.2+~cs2.1.14-6
+        node-functional-red-black-tree=1.0.1+20181105-8 node-gauge=4.0.4-5 node-get-caller-file=2.0.5+~cs1.1.1-7
+        node-get-stream=8.0.1-11 node-glob=13.0.6+~cs0.4.15-2 node-glob-parent=6.0.2+~5.1.3-1
+        node-globals=13.23.0-1 node-globby=13.1.3+~cs16.25.40-5 node-got=11.8.6+~cs58.13.36-1
+        node-graceful-fs=4.2.11-4 node-gyp=13.1.0+~7.0.0-1 node-has-flag=5.0.1-2 node-has-unicode=2.0.1-8
+        node-hosted-git-info=9.0.2-3 node-http-proxy-agent=7.0.2~0~2025070717+~cs16.2.9-1
+        node-https-proxy-agent=7.0.6~0~2025070717+~cs16.2.9-1 node-iconv-lite=0.6.3-3
+        node-icss-utils=5.1.0+~5.1.2-1 node-ieee754=1.2.1-6 node-iferr=1.0.2+~1.0.4-1
+        node-ignore=5.2.1-3 node-import-local=3.2.0+~cs2.0.3-3 node-import-meta-resolve=4.2.0-2
+        node-imurmurhash=0.1.4+dfsg+~0.1.4-1 node-indent-string=4.0.0-2 node-inherits=2.0.4-9
+        node-ini=7.0.0+~4.1.1-1 node-inquirer=8.2.5+~cs35.10.17-2 node-interpret=2.2.0+~1.1.4-1
+        node-ip-address=10.7.6-1 node-ip-regex=4.3.0+~4.1.1-1 node-is-arrayish=0.3.4-1
+        node-is-buffer=2.0.5-2 node-is-descriptor=3.0.0-2 node-is-extendable=1.0.1-3
+        node-is-extglob=2.1.1-5 node-is-glob=4.0.3-2 node-is-number=7.0.0-4 node-is-path-cwd=2.2.0-2
+        node-is-path-inside=3.0.3-2 node-is-plain-obj=4.1.0-3 node-is-plain-object=5.1.0-1
+        node-is-stream=3.0.0-5 node-is-windows=1.0.2+~cs1.0.0-1 node-isarray=2.0.5-7
+        node-isexe=2.0.0+~2.0.1-8 node-isobject=4.1.1-1 node-istanbul=0.4.5+repack10+~cs98.25.59-13
+        node-jackspeak=4.2.3-3 node-jest-worker=29.6.2~ds7+~cs73.45.28-8 node-js-tokens=8.0.0-3
+        node-js-yaml=4.3.2+~4.0.9-1 node-jschardet=3.0.0+dfsg+~1.4.0-4 node-jsesc=3.1.0+~3.0.3-1
+        node-json-buffer=3.0.1+~3.0.2-1 node-json-parse-better-errors=1.0.2+~cs3.3.1-5
+        node-json-schema=0.4.0+~7.0.15-1 node-json-schema-traverse=1.0.0-3 node-json-stable-stringify=1.0.2+repack1+~cs1.0.34-2
+        node-json5=2.2.3+dfsg-8 node-jsonify=0.0.1-1 node-jsonparse=1.3.1-10 node-kind-of=6.0.3+dfsg-2
+        node-levn=0.4.1+dfsg-2 node-llhttp=9.4.3+~cs12.11.9-2 node-loader-runner=4.3.2-1
+        node-locate-path=7.1.1-2 node-lodash=4.18.1+dfsg1-2 node-lodash-packages=4.18.1+dfsg1-2
+        node-long=5.3.2-1 node-lowercase-keys=2.0.0-2 node-lru-cache=11.2.7-7 node-make-dir=3.1.0-3
+        node-memfs=3.4.12+~cs1.0.3-3 node-memory-fs=0.5.0+~0.3.7-1 node-merge-stream=2.0.0+~cs6.0.0-1
+        node-micromatch=4.0.8+~4.0.10-2 node-mime=4.1.0+dfsg+~cs8.97.10-7 node-mime-types=3.0.2+~3.0.1-1
+        node-mimic-fn=4.0.0-6 node-mimic-response=3.1.0-9 node-minimatch=9.0.7-2 node-minimist=1.2.8+~cs5.3.5-4
+        node-minipass=7.1.3+~cs21.1.8-4 node-mkdirp=3.0.1+~cs5.2.1-4 node-move-concurrently=1.0.1-8
+        node-ms=2.1.3+~cs0.7.31-3 node-mute-stream=3.0.0+~0.0.4-4 node-n3=1.16.3+~1.2.3+~1.10.4-3
+        node-negotiator=0.6.4+~0.6.4-1 node-neo-async=2.6.2+~cs3.0.0-3 node-nopt=9.0.0-2
+        node-normalize-package-data=8.0.0+~2.4.4-5 node-normalize-path=3.0.0+~3.0.2-1
+        node-npm-bundled=2.0.1-5 node-npm-package-arg=13.0.2+~6.1.0-6 node-npm-run-path=6.0.0+~cs4.4.0-1
+        node-npmlog=7.0.1+~4.1.4-4 node-object-assign=4.1.1-7 node-object-inspect=1.12.2+~cs1.8.1-4
+        node-obug=2.1.4-3 node-once=1.4.1-4 node-optimist=0.6.1+~0.0.33-4 node-optionator=0.9.1+dfsg+~cs1.2.3-1
+        node-osenv=0.1.5+~0.1.3-4 node-p-cancelable=2.1.1-1 node-p-limit=4.0.0+~cs4.0.0-5
+        node-p-locate=6.0.0-14 node-p-map=4.0.0+~3.1.0+~3.0.1-2 node-parse-json=5.2.0+~cs5.1.7-2
+        node-parse-ms=4.0.0-2 node-path-dirname=1.0.2-2 node-path-exists=5.0.0-9 node-path-is-inside=1.0.2+~1.0.3-1
+        node-path-scurry=2.0.2-2 node-path-type=4.0.0-3 node-picocolors=1.1.1-1 node-pify=5.0.0+~cs5.0.1-1
+        node-pkg-dir=5.0.0-2 node-postcss=8.5.31+~cs10.2.26-1 node-postcss-modules-extract-imports=3.1.0-1
+        node-postcss-modules-values=4.0.0+~4.0.2-1 node-postcss-value-parser=4.2.0-1
+        node-prelude-ls=1.2.1+dfsg-3 node-pretty-ms=9.3.1-1 node-process=0.11.10-3
+        node-progress=2.0.3-2 node-promise-inflight=1.0.1+~1.0.3-1 node-promise-retry=2.0.1-4
+        node-promzard=3.0.1-4 node-prr=1.0.1-6 node-quick-lru=6.1.1-4 node-randombytes=2.1.0+~2.0.3-4
+        node-read=5.0.1-4 node-read-package-json=5.0.2+~2.0.0-6 node-read-pkg=10.1.0+~5.10.0-1
+        node-readable-stream=4.7.0+~cs9.0.2-8 node-rechoir=0.8.0+~0.6.4-1 node-regenerate=1.4.2-4
+        node-regenerate-unicode-properties=10.2.2+ds-4 node-regenerator-runtime=0.15.2+~0.10.8-3
+        node-regexpp=3.2.0-9 node-regexpu-core=6.4.0-1 node-regjsgen=0.8.0+ds-1 node-regjsparser=0.13.1+ds-1
+        node-repeat-string=1.6.1+repack-1 node-require-directory=2.1.1+~2.1.7-1 node-resolve=1.22.12+~cs5.38.14-1
+        node-resolve-cwd=3.0.0-2 node-resolve-from=5.0.0+~3.1.0+~3.3.0+~2.0.0-1 node-resolve-import=2.4.0+~4.0.0-4
+        node-restore-cursor=4.0.0-4 node-resumer=0.0.0-7 node-retry=0.13.1.+~cs2.19.16-2
+        node-rimraf=6.1.3-2 node-run-async=2.4.1-2 node-run-queue=2.0.0-6 node-safe-buffer=5.2.1+~cs2.1.2-6
+        node-schema-utils=4.3.3~ds-3 node-semver=7.7.4+~cs9.7.4-2 node-serialize-javascript=7.1.4+~5.0.4-1
+        node-set-blocking=2.0.0-2 node-shebang-command=2.0.0+~cs4.0.0-1 node-signal-exit=4.1.0-11
+        node-slash=5.1.0-2 node-slice-ansi=5.0.0+~cs9.0.0-5 node-smart-buffer=4.2.0-5
+        node-socks=2.8.10-1 node-socks-proxy-agent=8.0.5~0~2025070717+~cs16.2.9-1
+        node-source-list-map=2.0.1+dfsg+~0.1.6-1 node-source-map=0.8.0+dfsg-2 node-spdx-correct=3.2.0+~3.1.3-1
+        node-spdx-exceptions=2.5.0-1 node-spdx-expression-parse=4.0.0+~cs24.1.1-1
+        node-spdx-license-ids=3.26.0-1 node-sprintf-js=1.1.3+ds1+~1.1.4-2 node-ssri=9.0.1-6
+        node-string-decoder=1.3.0-9 node-string-width=4.2.3+~cs13.2.3-1 node-strip-ansi=7.2.0+~cs7.0.1-2
+        node-strip-bom=4.0.0-2 node-strip-eof=3.0.0-6 node-strip-json-comments=4.0.0-7
+        node-supports-color=10.2.2+ds-3 node-tapable=2.3.3-1 node-tape=5.6.1+~cs8.20.19-6
+        node-tar=7.5.22+~4.0.1-1 node-terser=5.51.2-2 node-text-table=0.2.0-5 node-through=2.3.8+~cs0.0.33-1
+        node-time-stamp=2.2.0-2 node-tmp=0.2.7+dfsg+~0.2.6-1 node-to-regex-range=5.0.1-4
+        node-tslib=2.8.1-1 node-type-check=0.4.0+dfsg-3 node-typed-array-buffer=1.2.2+~cs4.3.9-2
+        node-typedarray=0.0.7-4 node-undici=8.12.2+dfsg+~cs3.2.3-2 node-unicode-canonical-property-names-ecmascript=2.0.1-1
+        node-unicode-match-property-ecmascript=2.0.0-2 node-unicode-match-property-value-ecmascript=2.2.1+ds-1
+        node-unicode-property-aliases-ecmascript=2.2.0+ds-1 node-unique-filename=6.0.0+~cs7.0.0-5
+        node-util=0.12.5+~1.0.10-2 node-util-deprecate=1.0.2-4 node-v8flags=3.2.0+~3.1.1-1
+        node-validate-npm-package-license=3.0.4-3 node-validate-npm-package-name=5.0.0+~4.0.0-4
+        node-verkit=0.5.0-1 node-watchpack=2.5.2-4 node-wcwidth.js=1.0.2-2 node-webassemblyjs=1.14.1+dfsg3+~cs1.2.7-4
+        node-webpack-sources=3.4.1+~3.2.3-1 node-which=2.0.2+~cs1.3.2-8 node-which-typed-array=1.1.20+~cs3.2.22-3
+        node-wide-align=1.1.3-7 node-wordwrap=1.0.0-5 node-wrap-ansi=8.0.1+~8.0.1-3
+        node-wrappy=1.0.2-6 node-write=2.0.0~6.0.1+~3.0.4+~2.0.0+~1.0.0+~2.0.1-6 node-write-file-atomic=7.0.1+~4.0.3-1
+        node-xtend=4.0.2-3 node-y18n=5.0.8+~5.0.0-5 node-yallist=5.0.0-4 node-yargs=17.7.3+~17.0.35-3
+        node-yargs-parser=21.1.1+~21.0.0-5 nodejs=24.22.2+dfsg+~cs24.19.2-1 npm=12.2.0+ds1-1
+        terser=5.51.2-2 webpack=5.108.0+dfsg1+~cs14.7.20-3 | while IFS='=' read -r
+        package version; do printf '\\nPackage: %s\\nPin: version %s\\nPin-Priority:
+        1001\\n' \"$package\" \"$version\" >> /etc/apt/preferences.d/homelibrary-forky;
+        done"
       - apt-get -o Acquire::Retries=3 update
-      - apt-get -o Acquire::Retries=3 install -y -t forky npm
-      - install -d -o vagrant -g vagrant /usr/share/maven-repo/com/github/bumptech/glide/ksp/5.0.5
+      - apt-get -o Acquire::Retries=3 install --no-install-recommends -y nodejs=24.22.2+dfsg+~cs24.19.2-1
+        libnode137=24.22.2+dfsg+~cs24.19.2-1 npm=12.2.0+ds1-1
+      - test "$(dpkg-query -W -f='${Version}' nodejs)" = '24.22.2+dfsg+~cs24.19.2-1'
+      - test "$(dpkg-query -W -f='${Version}' npm)" = '12.2.0+ds1-1'
     init:
       - node --version
       - npm --version
-      - sed -i -e 's/"node":\ ">=22.13.0 <23"/"node":\ ">=22.13.0"/' package.json
+      - dpkg-query -W nodejs libnode137 npm
       - npm ci
     output: android/app/build/outputs/apk/release/app-release-unsigned.apk
     binary: 
@@ -107,13 +401,41 @@ Builds:
       - node_modules/@react-native-async-storage/async-storage/android/build.gradle
       - node_modules/react-native-safe-area-context/android/build.gradle
       - node_modules/react-native-screens/android/build.gradle
+      - scripts/glide-ksp-repro.init.gradle
     scandelete:
-      - node_modules
+      - node_modules/@expo/expo-modules-macros-plugin/apple/ExpoModulesMacros-tool
+      - node_modules/@react-native/gradle-plugin/react-native-gradle-plugin/build
+      - node_modules/@react-native/gradle-plugin/settings-plugin/build
+      - node_modules/@react-native/gradle-plugin/shared/build
+      - node_modules/expo-camera/prebuilds
+      - node_modules/expo-file-system/prebuilds
+      - node_modules/expo-font/prebuilds
+      - node_modules/expo-image-manipulator/prebuilds
+      - node_modules/expo-image/prebuilds
+      - node_modules/expo-modules-autolinking/android/expo-gradle-plugin/expo-autolinking-plugin-shared/build
+      - node_modules/expo-modules-autolinking/android/expo-gradle-plugin/expo-autolinking-plugin/build
+      - node_modules/expo-modules-autolinking/android/expo-gradle-plugin/expo-autolinking-settings-plugin/build
+      - node_modules/expo-modules-autolinking/android/expo-gradle-plugin/expo-max-sdk-override-plugin/build
+      - node_modules/expo-modules-core/expo-module-gradle-plugin/build
+      - node_modules/expo-modules-core/prebuilds
+      - node_modules/expo/template.tgz
+      - node_modules/fb-dotslash/bin/linux-musl.aarch64/dotslash
+      - node_modules/fb-dotslash/bin/linux-musl.x86_64/dotslash
+      - node_modules/fb-dotslash/bin/macos/dotslash
+      - node_modules/fb-dotslash/bin/windows-arm64/dotslash.exe
+      - node_modules/fb-dotslash/bin/windows/dotslash.exe
+      - node_modules/hermes-compiler/hermesc/osx-bin/hermesc
+      - node_modules/hermes-compiler/hermesc/win64-bin/hermesc.exe
+      - node_modules/react-native/React/I18n/strings/*/fbt_language_pack.bin
+      - node_modules/react-native/ReactAndroid/publish.gradle
+      - node_modules/zxing-wasm/dist/full/zxing_full.wasm
+      - node_modules/zxing-wasm/dist/reader/zxing_reader.wasm
+      - node_modules/zxing-wasm/dist/writer/zxing_writer.wasm
     build:
       - bash scripts/build-glide-ksp-repro.sh
-      - cp build/repro-maven/com/github/bumptech/glide/ksp/5.0.5/* /usr/share/maven-repo/com/github/bumptech/glide/ksp/5.0.5/
       - cd android/app
-      - gradle -I ../../scripts/glide-ksp-repro.init.gradle assembleRelease -PreactNativeArchitectures=arm64-v8a
+      - gradle -I ../../scripts/glide-ksp-repro.init.gradle :expo-image:homeLibraryGlideKspResolution
+        assembleRelease -PreactNativeArchitectures=arm64-v8a
     ndk: r27b
     postbuild:
       - python3 scripts/normalize-fdroid-apk-build-ids.py android/app/build/outputs/apk/release/app-release-unsigned.apk
@@ -122,18 +444,151 @@ Builds:
         arm64-v8a
       - test -s android/app/build/outputs/mapping/release/mapping.txt
 
-  - versionName: 1.0.12
-    versionCode: 133
-    commit: v1.0.12
+  - versionName: 1.0.13
+    versionCode: 143
+    commit: v1.0.13
     sudo:
       - echo "deb https://deb.debian.org/debian forky main" > /etc/apt/sources.list.d/forky.list
+      - "printf 'Package: *\\nPin: release n=forky\\nPin-Priority: -1\\n' > /etc/apt/preferences.d/homelibrary-forky"
+      - "printf '%s\\n' eslint=6.4.0~dfsg+~6.1.9-14 gyp=0.16.2-3 handlebars=3:4.7.10-1
+        libada-url0-3=3.4.4-1+b1 libc-bin=2.43-7 libc-dev-bin=2.43-7 libc-gconv-modules-extra=2.43-7
+        libc6=2.43-7 libc6-dev=2.43-7 libc6-i386=2.43-7 libc6-x32=2.43-7 libhdr-histogram6=0.11.8-4+b2
+        libicu78=78.3-2 libjs-esprima=4.0.1+ds+~4.0.6-3 libjs-events=3.3.0+~3.0.3-1
+        libjs-inherits=2.0.4-9 libjs-prettify=2015.12.04+dfsg-3 libjs-regenerate=1.4.2-4
+        libjs-sprintf-js=1.1.3+ds1+~1.1.4-2 libjs-util=0.12.5+~1.0.10-2 libllhttp9.4=9.4.3+~cs12.11.9-2
+        libnode-dev=24.22.2+dfsg+~cs24.19.2-1 libnode137=24.22.2+dfsg+~cs24.19.2-1
+        libsimdjson33=4.6.11-1 libsimdutf35=9.3.0+really9.1.2-1 libuv1-dev=1.53.0-1
+        libuv1t64=1.53.0-1 node-abbrev=1.1.1+~1.1.2-3 node-acorn=8.17.0+ds+~cs28.27.25-1
+        node-agent-base=7.1.4~0~2025070717+~cs16.2.9-1 node-ajv=8.20.0~ds+~cs7.2.4-1
+        node-ajv-keywords=5.1.0-8 node-ampproject-remapping=2.3.0+~cs5.17.39-1 node-ansi-escapes=5.0.0+really.4.3.1-1
+        node-ansi-regex=6.2.2+~cs4.0.2-1 node-ansi-styles=6.2.3-2 node-anymatch=3.1.3+~cs8.0.6-1
+        node-aproba=2.1.0-4 node-archy=1.0.0-10 node-are-we-there-yet=4.0.2+~1.1.2-4
+        node-argparse=2.0.1-3 node-arrify=2.0.1-6 node-assert=2.1.0+~cs3.9.13-1 node-async=3.2.6+dfsg-3
+        node-babel-helper-define-polyfill-provider=1.0.0~20260618+ds1-4 node-babel-plugin-polyfill-corejs3=1.0.0~20260618+ds1-4
+        node-babel7=8.1.1+ds1+~cs177.303.116-1 node-babel7-runtime=8.1.1+ds1+~cs177.303.116-1
+        node-balanced-match=2.0.0-1 node-base64-js=1.5.1+dfsg+~1.5.0-2 node-binary-extensions=2.3.0-1
+        node-bl=5.1.0-4 node-brace-expansion=2.1.7+~1.1.2-1 node-braces=3.0.3+~3.0.5-1
+        node-browserslist=4.28.7+~cs8.16.65-1 node-buffer=6.0.3-6 node-builtins=5.1.0-1
+        node-cacache=20.0.4+~cs30.1.8-3 node-call-bind-apply-helpers=1.2.2+~cs4.3.9-2
+        node-call-bound=1.2.2+~cs4.3.9-2 node-camelcase=9.0.0-1 node-caniuse-lite=1.0.30001812+dfsg+~1.0.5-1
+        node-chalk=5.6.2+dfsg-5 node-chokidar=4.0.3+~cs4.1.2-4 node-chownr=3.0.0-5
+        node-chrome-trace-event=1.0.3-3 node-ci-info=4.4.0+~cs8.2.0-4 node-cli-cursor=4.0.0-4
+        node-cli-spinners=2.9.2-1 node-cli-table=0.3.11+~cs0.13.4-4 node-cli-width=3.0.0-5
+        node-cliui=9.0.1-3 node-clone=2.1.2+~2.1.4-1 node-clone-deep=4.0.1+~cs7.0.2-1
+        node-color-convert=2.0.1+~cs2.0.0-2 node-color-name=1.1.4+~1.1.1-2 node-colors=1.4.0-4
+        node-columnify=1.6.0+~1.5.4-1 node-commander=14.0.3-7 node-commondir=1.0.1+~1.0.2-1
+        node-concat-stream=2.0.0+~2.0.3-2 node-console-control-strings=1.1.0-5 node-convert-source-map=2.0.0+~2.0.3-4
+        node-copy-concurrently=1.0.5-13 node-core-js=3.33.2-1 node-core-js-compat=3.33.2-1
+        node-core-js-pure=3.33.2-1 node-corepack=0.35.0-2 node-cspotcode-source-map-support=0.8.1+ds-3
+        node-css-loader=6.11.0+~cs15.5.7-3 node-css-selector-tokenizer=0.8.0+~cs4.8.3-1
+        node-data-uri-to-buffer=6.0.2~0~2025070717+~cs16.2.9-1 node-debbundle-es-to-primitive=1.2.1+~cs9.7.25-5
+        node-debug=4.4.3+~4.1.13-1 node-decamelize=4.0.0-3 node-decompress-response=6.0.0-3
+        node-deep-equal=2.2.3+ds1+~cs43.15.94-1 node-deep-is=0.1.4-1 node-defaults=1.0.4+~1.0.3-4
+        node-define-properties=1.2.1+~cs6.2.14-1 node-define-property=2.0.2+really+2.0.2-3
+        node-defined=1.0.1+~1.0.2-1 node-del=7.1.0-2 node-delegates=1.0.0-3 node-diff=8.0.4~dfsg-4
+        node-doctrine=3.0.0-4 node-electron-to-chromium=1.5.458-1 node-empathic=2.0.1-2
+        node-encoding=0.1.13-2 node-enhanced-resolve=5.25.1-1 node-env-paths=3.0.0-3
+        node-envinfo=7.11.0+~cs14.3.0-9 node-err-code=2.0.3+dfsg-3 node-errno=1.0.0-3
+        node-error-ex=1.3.4-1 node-es-abstract=1.24.2+~cs59.63.124-1 node-es-errors=1.3.0~1.2.2+~cs4.3.9-2
+        node-es-module-lexer=2.1.0+dfsg-2 node-es6-error=4.1.1-5 node-escape-string-regexp=4.0.0-2
+        node-escodegen=2.1.0+dfsg+~0.0.10-2 node-eslint-scope=7.1.1+~3.7.4-1 node-eslint-utils=3.0.0-4
+        node-eslint-visitor-keys=3.3.0+ds1-3 node-espree=9.4.1~dfsg-2 node-esprima=4.0.1+ds+~4.0.6-3
+        node-esquery=1.6.0~ds-1 node-esrecurse=4.3.0-2 node-estraverse=5.3.0+ds+~5.1.7-1
+        node-esutils=2.0.3+~2.0.2-3 node-events=3.3.0+~3.0.3-1 node-execa=9.6.1+dfsg1+~cs23.2.2-1
+        node-external-editor=3.1.0+dfsg-5 node-fancy-log=1.3.3+~cs1.3.1-2 node-fast-deep-equal=3.1.3-3
+        node-fast-levenshtein=2.0.6+ds-3 node-fdir=6.5.0-2 node-fetch=3.3.2+~cs11.4.11-4
+        node-file-entry-cache=6.0.1+~3.0.4+~2.0.0+~1.0.0+~2.0.1-6 node-fill-range=7.1.1+~7.0.3-1
+        node-find-cache-dir=3.3.2+~3.2.1-1 node-find-up=6.3.0-8 node-flat-cache=3.0.4~6.0.1+~3.0.4+~2.0.0+~1.0.0+~2.0.1-6
+        node-flatted=3.4.4~ds-1 node-for-in=1.0.2-5 node-for-own=1.0.0-3 node-foreground-child=4.0.3-2
+        node-fs-write-stream-atomic=1.0.10-8 node-function-bind=1.1.2+~cs2.1.14-6
+        node-functional-red-black-tree=1.0.1+20181105-8 node-gauge=4.0.4-5 node-get-caller-file=2.0.5+~cs1.1.1-7
+        node-get-stream=8.0.1-11 node-glob=13.0.6+~cs0.4.15-2 node-glob-parent=6.0.2+~5.1.3-1
+        node-globals=13.23.0-1 node-globby=13.1.3+~cs16.25.40-5 node-got=11.8.6+~cs58.13.36-1
+        node-graceful-fs=4.2.11-4 node-gyp=13.1.0+~7.0.0-1 node-has-flag=5.0.1-2 node-has-unicode=2.0.1-8
+        node-hosted-git-info=9.0.2-3 node-http-proxy-agent=7.0.2~0~2025070717+~cs16.2.9-1
+        node-https-proxy-agent=7.0.6~0~2025070717+~cs16.2.9-1 node-iconv-lite=0.6.3-3
+        node-icss-utils=5.1.0+~5.1.2-1 node-ieee754=1.2.1-6 node-iferr=1.0.2+~1.0.4-1
+        node-ignore=5.2.1-3 node-import-local=3.2.0+~cs2.0.3-3 node-import-meta-resolve=4.2.0-2
+        node-imurmurhash=0.1.4+dfsg+~0.1.4-1 node-indent-string=4.0.0-2 node-inherits=2.0.4-9
+        node-ini=7.0.0+~4.1.1-1 node-inquirer=8.2.5+~cs35.10.17-2 node-interpret=2.2.0+~1.1.4-1
+        node-ip-address=10.7.6-1 node-ip-regex=4.3.0+~4.1.1-1 node-is-arrayish=0.3.4-1
+        node-is-buffer=2.0.5-2 node-is-descriptor=3.0.0-2 node-is-extendable=1.0.1-3
+        node-is-extglob=2.1.1-5 node-is-glob=4.0.3-2 node-is-number=7.0.0-4 node-is-path-cwd=2.2.0-2
+        node-is-path-inside=3.0.3-2 node-is-plain-obj=4.1.0-3 node-is-plain-object=5.1.0-1
+        node-is-stream=3.0.0-5 node-is-windows=1.0.2+~cs1.0.0-1 node-isarray=2.0.5-7
+        node-isexe=2.0.0+~2.0.1-8 node-isobject=4.1.1-1 node-istanbul=0.4.5+repack10+~cs98.25.59-13
+        node-jackspeak=4.2.3-3 node-jest-worker=29.6.2~ds7+~cs73.45.28-8 node-js-tokens=8.0.0-3
+        node-js-yaml=4.3.2+~4.0.9-1 node-jschardet=3.0.0+dfsg+~1.4.0-4 node-jsesc=3.1.0+~3.0.3-1
+        node-json-buffer=3.0.1+~3.0.2-1 node-json-parse-better-errors=1.0.2+~cs3.3.1-5
+        node-json-schema=0.4.0+~7.0.15-1 node-json-schema-traverse=1.0.0-3 node-json-stable-stringify=1.0.2+repack1+~cs1.0.34-2
+        node-json5=2.2.3+dfsg-8 node-jsonify=0.0.1-1 node-jsonparse=1.3.1-10 node-kind-of=6.0.3+dfsg-2
+        node-levn=0.4.1+dfsg-2 node-llhttp=9.4.3+~cs12.11.9-2 node-loader-runner=4.3.2-1
+        node-locate-path=7.1.1-2 node-lodash=4.18.1+dfsg1-2 node-lodash-packages=4.18.1+dfsg1-2
+        node-long=5.3.2-1 node-lowercase-keys=2.0.0-2 node-lru-cache=11.2.7-7 node-make-dir=3.1.0-3
+        node-memfs=3.4.12+~cs1.0.3-3 node-memory-fs=0.5.0+~0.3.7-1 node-merge-stream=2.0.0+~cs6.0.0-1
+        node-micromatch=4.0.8+~4.0.10-2 node-mime=4.1.0+dfsg+~cs8.97.10-7 node-mime-types=3.0.2+~3.0.1-1
+        node-mimic-fn=4.0.0-6 node-mimic-response=3.1.0-9 node-minimatch=9.0.7-2 node-minimist=1.2.8+~cs5.3.5-4
+        node-minipass=7.1.3+~cs21.1.8-4 node-mkdirp=3.0.1+~cs5.2.1-4 node-move-concurrently=1.0.1-8
+        node-ms=2.1.3+~cs0.7.31-3 node-mute-stream=3.0.0+~0.0.4-4 node-n3=1.16.3+~1.2.3+~1.10.4-3
+        node-negotiator=0.6.4+~0.6.4-1 node-neo-async=2.6.2+~cs3.0.0-3 node-nopt=9.0.0-2
+        node-normalize-package-data=8.0.0+~2.4.4-5 node-normalize-path=3.0.0+~3.0.2-1
+        node-npm-bundled=2.0.1-5 node-npm-package-arg=13.0.2+~6.1.0-6 node-npm-run-path=6.0.0+~cs4.4.0-1
+        node-npmlog=7.0.1+~4.1.4-4 node-object-assign=4.1.1-7 node-object-inspect=1.12.2+~cs1.8.1-4
+        node-obug=2.1.4-3 node-once=1.4.1-4 node-optimist=0.6.1+~0.0.33-4 node-optionator=0.9.1+dfsg+~cs1.2.3-1
+        node-osenv=0.1.5+~0.1.3-4 node-p-cancelable=2.1.1-1 node-p-limit=4.0.0+~cs4.0.0-5
+        node-p-locate=6.0.0-14 node-p-map=4.0.0+~3.1.0+~3.0.1-2 node-parse-json=5.2.0+~cs5.1.7-2
+        node-parse-ms=4.0.0-2 node-path-dirname=1.0.2-2 node-path-exists=5.0.0-9 node-path-is-inside=1.0.2+~1.0.3-1
+        node-path-scurry=2.0.2-2 node-path-type=4.0.0-3 node-picocolors=1.1.1-1 node-pify=5.0.0+~cs5.0.1-1
+        node-pkg-dir=5.0.0-2 node-postcss=8.5.31+~cs10.2.26-1 node-postcss-modules-extract-imports=3.1.0-1
+        node-postcss-modules-values=4.0.0+~4.0.2-1 node-postcss-value-parser=4.2.0-1
+        node-prelude-ls=1.2.1+dfsg-3 node-pretty-ms=9.3.1-1 node-process=0.11.10-3
+        node-progress=2.0.3-2 node-promise-inflight=1.0.1+~1.0.3-1 node-promise-retry=2.0.1-4
+        node-promzard=3.0.1-4 node-prr=1.0.1-6 node-quick-lru=6.1.1-4 node-randombytes=2.1.0+~2.0.3-4
+        node-read=5.0.1-4 node-read-package-json=5.0.2+~2.0.0-6 node-read-pkg=10.1.0+~5.10.0-1
+        node-readable-stream=4.7.0+~cs9.0.2-8 node-rechoir=0.8.0+~0.6.4-1 node-regenerate=1.4.2-4
+        node-regenerate-unicode-properties=10.2.2+ds-4 node-regenerator-runtime=0.15.2+~0.10.8-3
+        node-regexpp=3.2.0-9 node-regexpu-core=6.4.0-1 node-regjsgen=0.8.0+ds-1 node-regjsparser=0.13.1+ds-1
+        node-repeat-string=1.6.1+repack-1 node-require-directory=2.1.1+~2.1.7-1 node-resolve=1.22.12+~cs5.38.14-1
+        node-resolve-cwd=3.0.0-2 node-resolve-from=5.0.0+~3.1.0+~3.3.0+~2.0.0-1 node-resolve-import=2.4.0+~4.0.0-4
+        node-restore-cursor=4.0.0-4 node-resumer=0.0.0-7 node-retry=0.13.1.+~cs2.19.16-2
+        node-rimraf=6.1.3-2 node-run-async=2.4.1-2 node-run-queue=2.0.0-6 node-safe-buffer=5.2.1+~cs2.1.2-6
+        node-schema-utils=4.3.3~ds-3 node-semver=7.7.4+~cs9.7.4-2 node-serialize-javascript=7.1.4+~5.0.4-1
+        node-set-blocking=2.0.0-2 node-shebang-command=2.0.0+~cs4.0.0-1 node-signal-exit=4.1.0-11
+        node-slash=5.1.0-2 node-slice-ansi=5.0.0+~cs9.0.0-5 node-smart-buffer=4.2.0-5
+        node-socks=2.8.10-1 node-socks-proxy-agent=8.0.5~0~2025070717+~cs16.2.9-1
+        node-source-list-map=2.0.1+dfsg+~0.1.6-1 node-source-map=0.8.0+dfsg-2 node-spdx-correct=3.2.0+~3.1.3-1
+        node-spdx-exceptions=2.5.0-1 node-spdx-expression-parse=4.0.0+~cs24.1.1-1
+        node-spdx-license-ids=3.26.0-1 node-sprintf-js=1.1.3+ds1+~1.1.4-2 node-ssri=9.0.1-6
+        node-string-decoder=1.3.0-9 node-string-width=4.2.3+~cs13.2.3-1 node-strip-ansi=7.2.0+~cs7.0.1-2
+        node-strip-bom=4.0.0-2 node-strip-eof=3.0.0-6 node-strip-json-comments=4.0.0-7
+        node-supports-color=10.2.2+ds-3 node-tapable=2.3.3-1 node-tape=5.6.1+~cs8.20.19-6
+        node-tar=7.5.22+~4.0.1-1 node-terser=5.51.2-2 node-text-table=0.2.0-5 node-through=2.3.8+~cs0.0.33-1
+        node-time-stamp=2.2.0-2 node-tmp=0.2.7+dfsg+~0.2.6-1 node-to-regex-range=5.0.1-4
+        node-tslib=2.8.1-1 node-type-check=0.4.0+dfsg-3 node-typed-array-buffer=1.2.2+~cs4.3.9-2
+        node-typedarray=0.0.7-4 node-undici=8.12.2+dfsg+~cs3.2.3-2 node-unicode-canonical-property-names-ecmascript=2.0.1-1
+        node-unicode-match-property-ecmascript=2.0.0-2 node-unicode-match-property-value-ecmascript=2.2.1+ds-1
+        node-unicode-property-aliases-ecmascript=2.2.0+ds-1 node-unique-filename=6.0.0+~cs7.0.0-5
+        node-util=0.12.5+~1.0.10-2 node-util-deprecate=1.0.2-4 node-v8flags=3.2.0+~3.1.1-1
+        node-validate-npm-package-license=3.0.4-3 node-validate-npm-package-name=5.0.0+~4.0.0-4
+        node-verkit=0.5.0-1 node-watchpack=2.5.2-4 node-wcwidth.js=1.0.2-2 node-webassemblyjs=1.14.1+dfsg3+~cs1.2.7-4
+        node-webpack-sources=3.4.1+~3.2.3-1 node-which=2.0.2+~cs1.3.2-8 node-which-typed-array=1.1.20+~cs3.2.22-3
+        node-wide-align=1.1.3-7 node-wordwrap=1.0.0-5 node-wrap-ansi=8.0.1+~8.0.1-3
+        node-wrappy=1.0.2-6 node-write=2.0.0~6.0.1+~3.0.4+~2.0.0+~1.0.0+~2.0.1-6 node-write-file-atomic=7.0.1+~4.0.3-1
+        node-xtend=4.0.2-3 node-y18n=5.0.8+~5.0.0-5 node-yallist=5.0.0-4 node-yargs=17.7.3+~17.0.35-3
+        node-yargs-parser=21.1.1+~21.0.0-5 nodejs=24.22.2+dfsg+~cs24.19.2-1 npm=12.2.0+ds1-1
+        terser=5.51.2-2 webpack=5.108.0+dfsg1+~cs14.7.20-3 | while IFS='=' read -r
+        package version; do printf '\\nPackage: %s\\nPin: version %s\\nPin-Priority:
+        1001\\n' \"$package\" \"$version\" >> /etc/apt/preferences.d/homelibrary-forky;
+        done"
       - apt-get -o Acquire::Retries=3 update
-      - apt-get -o Acquire::Retries=3 install -y -t forky npm
-      - install -d -o vagrant -g vagrant /usr/share/maven-repo/com/github/bumptech/glide/ksp/5.0.5
+      - apt-get -o Acquire::Retries=3 install --no-install-recommends -y nodejs=24.22.2+dfsg+~cs24.19.2-1
+        libnode137=24.22.2+dfsg+~cs24.19.2-1 npm=12.2.0+ds1-1
+      - test "$(dpkg-query -W -f='${Version}' nodejs)" = '24.22.2+dfsg+~cs24.19.2-1'
+      - test "$(dpkg-query -W -f='${Version}' npm)" = '12.2.0+ds1-1'
     init:
       - node --version
       - npm --version
-      - sed -i -e 's/"node":\ ">=22.13.0 <23"/"node":\ ">=22.13.0"/' package.json
+      - dpkg-query -W nodejs libnode137 npm
       - npm ci
     output: android/app/build/outputs/apk/release/app-release-unsigned.apk
     binary: 
@@ -160,13 +615,41 @@ Builds:
       - node_modules/@react-native-async-storage/async-storage/android/build.gradle
       - node_modules/react-native-safe-area-context/android/build.gradle
       - node_modules/react-native-screens/android/build.gradle
+      - scripts/glide-ksp-repro.init.gradle
     scandelete:
-      - node_modules
+      - node_modules/@expo/expo-modules-macros-plugin/apple/ExpoModulesMacros-tool
+      - node_modules/@react-native/gradle-plugin/react-native-gradle-plugin/build
+      - node_modules/@react-native/gradle-plugin/settings-plugin/build
+      - node_modules/@react-native/gradle-plugin/shared/build
+      - node_modules/expo-camera/prebuilds
+      - node_modules/expo-file-system/prebuilds
+      - node_modules/expo-font/prebuilds
+      - node_modules/expo-image-manipulator/prebuilds
+      - node_modules/expo-image/prebuilds
+      - node_modules/expo-modules-autolinking/android/expo-gradle-plugin/expo-autolinking-plugin-shared/build
+      - node_modules/expo-modules-autolinking/android/expo-gradle-plugin/expo-autolinking-plugin/build
+      - node_modules/expo-modules-autolinking/android/expo-gradle-plugin/expo-autolinking-settings-plugin/build
+      - node_modules/expo-modules-autolinking/android/expo-gradle-plugin/expo-max-sdk-override-plugin/build
+      - node_modules/expo-modules-core/expo-module-gradle-plugin/build
+      - node_modules/expo-modules-core/prebuilds
+      - node_modules/expo/template.tgz
+      - node_modules/fb-dotslash/bin/linux-musl.aarch64/dotslash
+      - node_modules/fb-dotslash/bin/linux-musl.x86_64/dotslash
+      - node_modules/fb-dotslash/bin/macos/dotslash
+      - node_modules/fb-dotslash/bin/windows-arm64/dotslash.exe
+      - node_modules/fb-dotslash/bin/windows/dotslash.exe
+      - node_modules/hermes-compiler/hermesc/osx-bin/hermesc
+      - node_modules/hermes-compiler/hermesc/win64-bin/hermesc.exe
+      - node_modules/react-native/React/I18n/strings/*/fbt_language_pack.bin
+      - node_modules/react-native/ReactAndroid/publish.gradle
+      - node_modules/zxing-wasm/dist/full/zxing_full.wasm
+      - node_modules/zxing-wasm/dist/reader/zxing_reader.wasm
+      - node_modules/zxing-wasm/dist/writer/zxing_writer.wasm
     build:
       - bash scripts/build-glide-ksp-repro.sh
-      - cp build/repro-maven/com/github/bumptech/glide/ksp/5.0.5/* /usr/share/maven-repo/com/github/bumptech/glide/ksp/5.0.5/
       - cd android/app
-      - gradle -I ../../scripts/glide-ksp-repro.init.gradle assembleRelease -PreactNativeArchitectures=x86
+      - gradle -I ../../scripts/glide-ksp-repro.init.gradle :expo-image:homeLibraryGlideKspResolution
+        assembleRelease -PreactNativeArchitectures=x86
     ndk: r27b
     postbuild:
       - python3 scripts/normalize-fdroid-apk-build-ids.py android/app/build/outputs/apk/release/app-release-unsigned.apk
@@ -175,18 +658,151 @@ Builds:
         x86
       - test -s android/app/build/outputs/mapping/release/mapping.txt
 
-  - versionName: 1.0.12
-    versionCode: 134
-    commit: v1.0.12
+  - versionName: 1.0.13
+    versionCode: 144
+    commit: v1.0.13
     sudo:
       - echo "deb https://deb.debian.org/debian forky main" > /etc/apt/sources.list.d/forky.list
+      - "printf 'Package: *\\nPin: release n=forky\\nPin-Priority: -1\\n' > /etc/apt/preferences.d/homelibrary-forky"
+      - "printf '%s\\n' eslint=6.4.0~dfsg+~6.1.9-14 gyp=0.16.2-3 handlebars=3:4.7.10-1
+        libada-url0-3=3.4.4-1+b1 libc-bin=2.43-7 libc-dev-bin=2.43-7 libc-gconv-modules-extra=2.43-7
+        libc6=2.43-7 libc6-dev=2.43-7 libc6-i386=2.43-7 libc6-x32=2.43-7 libhdr-histogram6=0.11.8-4+b2
+        libicu78=78.3-2 libjs-esprima=4.0.1+ds+~4.0.6-3 libjs-events=3.3.0+~3.0.3-1
+        libjs-inherits=2.0.4-9 libjs-prettify=2015.12.04+dfsg-3 libjs-regenerate=1.4.2-4
+        libjs-sprintf-js=1.1.3+ds1+~1.1.4-2 libjs-util=0.12.5+~1.0.10-2 libllhttp9.4=9.4.3+~cs12.11.9-2
+        libnode-dev=24.22.2+dfsg+~cs24.19.2-1 libnode137=24.22.2+dfsg+~cs24.19.2-1
+        libsimdjson33=4.6.11-1 libsimdutf35=9.3.0+really9.1.2-1 libuv1-dev=1.53.0-1
+        libuv1t64=1.53.0-1 node-abbrev=1.1.1+~1.1.2-3 node-acorn=8.17.0+ds+~cs28.27.25-1
+        node-agent-base=7.1.4~0~2025070717+~cs16.2.9-1 node-ajv=8.20.0~ds+~cs7.2.4-1
+        node-ajv-keywords=5.1.0-8 node-ampproject-remapping=2.3.0+~cs5.17.39-1 node-ansi-escapes=5.0.0+really.4.3.1-1
+        node-ansi-regex=6.2.2+~cs4.0.2-1 node-ansi-styles=6.2.3-2 node-anymatch=3.1.3+~cs8.0.6-1
+        node-aproba=2.1.0-4 node-archy=1.0.0-10 node-are-we-there-yet=4.0.2+~1.1.2-4
+        node-argparse=2.0.1-3 node-arrify=2.0.1-6 node-assert=2.1.0+~cs3.9.13-1 node-async=3.2.6+dfsg-3
+        node-babel-helper-define-polyfill-provider=1.0.0~20260618+ds1-4 node-babel-plugin-polyfill-corejs3=1.0.0~20260618+ds1-4
+        node-babel7=8.1.1+ds1+~cs177.303.116-1 node-babel7-runtime=8.1.1+ds1+~cs177.303.116-1
+        node-balanced-match=2.0.0-1 node-base64-js=1.5.1+dfsg+~1.5.0-2 node-binary-extensions=2.3.0-1
+        node-bl=5.1.0-4 node-brace-expansion=2.1.7+~1.1.2-1 node-braces=3.0.3+~3.0.5-1
+        node-browserslist=4.28.7+~cs8.16.65-1 node-buffer=6.0.3-6 node-builtins=5.1.0-1
+        node-cacache=20.0.4+~cs30.1.8-3 node-call-bind-apply-helpers=1.2.2+~cs4.3.9-2
+        node-call-bound=1.2.2+~cs4.3.9-2 node-camelcase=9.0.0-1 node-caniuse-lite=1.0.30001812+dfsg+~1.0.5-1
+        node-chalk=5.6.2+dfsg-5 node-chokidar=4.0.3+~cs4.1.2-4 node-chownr=3.0.0-5
+        node-chrome-trace-event=1.0.3-3 node-ci-info=4.4.0+~cs8.2.0-4 node-cli-cursor=4.0.0-4
+        node-cli-spinners=2.9.2-1 node-cli-table=0.3.11+~cs0.13.4-4 node-cli-width=3.0.0-5
+        node-cliui=9.0.1-3 node-clone=2.1.2+~2.1.4-1 node-clone-deep=4.0.1+~cs7.0.2-1
+        node-color-convert=2.0.1+~cs2.0.0-2 node-color-name=1.1.4+~1.1.1-2 node-colors=1.4.0-4
+        node-columnify=1.6.0+~1.5.4-1 node-commander=14.0.3-7 node-commondir=1.0.1+~1.0.2-1
+        node-concat-stream=2.0.0+~2.0.3-2 node-console-control-strings=1.1.0-5 node-convert-source-map=2.0.0+~2.0.3-4
+        node-copy-concurrently=1.0.5-13 node-core-js=3.33.2-1 node-core-js-compat=3.33.2-1
+        node-core-js-pure=3.33.2-1 node-corepack=0.35.0-2 node-cspotcode-source-map-support=0.8.1+ds-3
+        node-css-loader=6.11.0+~cs15.5.7-3 node-css-selector-tokenizer=0.8.0+~cs4.8.3-1
+        node-data-uri-to-buffer=6.0.2~0~2025070717+~cs16.2.9-1 node-debbundle-es-to-primitive=1.2.1+~cs9.7.25-5
+        node-debug=4.4.3+~4.1.13-1 node-decamelize=4.0.0-3 node-decompress-response=6.0.0-3
+        node-deep-equal=2.2.3+ds1+~cs43.15.94-1 node-deep-is=0.1.4-1 node-defaults=1.0.4+~1.0.3-4
+        node-define-properties=1.2.1+~cs6.2.14-1 node-define-property=2.0.2+really+2.0.2-3
+        node-defined=1.0.1+~1.0.2-1 node-del=7.1.0-2 node-delegates=1.0.0-3 node-diff=8.0.4~dfsg-4
+        node-doctrine=3.0.0-4 node-electron-to-chromium=1.5.458-1 node-empathic=2.0.1-2
+        node-encoding=0.1.13-2 node-enhanced-resolve=5.25.1-1 node-env-paths=3.0.0-3
+        node-envinfo=7.11.0+~cs14.3.0-9 node-err-code=2.0.3+dfsg-3 node-errno=1.0.0-3
+        node-error-ex=1.3.4-1 node-es-abstract=1.24.2+~cs59.63.124-1 node-es-errors=1.3.0~1.2.2+~cs4.3.9-2
+        node-es-module-lexer=2.1.0+dfsg-2 node-es6-error=4.1.1-5 node-escape-string-regexp=4.0.0-2
+        node-escodegen=2.1.0+dfsg+~0.0.10-2 node-eslint-scope=7.1.1+~3.7.4-1 node-eslint-utils=3.0.0-4
+        node-eslint-visitor-keys=3.3.0+ds1-3 node-espree=9.4.1~dfsg-2 node-esprima=4.0.1+ds+~4.0.6-3
+        node-esquery=1.6.0~ds-1 node-esrecurse=4.3.0-2 node-estraverse=5.3.0+ds+~5.1.7-1
+        node-esutils=2.0.3+~2.0.2-3 node-events=3.3.0+~3.0.3-1 node-execa=9.6.1+dfsg1+~cs23.2.2-1
+        node-external-editor=3.1.0+dfsg-5 node-fancy-log=1.3.3+~cs1.3.1-2 node-fast-deep-equal=3.1.3-3
+        node-fast-levenshtein=2.0.6+ds-3 node-fdir=6.5.0-2 node-fetch=3.3.2+~cs11.4.11-4
+        node-file-entry-cache=6.0.1+~3.0.4+~2.0.0+~1.0.0+~2.0.1-6 node-fill-range=7.1.1+~7.0.3-1
+        node-find-cache-dir=3.3.2+~3.2.1-1 node-find-up=6.3.0-8 node-flat-cache=3.0.4~6.0.1+~3.0.4+~2.0.0+~1.0.0+~2.0.1-6
+        node-flatted=3.4.4~ds-1 node-for-in=1.0.2-5 node-for-own=1.0.0-3 node-foreground-child=4.0.3-2
+        node-fs-write-stream-atomic=1.0.10-8 node-function-bind=1.1.2+~cs2.1.14-6
+        node-functional-red-black-tree=1.0.1+20181105-8 node-gauge=4.0.4-5 node-get-caller-file=2.0.5+~cs1.1.1-7
+        node-get-stream=8.0.1-11 node-glob=13.0.6+~cs0.4.15-2 node-glob-parent=6.0.2+~5.1.3-1
+        node-globals=13.23.0-1 node-globby=13.1.3+~cs16.25.40-5 node-got=11.8.6+~cs58.13.36-1
+        node-graceful-fs=4.2.11-4 node-gyp=13.1.0+~7.0.0-1 node-has-flag=5.0.1-2 node-has-unicode=2.0.1-8
+        node-hosted-git-info=9.0.2-3 node-http-proxy-agent=7.0.2~0~2025070717+~cs16.2.9-1
+        node-https-proxy-agent=7.0.6~0~2025070717+~cs16.2.9-1 node-iconv-lite=0.6.3-3
+        node-icss-utils=5.1.0+~5.1.2-1 node-ieee754=1.2.1-6 node-iferr=1.0.2+~1.0.4-1
+        node-ignore=5.2.1-3 node-import-local=3.2.0+~cs2.0.3-3 node-import-meta-resolve=4.2.0-2
+        node-imurmurhash=0.1.4+dfsg+~0.1.4-1 node-indent-string=4.0.0-2 node-inherits=2.0.4-9
+        node-ini=7.0.0+~4.1.1-1 node-inquirer=8.2.5+~cs35.10.17-2 node-interpret=2.2.0+~1.1.4-1
+        node-ip-address=10.7.6-1 node-ip-regex=4.3.0+~4.1.1-1 node-is-arrayish=0.3.4-1
+        node-is-buffer=2.0.5-2 node-is-descriptor=3.0.0-2 node-is-extendable=1.0.1-3
+        node-is-extglob=2.1.1-5 node-is-glob=4.0.3-2 node-is-number=7.0.0-4 node-is-path-cwd=2.2.0-2
+        node-is-path-inside=3.0.3-2 node-is-plain-obj=4.1.0-3 node-is-plain-object=5.1.0-1
+        node-is-stream=3.0.0-5 node-is-windows=1.0.2+~cs1.0.0-1 node-isarray=2.0.5-7
+        node-isexe=2.0.0+~2.0.1-8 node-isobject=4.1.1-1 node-istanbul=0.4.5+repack10+~cs98.25.59-13
+        node-jackspeak=4.2.3-3 node-jest-worker=29.6.2~ds7+~cs73.45.28-8 node-js-tokens=8.0.0-3
+        node-js-yaml=4.3.2+~4.0.9-1 node-jschardet=3.0.0+dfsg+~1.4.0-4 node-jsesc=3.1.0+~3.0.3-1
+        node-json-buffer=3.0.1+~3.0.2-1 node-json-parse-better-errors=1.0.2+~cs3.3.1-5
+        node-json-schema=0.4.0+~7.0.15-1 node-json-schema-traverse=1.0.0-3 node-json-stable-stringify=1.0.2+repack1+~cs1.0.34-2
+        node-json5=2.2.3+dfsg-8 node-jsonify=0.0.1-1 node-jsonparse=1.3.1-10 node-kind-of=6.0.3+dfsg-2
+        node-levn=0.4.1+dfsg-2 node-llhttp=9.4.3+~cs12.11.9-2 node-loader-runner=4.3.2-1
+        node-locate-path=7.1.1-2 node-lodash=4.18.1+dfsg1-2 node-lodash-packages=4.18.1+dfsg1-2
+        node-long=5.3.2-1 node-lowercase-keys=2.0.0-2 node-lru-cache=11.2.7-7 node-make-dir=3.1.0-3
+        node-memfs=3.4.12+~cs1.0.3-3 node-memory-fs=0.5.0+~0.3.7-1 node-merge-stream=2.0.0+~cs6.0.0-1
+        node-micromatch=4.0.8+~4.0.10-2 node-mime=4.1.0+dfsg+~cs8.97.10-7 node-mime-types=3.0.2+~3.0.1-1
+        node-mimic-fn=4.0.0-6 node-mimic-response=3.1.0-9 node-minimatch=9.0.7-2 node-minimist=1.2.8+~cs5.3.5-4
+        node-minipass=7.1.3+~cs21.1.8-4 node-mkdirp=3.0.1+~cs5.2.1-4 node-move-concurrently=1.0.1-8
+        node-ms=2.1.3+~cs0.7.31-3 node-mute-stream=3.0.0+~0.0.4-4 node-n3=1.16.3+~1.2.3+~1.10.4-3
+        node-negotiator=0.6.4+~0.6.4-1 node-neo-async=2.6.2+~cs3.0.0-3 node-nopt=9.0.0-2
+        node-normalize-package-data=8.0.0+~2.4.4-5 node-normalize-path=3.0.0+~3.0.2-1
+        node-npm-bundled=2.0.1-5 node-npm-package-arg=13.0.2+~6.1.0-6 node-npm-run-path=6.0.0+~cs4.4.0-1
+        node-npmlog=7.0.1+~4.1.4-4 node-object-assign=4.1.1-7 node-object-inspect=1.12.2+~cs1.8.1-4
+        node-obug=2.1.4-3 node-once=1.4.1-4 node-optimist=0.6.1+~0.0.33-4 node-optionator=0.9.1+dfsg+~cs1.2.3-1
+        node-osenv=0.1.5+~0.1.3-4 node-p-cancelable=2.1.1-1 node-p-limit=4.0.0+~cs4.0.0-5
+        node-p-locate=6.0.0-14 node-p-map=4.0.0+~3.1.0+~3.0.1-2 node-parse-json=5.2.0+~cs5.1.7-2
+        node-parse-ms=4.0.0-2 node-path-dirname=1.0.2-2 node-path-exists=5.0.0-9 node-path-is-inside=1.0.2+~1.0.3-1
+        node-path-scurry=2.0.2-2 node-path-type=4.0.0-3 node-picocolors=1.1.1-1 node-pify=5.0.0+~cs5.0.1-1
+        node-pkg-dir=5.0.0-2 node-postcss=8.5.31+~cs10.2.26-1 node-postcss-modules-extract-imports=3.1.0-1
+        node-postcss-modules-values=4.0.0+~4.0.2-1 node-postcss-value-parser=4.2.0-1
+        node-prelude-ls=1.2.1+dfsg-3 node-pretty-ms=9.3.1-1 node-process=0.11.10-3
+        node-progress=2.0.3-2 node-promise-inflight=1.0.1+~1.0.3-1 node-promise-retry=2.0.1-4
+        node-promzard=3.0.1-4 node-prr=1.0.1-6 node-quick-lru=6.1.1-4 node-randombytes=2.1.0+~2.0.3-4
+        node-read=5.0.1-4 node-read-package-json=5.0.2+~2.0.0-6 node-read-pkg=10.1.0+~5.10.0-1
+        node-readable-stream=4.7.0+~cs9.0.2-8 node-rechoir=0.8.0+~0.6.4-1 node-regenerate=1.4.2-4
+        node-regenerate-unicode-properties=10.2.2+ds-4 node-regenerator-runtime=0.15.2+~0.10.8-3
+        node-regexpp=3.2.0-9 node-regexpu-core=6.4.0-1 node-regjsgen=0.8.0+ds-1 node-regjsparser=0.13.1+ds-1
+        node-repeat-string=1.6.1+repack-1 node-require-directory=2.1.1+~2.1.7-1 node-resolve=1.22.12+~cs5.38.14-1
+        node-resolve-cwd=3.0.0-2 node-resolve-from=5.0.0+~3.1.0+~3.3.0+~2.0.0-1 node-resolve-import=2.4.0+~4.0.0-4
+        node-restore-cursor=4.0.0-4 node-resumer=0.0.0-7 node-retry=0.13.1.+~cs2.19.16-2
+        node-rimraf=6.1.3-2 node-run-async=2.4.1-2 node-run-queue=2.0.0-6 node-safe-buffer=5.2.1+~cs2.1.2-6
+        node-schema-utils=4.3.3~ds-3 node-semver=7.7.4+~cs9.7.4-2 node-serialize-javascript=7.1.4+~5.0.4-1
+        node-set-blocking=2.0.0-2 node-shebang-command=2.0.0+~cs4.0.0-1 node-signal-exit=4.1.0-11
+        node-slash=5.1.0-2 node-slice-ansi=5.0.0+~cs9.0.0-5 node-smart-buffer=4.2.0-5
+        node-socks=2.8.10-1 node-socks-proxy-agent=8.0.5~0~2025070717+~cs16.2.9-1
+        node-source-list-map=2.0.1+dfsg+~0.1.6-1 node-source-map=0.8.0+dfsg-2 node-spdx-correct=3.2.0+~3.1.3-1
+        node-spdx-exceptions=2.5.0-1 node-spdx-expression-parse=4.0.0+~cs24.1.1-1
+        node-spdx-license-ids=3.26.0-1 node-sprintf-js=1.1.3+ds1+~1.1.4-2 node-ssri=9.0.1-6
+        node-string-decoder=1.3.0-9 node-string-width=4.2.3+~cs13.2.3-1 node-strip-ansi=7.2.0+~cs7.0.1-2
+        node-strip-bom=4.0.0-2 node-strip-eof=3.0.0-6 node-strip-json-comments=4.0.0-7
+        node-supports-color=10.2.2+ds-3 node-tapable=2.3.3-1 node-tape=5.6.1+~cs8.20.19-6
+        node-tar=7.5.22+~4.0.1-1 node-terser=5.51.2-2 node-text-table=0.2.0-5 node-through=2.3.8+~cs0.0.33-1
+        node-time-stamp=2.2.0-2 node-tmp=0.2.7+dfsg+~0.2.6-1 node-to-regex-range=5.0.1-4
+        node-tslib=2.8.1-1 node-type-check=0.4.0+dfsg-3 node-typed-array-buffer=1.2.2+~cs4.3.9-2
+        node-typedarray=0.0.7-4 node-undici=8.12.2+dfsg+~cs3.2.3-2 node-unicode-canonical-property-names-ecmascript=2.0.1-1
+        node-unicode-match-property-ecmascript=2.0.0-2 node-unicode-match-property-value-ecmascript=2.2.1+ds-1
+        node-unicode-property-aliases-ecmascript=2.2.0+ds-1 node-unique-filename=6.0.0+~cs7.0.0-5
+        node-util=0.12.5+~1.0.10-2 node-util-deprecate=1.0.2-4 node-v8flags=3.2.0+~3.1.1-1
+        node-validate-npm-package-license=3.0.4-3 node-validate-npm-package-name=5.0.0+~4.0.0-4
+        node-verkit=0.5.0-1 node-watchpack=2.5.2-4 node-wcwidth.js=1.0.2-2 node-webassemblyjs=1.14.1+dfsg3+~cs1.2.7-4
+        node-webpack-sources=3.4.1+~3.2.3-1 node-which=2.0.2+~cs1.3.2-8 node-which-typed-array=1.1.20+~cs3.2.22-3
+        node-wide-align=1.1.3-7 node-wordwrap=1.0.0-5 node-wrap-ansi=8.0.1+~8.0.1-3
+        node-wrappy=1.0.2-6 node-write=2.0.0~6.0.1+~3.0.4+~2.0.0+~1.0.0+~2.0.1-6 node-write-file-atomic=7.0.1+~4.0.3-1
+        node-xtend=4.0.2-3 node-y18n=5.0.8+~5.0.0-5 node-yallist=5.0.0-4 node-yargs=17.7.3+~17.0.35-3
+        node-yargs-parser=21.1.1+~21.0.0-5 nodejs=24.22.2+dfsg+~cs24.19.2-1 npm=12.2.0+ds1-1
+        terser=5.51.2-2 webpack=5.108.0+dfsg1+~cs14.7.20-3 | while IFS='=' read -r
+        package version; do printf '\\nPackage: %s\\nPin: version %s\\nPin-Priority:
+        1001\\n' \"$package\" \"$version\" >> /etc/apt/preferences.d/homelibrary-forky;
+        done"
       - apt-get -o Acquire::Retries=3 update
-      - apt-get -o Acquire::Retries=3 install -y -t forky npm
-      - install -d -o vagrant -g vagrant /usr/share/maven-repo/com/github/bumptech/glide/ksp/5.0.5
+      - apt-get -o Acquire::Retries=3 install --no-install-recommends -y nodejs=24.22.2+dfsg+~cs24.19.2-1
+        libnode137=24.22.2+dfsg+~cs24.19.2-1 npm=12.2.0+ds1-1
+      - test "$(dpkg-query -W -f='${Version}' nodejs)" = '24.22.2+dfsg+~cs24.19.2-1'
+      - test "$(dpkg-query -W -f='${Version}' npm)" = '12.2.0+ds1-1'
     init:
       - node --version
       - npm --version
-      - sed -i -e 's/"node":\ ">=22.13.0 <23"/"node":\ ">=22.13.0"/' package.json
+      - dpkg-query -W nodejs libnode137 npm
       - npm ci
     output: android/app/build/outputs/apk/release/app-release-unsigned.apk
     binary: 
@@ -213,13 +829,41 @@ Builds:
       - node_modules/@react-native-async-storage/async-storage/android/build.gradle
       - node_modules/react-native-safe-area-context/android/build.gradle
       - node_modules/react-native-screens/android/build.gradle
+      - scripts/glide-ksp-repro.init.gradle
     scandelete:
-      - node_modules
+      - node_modules/@expo/expo-modules-macros-plugin/apple/ExpoModulesMacros-tool
+      - node_modules/@react-native/gradle-plugin/react-native-gradle-plugin/build
+      - node_modules/@react-native/gradle-plugin/settings-plugin/build
+      - node_modules/@react-native/gradle-plugin/shared/build
+      - node_modules/expo-camera/prebuilds
+      - node_modules/expo-file-system/prebuilds
+      - node_modules/expo-font/prebuilds
+      - node_modules/expo-image-manipulator/prebuilds
+      - node_modules/expo-image/prebuilds
+      - node_modules/expo-modules-autolinking/android/expo-gradle-plugin/expo-autolinking-plugin-shared/build
+      - node_modules/expo-modules-autolinking/android/expo-gradle-plugin/expo-autolinking-plugin/build
+      - node_modules/expo-modules-autolinking/android/expo-gradle-plugin/expo-autolinking-settings-plugin/build
+      - node_modules/expo-modules-autolinking/android/expo-gradle-plugin/expo-max-sdk-override-plugin/build
+      - node_modules/expo-modules-core/expo-module-gradle-plugin/build
+      - node_modules/expo-modules-core/prebuilds
+      - node_modules/expo/template.tgz
+      - node_modules/fb-dotslash/bin/linux-musl.aarch64/dotslash
+      - node_modules/fb-dotslash/bin/linux-musl.x86_64/dotslash
+      - node_modules/fb-dotslash/bin/macos/dotslash
+      - node_modules/fb-dotslash/bin/windows-arm64/dotslash.exe
+      - node_modules/fb-dotslash/bin/windows/dotslash.exe
+      - node_modules/hermes-compiler/hermesc/osx-bin/hermesc
+      - node_modules/hermes-compiler/hermesc/win64-bin/hermesc.exe
+      - node_modules/react-native/React/I18n/strings/*/fbt_language_pack.bin
+      - node_modules/react-native/ReactAndroid/publish.gradle
+      - node_modules/zxing-wasm/dist/full/zxing_full.wasm
+      - node_modules/zxing-wasm/dist/reader/zxing_reader.wasm
+      - node_modules/zxing-wasm/dist/writer/zxing_writer.wasm
     build:
       - bash scripts/build-glide-ksp-repro.sh
-      - cp build/repro-maven/com/github/bumptech/glide/ksp/5.0.5/* /usr/share/maven-repo/com/github/bumptech/glide/ksp/5.0.5/
       - cd android/app
-      - gradle -I ../../scripts/glide-ksp-repro.init.gradle assembleRelease -PreactNativeArchitectures=x86_64
+      - gradle -I ../../scripts/glide-ksp-repro.init.gradle :expo-image:homeLibraryGlideKspResolution
+        assembleRelease -PreactNativeArchitectures=x86_64
     ndk: r27b
     postbuild:
       - python3 scripts/normalize-fdroid-apk-build-ids.py android/app/build/outputs/apk/release/app-release-unsigned.apk
@@ -241,7 +885,7 @@ MaintainerNotes: |
   build/glide-source before scanning. The processor-only Gradle project
   avoids unrelated samples and publishing plugins. The one-line ordering
   backport is applied before scanning; compilation uses buildserver Gradle.
-  Only the processor JAR is replaced in the system Maven repository; its
+  Only the processor JAR is replaced in build/repro-maven; its
   checked-in upstream POM retains the original transitive dependencies.
   The runtime Glide dependency is unchanged.
 
@@ -255,6 +899,21 @@ MaintainerNotes: |
   app.json stores the base versionCode. VercodeOperation expands it for
   the four standalone ABIs; per-build binary URLs preserve ABI identity.
 
+  Forky remains the Debian Node source. nodejs/libnode137 24.22.2 and npm
+  12.2.0 are exact package pins; the required Forky dependency allowlist is
+  rendered from scripts/fdroid/debian-toolchain.lock. All other Forky packages
+  have negative priority. libc6 2.43 is required by Debian libnode137; this
+  is an explicit runtime dependency, not a general testing upgrade. Missing
+  pinned versions fail apt rather than selecting a newer toolchain.
+
+  The reviewed Glide init script needs scanignore for its dynamic local
+  Maven URL. exclusiveContent limits it to the rebuilt KSP coordinate, and
+  homeLibraryGlideKspResolution verifies the actual resolved artifact.
+  Gradle checks declared Glide versions before processor compilation.
+  Targeted scandelete paths cover unused Apple/Windows/WASM tools and
+  generated Gradle outputs identified in the successful four-ABI build log.
+  New paths outside this list fail the normal source scanner.
+
 AutoUpdateMode: Version
 UpdateCheckMode: Tags ^v[0-9]+\.[0-9]+\.[0-9]+$
 VercodeOperation:
@@ -263,5 +922,5 @@ VercodeOperation:
   - 10 * %c + 3
   - 10 * %c + 4
 UpdateCheckData: app.json|"versionCode":\s*(\d+)|app.json|"version":\s*"([\d.]+)"
-CurrentVersion: 1.0.12
-CurrentVersionCode: 134
+CurrentVersion: 1.0.13
+CurrentVersionCode: 144

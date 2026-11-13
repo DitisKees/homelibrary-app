@@ -45,7 +45,7 @@ HomeLibrary keeps the stock Glide 5.0.5 runtime and backports only deterministic
 
 After scanning, `scripts/build-glide-ksp-repro.sh` compiles those staged sources using the buildserver's `gradle` command. It performs no source fetch and invokes no dependency wrapper. The upstream text Gradle version declaration selects buildserver-managed Gradle 8.14.3. One JDK, buildserver Java 21, runs both the processor and application builds; the processor retains Java 11 bytecode, while its compile-time annotation project uses Java 8 because JDK 21 no longer accepts Java 7 source. No JDK 11/17 packages or obsolete Debian releases are needed.
 
-JAR ZIP normalization and exclusive Maven resolution remain unchanged. The unmodified upstream KSP POM is checked in at `scripts/glide-ksp/ksp-5.0.5.pom` (SHA-256 `f182a3aba6a4574dc484fb3b4e534ab9460b19f94a031a0172b544d3acd51376`), preserving its transitive dependency graph without a build-time POM download. `scripts/glide-ksp-repro.init.gradle` restricts the system mirror to `com.github.bumptech.glide:ksp:5.0.5`. The srclib definition in `scripts/fdroid/srclibs/Glide.yml` must accompany the app metadata in fdroiddata; the GitHub harness installs the same file before fetching srclibs.
+JAR ZIP normalization and exclusive Maven resolution remain unchanged. The unmodified upstream KSP POM is checked in at `scripts/glide-ksp/ksp-5.0.5.pom` (SHA-256 `f182a3aba6a4574dc484fb3b4e534ab9460b19f94a031a0172b544d3acd51376`), preserving its transitive dependency graph without a build-time POM download. `scripts/glide-ksp-repro.init.gradle` restricts the build-local mirror to `com.github.bumptech.glide:ksp:5.0.5`. The srclib definition in `scripts/fdroid/srclibs/Glide.yml` must accompany the app metadata in fdroiddata; the GitHub harness installs the same file before fetching srclibs.
 
 The focused proof generated the same Glide indexer on independent GitHub and GitLab environments, SHA-256 `bb57a537b3084dc8845d11f01e167df3c61675a22ffbc7655f1f9de60e41627a`. The production F-Droid recipe builds this processor during the network-enabled init phase using explicit Debian JDK 11/17 toolchains; the Android release itself remains on the buildserver's Java 21 baseline.
 
@@ -135,3 +135,65 @@ lookup can use proprietary Google Books when explicitly enabled in Settings.
 It is disabled by default, including on upgrades with a saved key. When enabled,
 Google Books is the fallback without a key; a configured key moves it first. Core library/manual entry use the
 self-hostable PocketBase backend; see the release process for this disclosure.
+
+## November 2026 recipe hardening (1.0.13)
+
+Issue #65 keeps Debian Forky as requested by F-Droid. The last successful
+1.0.12 GitLab log used `nodejs=24.21.0+dfsg+~cs24.13.4-1` and
+`npm=12.2.0+ds1-1`. The old Node package has left the live Forky index.
+The new recipe explicitly requests `nodejs` and its ABI-coupled `libnode137`
+at `24.22.2+dfsg+~cs24.19.2-1`, plus `npm=12.2.0+ds1-1`.
+Upstream now supports patched Node 22 and 24 without a recipe-side engine patch.
+Release APKs on GitHub and GitLab both use the Debian recipe; `.nvmrc` remains
+the supported Node 22 toolchain for source checks/web builds.
+
+`scripts/fdroid/debian-toolchain.lock` records the reviewed Forky dependency
+allowlist. Its exact version pins are rendered into each `sudo` block because
+F-Droid runs that block before checking out app sources. Keep both in sync;
+`test-recipe-hardening.py` checks every lock entry. Unlisted Forky packages have
+priority -1; there is no `-t forky` or general upgrade. Debian's Node 24 library
+requires libc6 2.43 and additional runtime libraries. Those are explicitly
+allowlisted dependencies, rather than an unrestricted partial upgrade. A local
+apt solver check against current Trixie/Forky indexes accepted this set. The
+actual pinned buildserver remains the required installation/build test.
+Missing exact versions must fail installation. Future maintainers must review
+and regenerate the dependency set when the live archive removes pinned versions;
+there is intentionally no fallback to newer packages.
+
+The source-built processor remains in `build/repro-maven`. The reviewed init
+script has a targeted scanner exception for its dynamic local Maven URL.
+`exclusiveContent` serves only `com.github.bumptech.glide:ksp`; the explicit
+`homeLibraryGlideKspResolution` task verifies its version, local JAR path and
+KotlinPoet transitive dependency before APK assembly. No system Maven writes or
+ownership changes remain. `check-glide-version.init.gradle` inspects Expo Image's
+Gradle dependency objects during the existing prebuild dependency audit, before
+processor compilation, and rejects missing or changed Glide modules with update
+instructions for the srclib commit and processor setup.
+
+The scanner deletion list is based on the last successful GitLab build log:
+unused Apple prebuilds/macros, non-Linux Hermes, bundled dotSlash executables,
+Expo's template archive, React Native's Apple language packs/publishing script,
+ZXing WASM and the specific Gradle plugin build outputs created by prebuild.
+F-Droid already removes Gradle wrappers itself. Unexpected paths outside these
+reviewed locations fail scanning. The source-build harness runs a real scanner
+regression that deletes reviewed WASM but rejects and preserves a new unreviewed
+AAR. Every full F-Droid build still runs the live scanner after prebuild.
+
+The lockfile also refreshes compatible security patches, including shell-quote,
+Undici, node-forge, source-map-js, decode-uri-component and brace-expansion.
+The old global glob 13 override is advanced to 14.0.3 to match current Expo tools.
+Remaining npm audit findings require separate compatibility review; no forced
+major-version downgrade or incompatible Zod replacement is applied.
+
+Validation of the 1.0.13 candidate must include the normal CI gate, the two
+independent buildserver copies for each ABI, emulator startup, and an independent
+GitLab source build. A release tag and submitted metadata must follow successful
+candidate checks; signed-reference comparisons require the published release
+assets. Do not claim 1.0.12's results as evidence for this candidate.
+
+The toolchain preflight also performs `npm ci --ignore-scripts` on the candidate
+lockfile. Checking only `npm --version` misses incompatibilities in Debian's
+split JavaScript dependencies: for example, Trixie's node-semver expects the
+older lru-cache constructor. The allowlist therefore pins the complete npm
+JavaScript dependency set selected from Forky, not just packages with explicit
+minimum-version requirements. The same source checks still exercise postinstall.
