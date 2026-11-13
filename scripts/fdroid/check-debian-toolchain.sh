@@ -34,3 +34,9 @@ if ! npm ci --ignore-scripts --no-audit --no-fund; then
   find /root/.npm/_logs -type f -name '*debug-0.log' -exec tail -n 80 {} +
   exit 1
 fi
+
+if [[ -f /etc/profile.d/bsenv.sh ]]; then
+  # shellcheck disable=SC1091
+  source /etc/profile.d/bsenv.sh
+fi
+python3 "$ROOT/scripts/fdroid/test-glide-repository.py" "$(command -v gradle)"
