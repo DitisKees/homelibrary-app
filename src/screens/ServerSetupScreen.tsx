@@ -1,5 +1,5 @@
 import React from 'react';
-import { KeyboardAvoidingView, Linking, Platform, StyleSheet, Text, TextInput, View } from 'react-native';
+import { KeyboardAvoidingView, Linking, Platform, ScrollView, StyleSheet, Text, TextInput, View } from 'react-native';
 import { useTranslation } from 'react-i18next';
 import AppButton from '@/components/AppButton';
 import { useAuth } from '@/context/AuthContext';
@@ -34,41 +34,49 @@ export default function ServerSetupScreen() {
 
   return (
     <KeyboardAvoidingView style={styles.container} behavior={Platform.OS === 'ios' ? 'padding' : undefined}>
-      <View style={styles.card}>
-        <Text accessibilityRole="header" style={styles.title}>{t('server.setup.title')}</Text>
-        <Text style={styles.help}>{t('server.setup.help')}</Text>
-        <Text
-          accessibilityRole="link"
-          style={styles.link}
-          onPress={() => void Linking.openURL(SELF_HOSTING_URL)}
-        >
-          {t('server.setup.selfHost')}
-        </Text>
-        <TextInput
-          value={endpoint}
-          onChangeText={setEndpoint}
-          editable={!isSaving}
-          autoCapitalize="none"
-          autoCorrect={false}
-          keyboardType="url"
-          placeholder="https://books.example.com"
-          accessibilityLabel={t('server.setup.urlLabel')}
-          style={styles.input}
-        />
-        {!!error && <Text accessibilityRole="alert" style={styles.error}>{error}</Text>}
-        <AppButton
-          label={t('server.setup.save')}
-          loadingLabel={t('server.setup.testing')}
-          loading={isSaving}
-          onPress={() => void save()}
-        />
-      </View>
+      <ScrollView
+        testID="server-setup-form-scroll"
+        contentContainerStyle={styles.scrollContent}
+        keyboardShouldPersistTaps="handled"
+        keyboardDismissMode={Platform.OS === 'ios' ? 'interactive' : 'on-drag'}
+      >
+        <View style={styles.card}>
+          <Text accessibilityRole="header" style={styles.title}>{t('server.setup.title')}</Text>
+          <Text style={styles.help}>{t('server.setup.help')}</Text>
+          <Text
+            accessibilityRole="link"
+            style={styles.link}
+            onPress={() => void Linking.openURL(SELF_HOSTING_URL)}
+          >
+            {t('server.setup.selfHost')}
+          </Text>
+          <TextInput
+            value={endpoint}
+            onChangeText={setEndpoint}
+            editable={!isSaving}
+            autoCapitalize="none"
+            autoCorrect={false}
+            keyboardType="url"
+            placeholder="https://books.example.com"
+            accessibilityLabel={t('server.setup.urlLabel')}
+            style={styles.input}
+          />
+          {!!error && <Text accessibilityRole="alert" style={styles.error}>{error}</Text>}
+          <AppButton
+            label={t('server.setup.save')}
+            loadingLabel={t('server.setup.testing')}
+            loading={isSaving}
+            onPress={() => void save()}
+          />
+        </View>
+      </ScrollView>
     </KeyboardAvoidingView>
   );
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, justifyContent: 'center', padding: 20, backgroundColor: '#f3f4f6' },
+  container: { flex: 1, backgroundColor: '#f3f4f6' },
+  scrollContent: { flexGrow: 1, justifyContent: 'center', padding: 20 },
   card: { width: '100%', maxWidth: 480, alignSelf: 'center', gap: 16, padding: 24, borderRadius: 14, backgroundColor: '#fff' },
   title: { fontSize: 24, fontWeight: '700', color: '#111827' },
   help: { fontSize: 15, lineHeight: 22, color: '#4b5563' },
