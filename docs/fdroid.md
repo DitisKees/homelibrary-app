@@ -190,3 +190,10 @@ independent buildserver copies for each ABI, emulator startup, and an independen
 GitLab source build. A release tag and submitted metadata must follow successful
 candidate checks; signed-reference comparisons require the published release
 assets. Do not claim 1.0.12's results as evidence for this candidate.
+
+The toolchain preflight also performs `npm ci --ignore-scripts` on the candidate
+lockfile. Checking only `npm --version` misses incompatibilities in Debian's
+split JavaScript dependencies: for example, Trixie's node-semver expects the
+older lru-cache constructor. The allowlist therefore pins the complete npm
+JavaScript dependency set selected from Forky, not just packages with explicit
+minimum-version requirements. The same source checks still exercise postinstall.

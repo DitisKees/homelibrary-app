@@ -22,7 +22,6 @@ npm ci
 # This diagnostic receives the same commit-pinned source as F-Droid srclibs.
 # Fetching is the caller's preparation step; the build helper never fetches code.
 bash scripts/prepare-glide-ksp-source.sh "${HOMELIBRARY_GLIDE_SOURCE:?Set the prepared Glide srclib source path}"
-bash scripts/build-glide-ksp-repro.sh
 
 # F-Droid's React Native template builds Expo native modules from source.
 # package.json already contains this setting, but enforce it for parity.
@@ -59,6 +58,7 @@ EOF
 # packaged into the release APK.
 bash scripts/prepare-android-gradle-properties.sh
 bash scripts/check-fdroid-android-dependencies.sh
+bash scripts/build-glide-ksp-repro.sh
 
 # externalNativeBuild prefix maps are generated upstream by
 # plugins/with-reproducible-native-builds.js during Expo prebuild. Keep this

@@ -23,3 +23,14 @@ PY
 node --version
 npm --version
 dpkg-query -W nodejs libnode137 npm libc6 libc-bin
+
+# npm --version does not load all Debian-split dependencies. Exercise the real
+# installer against the candidate lock before launching the ABI build matrix.
+WORK="$(mktemp -d)"
+trap 'rm -rf "$WORK"' EXIT
+cp "$ROOT/package.json" "$ROOT/package-lock.json" "$WORK/"
+cd "$WORK"
+if ! npm ci --ignore-scripts --no-audit --no-fund; then
+  find /root/.npm/_logs -type f -name '*debug-0.log' -exec tail -n 80 {} +
+  exit 1
+fi
