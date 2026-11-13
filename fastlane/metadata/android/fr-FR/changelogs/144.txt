@@ -1,0 +1,1 @@
+Renforcement des builds F-Droid reproductibles : outils Debian figés, processeur Glide local et analyse ciblée des sources. Correctifs de sécurité des dépendances.

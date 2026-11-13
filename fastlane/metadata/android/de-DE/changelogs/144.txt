@@ -1,0 +1,1 @@
+Reproduzierbare F-Droid-Builds mit festgelegten Debian-Werkzeugen, lokalem Glide-Prozessor und gezielten Quellprüfungen. Sicherheitsupdates für Abhängigkeiten.

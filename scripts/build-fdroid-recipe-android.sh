@@ -17,18 +17,12 @@ export CPPFLAGS="${CPPFLAGS:-} $PREFIX_MAP_FLAGS"
 # dependency install, Expo source build/prebuild, signing cleanup, then Gradle.
 # Debian forky supplies Node.js/npm in CI and on the F-Droid builder.
 
-# Forky's Node may be newer than the conservative upper bound on the release tag.
-# Match the fdroiddata recipe by removing only that upper bound.
-sed -i -e 's/"node": ">=22.13.0 <23"/"node": ">=22.13.0"/' package.json
-
 npm ci
 
 # This diagnostic receives the same commit-pinned source as F-Droid srclibs.
 # Fetching is the caller's preparation step; the build helper never fetches code.
 bash scripts/prepare-glide-ksp-source.sh "${HOMELIBRARY_GLIDE_SOURCE:?Set the prepared Glide srclib source path}"
 bash scripts/build-glide-ksp-repro.sh
-install -d /usr/share/maven-repo/com/github/bumptech/glide/ksp/5.0.5
-cp build/repro-maven/com/github/bumptech/glide/ksp/5.0.5/* /usr/share/maven-repo/com/github/bumptech/glide/ksp/5.0.5/
 
 # F-Droid's React Native template builds Expo native modules from source.
 # package.json already contains this setting, but enforce it for parity.

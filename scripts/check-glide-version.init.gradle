@@ -1,0 +1,20 @@
+// Inspect Gradle's declared dependencies, including Expo overrides, before compilation.
+// A source/processor update must update the srclib commit and reproducibility setup together.
+gradle.beforeProject { project ->
+    project.afterEvaluate {
+        if (project.path == ':expo-image') {
+            def expected = '5.0.5'
+            def modules = ['glide', 'ksp', 'avif-integration', 'okhttp3-integration']
+            def declared = project.configurations.collectMany { it.dependencies.toList() }.findAll {
+                it.group == 'com.github.bumptech.glide' && modules.contains(it.name)
+            }
+            if (!modules.every { name -> declared.any { it.name == name } } ||
+                    declared.any { it.version != expected }) {
+                throw new GradleException('Glide version mismatch: expected ' + expected +
+                    ', declared ' + declared.collect { it.group + ':' + it.name + ':' + it.version } +
+                    '. Update the Glide srclib commit and reproducibility processor setup together.')
+            }
+            println('HOMELIBRARY_GLIDE_VERSION=' + expected)
+        }
+    }
+}

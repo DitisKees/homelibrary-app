@@ -34,7 +34,7 @@ trap 'rm -f "$TMP_OUTPUT" "$TMP_MODULES"' EXIT
 
 (
   cd "$ANDROID_DIR"
-  "${GRADLE_CMD[@]}" :app:dependencies \
+  "${GRADLE_CMD[@]}" -I "$ROOT/scripts/check-glide-version.init.gradle" :app:dependencies \
     --configuration releaseRuntimeClasspath \
     --console=plain \
     --no-daemon
