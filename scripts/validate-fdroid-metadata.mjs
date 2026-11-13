@@ -122,12 +122,12 @@ if (fs.existsSync(fdroidPath)) {
   expect(!/^\s*subdir:/m.test(fdroid), '.fdroid.yml must not declare subdir because Expo generates android/ after checkout');
   expect(fdroid.includes('output: android/app/build/outputs/apk/release/app-release-unsigned.apk'), '.fdroid.yml must declare the generated unsigned APK output');
   expect(fdroid.includes('cd android/app'), '.fdroid.yml must build from the generated Android app directory');
-  expect(/gradle\s+(?:-I\s+\S+\s+)?(?:homeLibraryGlideKspResolution\s+)?assembleRelease/.test(fdroid), '.fdroid.yml must use F-Droid system Gradle after scanner removes the wrapper');
+  expect(/gradle\s+(?:-I\s+\S+\s+)?(?::expo-image:homeLibraryGlideKspResolution\s+)?assembleRelease/.test(fdroid), '.fdroid.yml must use F-Droid system Gradle after scanner removes the wrapper');
   expect(fdroid.includes("jvmToolchain\\|JavaVersion/s/17/21/"), '.fdroid.yml must apply F-Droid React Native Java 17-to-21 toolchain compatibility');
   expect(!fdroid.includes('s/"node"'), '.fdroid.yml must not patch the upstream Node engine constraint');
   expect(!fdroid.includes('/usr/share/maven-repo'), '.fdroid.yml must not write a processor into the system Maven repository');
   expect(!/^      - node_modules$/m.test(fdroid), '.fdroid.yml must not use a blanket node_modules scanner deletion');
-  expect(/homeLibraryGlideKspResolution\s+assembleRelease/.test(fdroid), '.fdroid.yml must verify local processor resolution before assembling');
+  expect(/:expo-image:homeLibraryGlideKspResolution\s+assembleRelease/.test(fdroid), '.fdroid.yml must verify local processor resolution before assembling');
   expect(fdroid.includes('Pin-Priority: -1'), '.fdroid.yml must deny unreviewed Forky packages');
   expect(fdroid.includes('bash scripts/prepare-android-gradle-properties.sh'), '.fdroid.yml must guard Expo Camera Gradle properties before and after appending build settings');
   expect(fdroid.includes('bash scripts/check-fdroid-android-dependencies.sh'), '.fdroid.yml must audit the final Android runtime dependency graph');

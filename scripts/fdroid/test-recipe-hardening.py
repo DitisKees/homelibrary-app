@@ -22,7 +22,7 @@ for build in app.Builds:
     assert 'node_modules' not in build.scandelete
     assert all(path.startswith('node_modules/') for path in build.scandelete)
     assert 'scripts/glide-ksp-repro.init.gradle' in build.scanignore
-    assert 'homeLibraryGlideKspResolution assembleRelease' in '\n'.join(build.build)
+    assert ':expo-image:homeLibraryGlideKspResolution assembleRelease' in '\n'.join(build.build)
 
 # Use the actual pinned scanner's rule matcher: known binaries are deleted,
 # while an unrelated new AAR produces an error and remains for inspection.
