@@ -22,9 +22,10 @@ Builds:
     sudo:
       - echo "deb https://deb.debian.org/debian forky main" > /etc/apt/sources.list.d/forky.list
       - "printf 'Package: *\\nPin: release n=forky\\nPin-Priority: -1\\n' > /etc/apt/preferences.d/homelibrary-forky"
-      - "for pin in eslint=6.4.0~dfsg+~6.1.9-14 libada-url0-3=3.4.4-1+b1 libc-gconv-modules-extra=2.43-7
-        libc6=2.43-7 libhdr-histogram6=0.11.8-4+b2 libicu78=78.3-2 libllhttp9.4=9.4.3+~cs12.11.9-2
-        libnode-dev=24.22.2+dfsg+~cs24.19.2-1 libnode137=24.22.2+dfsg+~cs24.19.2-1
+      - "for pin in eslint=6.4.0~dfsg+~6.1.9-14 libada-url0-3=3.4.4-1+b1 libc-bin=2.43-7
+        libc-dev-bin=2.43-7 libc-gconv-modules-extra=2.43-7 libc6=2.43-7 libc6-dev=2.43-7
+        libc6-i386=2.43-7 libc6-x32=2.43-7 libhdr-histogram6=0.11.8-4+b2 libicu78=78.3-2
+        libllhttp9.4=9.4.3+~cs12.11.9-2 libnode-dev=24.22.2+dfsg+~cs24.19.2-1 libnode137=24.22.2+dfsg+~cs24.19.2-1
         libsimdjson33=4.6.11-1 libsimdutf35=9.3.0+really9.1.2-1 libuv1-dev=1.53.0-1
         libuv1t64=1.53.0-1 node-acorn=8.17.0+ds+~cs28.27.25-1 node-babel-helper-define-polyfill-provider=1.0.0~20260618+ds1-4
         node-babel-plugin-polyfill-corejs3=1.0.0~20260618+ds1-4 node-babel7=8.1.1+ds1+~cs177.303.116-1
@@ -132,9 +133,10 @@ Builds:
     sudo:
       - echo "deb https://deb.debian.org/debian forky main" > /etc/apt/sources.list.d/forky.list
       - "printf 'Package: *\\nPin: release n=forky\\nPin-Priority: -1\\n' > /etc/apt/preferences.d/homelibrary-forky"
-      - "for pin in eslint=6.4.0~dfsg+~6.1.9-14 libada-url0-3=3.4.4-1+b1 libc-gconv-modules-extra=2.43-7
-        libc6=2.43-7 libhdr-histogram6=0.11.8-4+b2 libicu78=78.3-2 libllhttp9.4=9.4.3+~cs12.11.9-2
-        libnode-dev=24.22.2+dfsg+~cs24.19.2-1 libnode137=24.22.2+dfsg+~cs24.19.2-1
+      - "for pin in eslint=6.4.0~dfsg+~6.1.9-14 libada-url0-3=3.4.4-1+b1 libc-bin=2.43-7
+        libc-dev-bin=2.43-7 libc-gconv-modules-extra=2.43-7 libc6=2.43-7 libc6-dev=2.43-7
+        libc6-i386=2.43-7 libc6-x32=2.43-7 libhdr-histogram6=0.11.8-4+b2 libicu78=78.3-2
+        libllhttp9.4=9.4.3+~cs12.11.9-2 libnode-dev=24.22.2+dfsg+~cs24.19.2-1 libnode137=24.22.2+dfsg+~cs24.19.2-1
         libsimdjson33=4.6.11-1 libsimdutf35=9.3.0+really9.1.2-1 libuv1-dev=1.53.0-1
         libuv1t64=1.53.0-1 node-acorn=8.17.0+ds+~cs28.27.25-1 node-babel-helper-define-polyfill-provider=1.0.0~20260618+ds1-4
         node-babel-plugin-polyfill-corejs3=1.0.0~20260618+ds1-4 node-babel7=8.1.1+ds1+~cs177.303.116-1
@@ -242,9 +244,10 @@ Builds:
     sudo:
       - echo "deb https://deb.debian.org/debian forky main" > /etc/apt/sources.list.d/forky.list
       - "printf 'Package: *\\nPin: release n=forky\\nPin-Priority: -1\\n' > /etc/apt/preferences.d/homelibrary-forky"
-      - "for pin in eslint=6.4.0~dfsg+~6.1.9-14 libada-url0-3=3.4.4-1+b1 libc-gconv-modules-extra=2.43-7
-        libc6=2.43-7 libhdr-histogram6=0.11.8-4+b2 libicu78=78.3-2 libllhttp9.4=9.4.3+~cs12.11.9-2
-        libnode-dev=24.22.2+dfsg+~cs24.19.2-1 libnode137=24.22.2+dfsg+~cs24.19.2-1
+      - "for pin in eslint=6.4.0~dfsg+~6.1.9-14 libada-url0-3=3.4.4-1+b1 libc-bin=2.43-7
+        libc-dev-bin=2.43-7 libc-gconv-modules-extra=2.43-7 libc6=2.43-7 libc6-dev=2.43-7
+        libc6-i386=2.43-7 libc6-x32=2.43-7 libhdr-histogram6=0.11.8-4+b2 libicu78=78.3-2
+        libllhttp9.4=9.4.3+~cs12.11.9-2 libnode-dev=24.22.2+dfsg+~cs24.19.2-1 libnode137=24.22.2+dfsg+~cs24.19.2-1
         libsimdjson33=4.6.11-1 libsimdutf35=9.3.0+really9.1.2-1 libuv1-dev=1.53.0-1
         libuv1t64=1.53.0-1 node-acorn=8.17.0+ds+~cs28.27.25-1 node-babel-helper-define-polyfill-provider=1.0.0~20260618+ds1-4
         node-babel-plugin-polyfill-corejs3=1.0.0~20260618+ds1-4 node-babel7=8.1.1+ds1+~cs177.303.116-1
@@ -352,9 +355,10 @@ Builds:
     sudo:
       - echo "deb https://deb.debian.org/debian forky main" > /etc/apt/sources.list.d/forky.list
       - "printf 'Package: *\\nPin: release n=forky\\nPin-Priority: -1\\n' > /etc/apt/preferences.d/homelibrary-forky"
-      - "for pin in eslint=6.4.0~dfsg+~6.1.9-14 libada-url0-3=3.4.4-1+b1 libc-gconv-modules-extra=2.43-7
-        libc6=2.43-7 libhdr-histogram6=0.11.8-4+b2 libicu78=78.3-2 libllhttp9.4=9.4.3+~cs12.11.9-2
-        libnode-dev=24.22.2+dfsg+~cs24.19.2-1 libnode137=24.22.2+dfsg+~cs24.19.2-1
+      - "for pin in eslint=6.4.0~dfsg+~6.1.9-14 libada-url0-3=3.4.4-1+b1 libc-bin=2.43-7
+        libc-dev-bin=2.43-7 libc-gconv-modules-extra=2.43-7 libc6=2.43-7 libc6-dev=2.43-7
+        libc6-i386=2.43-7 libc6-x32=2.43-7 libhdr-histogram6=0.11.8-4+b2 libicu78=78.3-2
+        libllhttp9.4=9.4.3+~cs12.11.9-2 libnode-dev=24.22.2+dfsg+~cs24.19.2-1 libnode137=24.22.2+dfsg+~cs24.19.2-1
         libsimdjson33=4.6.11-1 libsimdutf35=9.3.0+really9.1.2-1 libuv1-dev=1.53.0-1
         libuv1t64=1.53.0-1 node-acorn=8.17.0+ds+~cs28.27.25-1 node-babel-helper-define-polyfill-provider=1.0.0~20260618+ds1-4
         node-babel-plugin-polyfill-corejs3=1.0.0~20260618+ds1-4 node-babel7=8.1.1+ds1+~cs177.303.116-1

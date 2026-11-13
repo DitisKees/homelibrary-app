@@ -1,7 +1,12 @@
 eslint=6.4.0~dfsg+~6.1.9-14
 libada-url0-3=3.4.4-1+b1
+libc-bin=2.43-7
+libc-dev-bin=2.43-7
 libc-gconv-modules-extra=2.43-7
 libc6=2.43-7
+libc6-dev=2.43-7
+libc6-i386=2.43-7
+libc6-x32=2.43-7
 libhdr-histogram6=0.11.8-4+b2
 libicu78=78.3-2
 libllhttp9.4=9.4.3+~cs12.11.9-2
