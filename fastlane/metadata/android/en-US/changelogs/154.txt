@@ -1,0 +1,1 @@
+Keep keyboard input visible throughout the app: server setup, login, Settings URL/API key, Add/Edit Book (including location and description), loan entry and Library search. Scroll lower focused fields into view. Preserve browser scrolling and iOS keyboard handling.

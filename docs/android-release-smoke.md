@@ -85,8 +85,8 @@ This test key is disposable and is not an application-production identity. If it
 Android 10 (API 29) is now the minimum supported version. API 28 and older
 cannot install new builds; existing installations can keep their older version.
 The release APK verifier enforces API 29 and rejects legacy storage and biometric
-permissions. Camera and internet permissions remain required. These changes take
-effect in the next release; published v1.0.11 artifacts remain unchanged.
+permissions. Camera and internet permissions remain required. These checks remain mandatory for current releases; existing published artifacts
+remain unchanged.
 
 On API 29, 32, and 36 devices or emulators, test both a clean install and an
 upgrade from a prior APK signed with the same key:
@@ -108,3 +108,24 @@ visible, scroll to the test/save button, and submit without dismissing the
 keyboard first. Test an unreachable URL: its error must remain reachable by
 scrolling, and retry must work. Repeat on iOS and check the centered card on a
 large screen. Login's existing show/hide-password control must still work.
+
+## Full keyboard regression coverage (1.0.14)
+
+The author confirmed PR #68 on a real ARM64 device on 14 November 2026.
+Test both a fresh setup and an authenticated session, with the keyboard open:
+
+- Server setup URL; login email and password (including show/hide password).
+- Settings server URL and Google Books API key.
+- Add **and** Edit Book: title, author, ISBN, publisher, year, location and multiline description.
+- Book Details: loan borrower, dates and notes; Library search.
+
+Focus lower fields, change focus while the keyboard is already open, scroll,
+submit without dismissing it first, trigger validation errors, and dismiss/reopen
+the keyboard. Verify the viewport restores and inactive screens do not scroll.
+Repeat on iOS and the web; the browser must not call native focus APIs.
+
+The author's locally signed PR test APKs use a different test certificate from
+the GitHub smoke-workflow identity documented above. Only APKs signed with the
+**same** test key can update each other. Neither test key can update the permanent
+production installation. Signing an existing CI APK must preserve every original
+ZIP entry; record source SHA, unsigned hash and signer when distributing a test build.

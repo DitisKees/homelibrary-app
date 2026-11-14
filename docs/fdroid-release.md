@@ -1,9 +1,11 @@
 # F-Droid release process
 
-The next candidate is **1.0.12**, base Android code **13**. Published releases,
-including 1.0.11, and their tags/assets remain immutable. Issue #55 addresses the remaining source integration, Java, permission and
-Google Books review findings in `fdroid/fdroiddata!48673`. The accepted R8, ABI
-and reproducibility configuration remains in place.
+The prepared candidate is **1.0.14**, base Android code **15**. Version 1.0.13
+and all other existing tags/assets remain immutable. This release includes the
+keyboard corrections from PR #68, verified by the author on a real ARM64 device.
+The pinned Debian toolchain, local Glide processor, scanner rules and production
+signing identity from the preceding recipe remain in place. Do not describe this
+candidate as published or verified against signed references until its own gates pass.
 
 ## Version and APK identity
 
@@ -12,16 +14,16 @@ and reproducibility configuration remains in place.
 `plugins/with-android-release-packaging.js` generates release configuration
 upstream; fdroiddata does not patch the generated Gradle version or optimizer.
 
-| ABI | Code (`10 * base + suffix`) | Asset for 1.0.12 |
+| ABI | Code (`10 * base + suffix`) | Asset for 1.0.14 |
 | --- | --- | --- |
-| armeabi-v7a | 131 | HomeLibrary-1.0.12-armeabi-v7a.apk |
-| arm64-v8a | 132 | HomeLibrary-1.0.12-arm64-v8a.apk |
-| x86 | 133 | HomeLibrary-1.0.12-x86.apk |
-| x86_64 | 134 | HomeLibrary-1.0.12-x86_64.apk |
+| armeabi-v7a | 151 | HomeLibrary-1.0.14-armeabi-v7a.apk |
+| arm64-v8a | 152 | HomeLibrary-1.0.14-arm64-v8a.apk |
+| x86 | 153 | HomeLibrary-1.0.14-x86.apk |
+| x86_64 | 154 | HomeLibrary-1.0.14-x86_64.apk |
 
 Each is a standalone installable APK, built with React Native's supported
 `-PreactNativeArchitectures=<abi>` property. These are not APK-set fragments.
-An ordinary all-ABI developer/smoke build retains a universal APK, code 130.
+An ordinary all-ABI developer/smoke build retains a universal APK, code 150.
 The production workflow publishes the four smaller ABI APKs.
 
 For each new release:
@@ -52,8 +54,8 @@ Do not disable R8 or add global `-dontwarn`, `-dontoptimize`, or keep-all rules 
 hide a failure. Inspect missing-class reports and runtime behavior first.
 Resource shrinking is disabled: F-Droid documents potential non-determinism and
 recommends enabling it only when its reduction is substantial and verified.
-The existing Expo AGP 8.10.1 toolchain includes a newer R8 than the versions recommended
-for older CPU-dependent reproducibility bugs; no toolchain upgrade is needed.
+Retain the reviewed Expo/React Native toolchain pins; toolchain changes require
+a fresh dependency, startup and reproducibility review.
 
 ## Before tagging
 
@@ -70,7 +72,8 @@ exception. This uses no production key.
 
 Emulator startup does not replace device testing. Before release, verify on ARM
 hardware: installation/update, login, session persistence and logout, library
-thumbnails, ISBN scanning, cover capture, and navigation. Record actual sizes
+thumbnails, ISBN scanning, cover capture, navigation, and keyboard visibility
+for Settings URL/API key, Add/Edit Book location/description and loan fields. Record actual sizes
 for all four APKs compared with the preceding universal release. Do not claim
 these checks or size reductions passed before evidence exists.
 
@@ -79,8 +82,8 @@ Once the PR is merged and main is green, create the **new** immutable tag:
 ```bash
 git switch main
 git pull --ff-only
-git tag v1.0.12
-git push origin v1.0.12
+git tag v1.0.14
+git push origin v1.0.14
 ```
 
 Never move/recreate an existing tag or replace an existing APK with different
@@ -117,7 +120,7 @@ Copy canonical `.fdroid.yml` to `metadata/io.github.ditiskees.homelibrary.yml` i
 the fdroiddata fork, resolving all four `commit` entries to the full new tag SHA.
 Retain the four `binary` URLs, `VercodeOperation`, production signer and reviewed
 scanner exceptions. Run `fdroid rewritemeta`, `fdroid lint`, `fdroid checkupdates`
-and each of the four build specifications (131, 132, 133, 134).
+and each of the four build specifications (151, 152, 153, 154).
 
 Report the exact immutable source, per-ABI codes, sizes, SHA-256 values, signer
 and verification runs. The remote F-Droid runner remains the final parity check;

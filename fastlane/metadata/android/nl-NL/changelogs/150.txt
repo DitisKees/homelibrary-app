@@ -1,0 +1,1 @@
+Invoervelden blijven zichtbaar boven het toetsenbord: serverinstellingen, aanmelden, instellingen/API-sleutel, boeken toevoegen/bewerken (ook locatie en beschrijving), uitlenen en zoeken. Lagere velden schuiven in beeld. Browser- en iOS-gedrag blijven behouden.

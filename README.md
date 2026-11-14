@@ -2,7 +2,7 @@
 
 HomeLibrary is a cross-platform client for managing a shared, self-hosted household book collection backed by PocketBase.
 
-> **F-Droid status:** The official `fdroid/fdroiddata!48673` submission is open. Candidate **1.0.11 / base code 12 (ABI codes 121–124)** enables R8 and builds standalone APKs for ARMv7, ARM64, x86 and x86_64 in response to maintainer review. Every ABI must pass source/scanner, reproducibility and signed-reference checks before the MR is updated. Published releases remain immutable.
+> **Release preparation:** **1.0.14 / base code 15 (ABI codes 151–154)** contains the keyboard fixes verified on a real ARM64 device. The official [F-Droid submission](https://gitlab.com/fdroid/fdroiddata/-/merge_requests/48673) remains open. This version is prepared, not published: version-specific CI, immutable publication and all signed-reference checks must pass before updating that submission. Existing releases remain immutable.
 
 ## Features
 
@@ -21,7 +21,7 @@ HomeLibrary is a cross-platform client for managing a shared, self-hosted househ
 
 ## Development status
 
-HomeLibrary is early-stage software, but the current source is functional and the Android release path is deterministic on the pinned GitHub F-Droid harness. Cross-runner unsigned parity was verified for the earlier build fixes; the updated candidate still needs signed-reference verification on F-Droid's GitLab runner. See `docs/fdroid.md`, `docs/fdroid-harness.md`, and the open `fdroid/fdroiddata!48673` submission for the remaining publication work.
+HomeLibrary is early-stage software, but the current source is functional. Android releases use the pinned F-Droid buildserver/scanner path with two independent builds per ABI. The earlier 1.0.13 preparation demonstrated GitHub/GitLab unsigned parity on all four ABIs; each new release still requires its own build and signed-reference evidence. See `docs/fdroid.md`, `docs/fdroid-release.md`, and `docs/fdroid-harness.md` for the release gates.
 
 The permanent Android application ID is:
 
@@ -158,3 +158,17 @@ See [`docs/fdroid.md`](docs/fdroid.md), [`docs/fdroid-release.md`](docs/fdroid-r
 ## License
 
 HomeLibrary is free software licensed under **GNU General Public License v3.0 or later (`GPL-3.0-or-later`)**. See [`LICENSE`](LICENSE).
+
+## 1.0.14 release notes
+
+Keyboard handling now covers server setup, login, Settings (server URL and Google
+Books API key), all Add/Edit Book inputs, loan-entry fields, and Library search.
+The authenticated navigator resizes above the Android keyboard, and longer forms
+scroll their focused field into view. Browser scrolling stays browser-native,
+and iOS retains padding-based avoidance without duplicate keyboard insets.
+The author verified the fixes on a real ARM64 device using the PR #68 test APK.
+
+Production APKs are signed with the permanent release key. PR test APKs use a
+different test key and cannot update a production installation directly. Preserve
+local settings before switching signing identities. The server-hosted library
+is separate from local app settings. See [device checks](docs/android-release-smoke.md).

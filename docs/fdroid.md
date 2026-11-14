@@ -6,16 +6,16 @@ See [`fdroid-dependencies.md`](./fdroid-dependencies.md) for the dependency/lice
 
 ## Current F-Droid candidate
 
-The next F-Droid candidate is:
+The prepared, not-yet-published F-Droid candidate is:
 
 ```text
-versionName: 1.0.11
-base versionCode: 12
-ABI versionCodes: 121, 122, 123, 124
-tag: v1.0.11
+versionName: 1.0.14
+base versionCode: 15
+ABI versionCodes: 151, 152, 153, 154
+tag: v1.0.14
 ```
 
-`v1.0.7` / versionCode 8 is immutable and its source builds successfully on F-Droid, but its published signed APK does not reproduce F-Droid's buildserver output. The published 1.0.9 APK subsequently failed the binary scanner on disabled Google barcode references. Version 1.0.10 removed those references and added strict APK scanning gates; 1.0.11 adds R8 and ABI-specific packaging; all existing tags and APKs remain immutable. For this candidate, upstream will sign the exact unsigned APK produced by the same F-Droid buildserver/scanner path used for official verification.
+`v1.0.7` / versionCode 8 is immutable and its source builds successfully on F-Droid, but its published signed APK does not reproduce F-Droid's buildserver output. The published 1.0.9 APK subsequently failed the binary scanner on disabled Google barcode references. Version 1.0.10 removed those references and added strict APK scanning gates; 1.0.11 introduced R8 and ABI-specific packaging; all existing tags and APKs remain immutable. For this candidate, upstream will sign the exact unsigned APK produced by the same F-Droid buildserver/scanner path used for official verification.
 
 `app.json` is the source of truth for Android versionName and the base versionCode. Actual APK codes are `10 * base + ABI suffix` (1–4); see [the release process](fdroid-release.md). `package.json` remains the private JavaScript package manifest.
 
@@ -47,7 +47,7 @@ After scanning, `scripts/build-glide-ksp-repro.sh` compiles those staged sources
 
 JAR ZIP normalization and exclusive Maven resolution remain unchanged. The unmodified upstream KSP POM is checked in at `scripts/glide-ksp/ksp-5.0.5.pom` (SHA-256 `f182a3aba6a4574dc484fb3b4e534ab9460b19f94a031a0172b544d3acd51376`), preserving its transitive dependency graph without a build-time POM download. `scripts/glide-ksp-repro.init.gradle` restricts the build-local mirror to `com.github.bumptech.glide:ksp:5.0.5`. The srclib definition in `scripts/fdroid/srclibs/Glide.yml` must accompany the app metadata in fdroiddata; the GitHub harness installs the same file before fetching srclibs.
 
-The focused proof generated the same Glide indexer on independent GitHub and GitLab environments, SHA-256 `bb57a537b3084dc8845d11f01e167df3c61675a22ffbc7655f1f9de60e41627a`. The production F-Droid recipe builds this processor during the network-enabled init phase using explicit Debian JDK 11/17 toolchains; the Android release itself remains on the buildserver's Java 21 baseline.
+The focused proof generated the same Glide indexer on independent GitHub and GitLab environments, SHA-256 `bb57a537b3084dc8845d11f01e167df3c61675a22ffbc7655f1f9de60e41627a`. The current recipe stages sources before scanning and builds the processor afterward using buildserver Gradle and JDK 21; it does not install JDK 11/17 or write into the system Maven repository.
 
 ## Production signing and reproducible verification
 
@@ -101,7 +101,7 @@ CI verifies, among other things:
 
 ## F-Droid submission status
 
-The official fdroiddata submission is already open as `fdroid/fdroiddata!48673`. Version 1.0.7 exposed a cross-environment reproducibility gap; version 1.0.11 retains the verified fixes for that gap and removes the barcode references found by the binary scanner before the MR is updated:
+The official fdroiddata submission is already open as `fdroid/fdroiddata!48673`. Version 1.0.7 exposed a cross-environment reproducibility gap; the current recipe retains those fixes and the barcode scanner corrections. The 1.0.14 candidate adds device-verified keyboard handling, but still needs version-specific release verification before the MR is updated:
 
 - [x] Public GPL-3.0-or-later source repository
 - [x] Permanent Android application ID
@@ -185,11 +185,11 @@ The old global glob 13 override is advanced to 14.0.3 to match current Expo tool
 Remaining npm audit findings require separate compatibility review; no forced
 major-version downgrade or incompatible Zod replacement is applied.
 
-Validation of the 1.0.13 candidate must include the normal CI gate, the two
+Validation of every subsequent candidate, including 1.0.14, must include the normal CI gate, the two
 independent buildserver copies for each ABI, emulator startup, and an independent
 GitLab source build. A release tag and submitted metadata must follow successful
 candidate checks; signed-reference comparisons require the published release
-assets. Do not claim 1.0.12's results as evidence for this candidate.
+assets. Do not claim a previous version's results as signed-reference evidence for a new candidate.
 
 The toolchain preflight also performs `npm ci --ignore-scripts` on the candidate
 lockfile. Checking only `npm --version` misses incompatibilities in Debian's
