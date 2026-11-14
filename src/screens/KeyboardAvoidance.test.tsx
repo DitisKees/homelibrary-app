@@ -4,6 +4,7 @@ import { Keyboard, Platform, StyleSheet, type KeyboardEvent } from 'react-native
 import { i18n } from '@/i18n/core';
 import ServerSetupScreen from './ServerSetupScreen';
 import LoginScreen from './LoginScreen';
+import KeyboardViewport from '@/components/KeyboardViewport';
 
 jest.mock('@/context/AuthContext', () => ({
   useAuth: () => ({ changeEndpoint: jest.fn(), login: jest.fn() }),
@@ -17,6 +18,7 @@ afterEach(() => jest.restoreAllMocks());
 for (const [name, Screen, id] of [
   ['server setup', ServerSetupScreen, 'server-setup-keyboard'],
   ['login', LoginScreen, 'login-keyboard'],
+  ['authenticated screens', KeyboardViewport, 'authenticated-keyboard'],
 ] as const) {
   test(`${name} shrinks its Android viewport above the keyboard and restores it on dismissal`, async () => {
     jest.replaceProperty(Platform, 'OS', 'android');

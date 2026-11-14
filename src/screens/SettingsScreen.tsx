@@ -1,5 +1,6 @@
 import React from 'react';
-import { Pressable, ScrollView, StyleSheet, Switch, Text, TextInput, View } from 'react-native';
+import KeyboardFormScrollView from '@/components/KeyboardFormScrollView';
+import { Pressable, StyleSheet, Switch, Text, TextInput, View } from 'react-native';
 import { useTranslation } from 'react-i18next';
 import AppButton from '@/components/AppButton';
 import { supportedLanguages, useLanguage, type SupportedLocale } from '@/i18n';
@@ -154,7 +155,7 @@ export default function SettingsScreen() {
   }, [isSavingServer, resetEndpoint, t]);
 
   return (
-    <ScrollView contentContainerStyle={styles.content} keyboardShouldPersistTaps="handled">
+    <KeyboardFormScrollView contentContainerStyle={styles.content} keyboardShouldPersistTaps="handled">
       <View style={styles.section}>
         <Text style={styles.heading}>{t('server.settings.heading')}</Text>
         <Text style={styles.help}>{t('server.settings.help')}</Text>
@@ -285,7 +286,7 @@ export default function SettingsScreen() {
           />
         </View>
       </View>
-    </ScrollView>
+    </KeyboardFormScrollView>
   );
 }
 
