@@ -1,9 +1,9 @@
 import React from 'react';
+import KeyboardFormScrollView from '@/components/KeyboardFormScrollView';
 import {
   ActivityIndicator,
   Platform,
   Pressable,
-  ScrollView,
   StyleSheet,
   Text,
   TextInput,
@@ -286,10 +286,9 @@ export default function BookForm({
   }, [author, cover, description, initialBook, isbn, isBusy, location, onSubmit, publishedYear, publisher, remoteCoverUrl, title, validate]);
 
   return (
-    <ScrollView
+    <KeyboardFormScrollView
       contentContainerStyle={styles.content}
       keyboardShouldPersistTaps="handled"
-      automaticallyAdjustKeyboardInsets
     >
       <Text style={styles.heading}>{heading}</Text>
       <Text style={styles.help}>{help}</Text>
@@ -479,7 +478,7 @@ export default function BookForm({
           <Text style={styles.saveButtonText}>{submitLabel}</Text>
         )}
       </Pressable>
-    </ScrollView>
+    </KeyboardFormScrollView>
   );
 }
 

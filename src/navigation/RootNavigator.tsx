@@ -7,6 +7,8 @@ import { useTranslation } from 'react-i18next';
 import TabIcon from '@/components/TabIcon';
 import { useAuth } from '@/context/AuthContext';
 
+import KeyboardViewport from '@/components/KeyboardViewport';
+
 import LoginScreen from '@/screens/LoginScreen';
 import LibraryScreen from '@/screens/LibraryScreen';
 import MyReadingScreen from '@/screens/MyReadingScreen';
@@ -161,7 +163,7 @@ export default function RootNavigator() {
 
   return (
     <NavigationContainer>
-      {user ? <AppStack /> : <LoginScreen />}
+      {user ? <KeyboardViewport><AppStack /></KeyboardViewport> : <LoginScreen />}
     </NavigationContainer>
   );
 }

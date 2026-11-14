@@ -1,9 +1,9 @@
 import React from 'react';
+import KeyboardFormScrollView from '@/components/KeyboardFormScrollView';
 import {
   ActivityIndicator,
   Pressable,
   RefreshControl,
-  ScrollView,
   StyleSheet,
   Text,
   View,
@@ -150,7 +150,7 @@ export default function BookDetailScreen() {
   const description = book.description ? descriptionText(book.description) : undefined;
 
   return (
-    <ScrollView
+    <KeyboardFormScrollView
       contentContainerStyle={styles.content}
       refreshControl={<RefreshControl refreshing={isRefetching} onRefresh={() => void refetch()} />}
     >
@@ -253,7 +253,7 @@ export default function BookDetailScreen() {
           <Text style={styles.description}>{description}</Text>
         </View>
       )}
-    </ScrollView>
+    </KeyboardFormScrollView>
   );
 }
 

@@ -33,7 +33,7 @@ export default function ServerSetupScreen() {
   };
 
   return (
-    <KeyboardAvoidingView style={styles.container} behavior={Platform.OS === 'ios' ? 'padding' : undefined}>
+    <KeyboardAvoidingView testID="server-setup-keyboard" style={styles.container} behavior={Platform.OS === 'ios' ? 'padding' : 'height'}>
       <ScrollView
         testID="server-setup-form-scroll"
         contentContainerStyle={styles.scrollContent}
