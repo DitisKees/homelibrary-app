@@ -7,8 +7,9 @@ export default function KeyboardFormScrollView({ onFocus, onBlur, onLayout, ...p
   const scroll = React.useRef<ScrollView>(null);
   const ownsFocus = React.useRef(false);
   const revealFocusedInput = React.useCallback(() => {
+    if (Platform.OS === 'web' || !ownsFocus.current || !Keyboard.isVisible()) return;
     const focused = TextInput.State.currentlyFocusedInput();
-    if (ownsFocus.current && focused && Keyboard.isVisible()) {
+    if (focused) {
       scroll.current?.scrollResponderScrollNativeHandleToKeyboard(focused, 24, true);
     }
   }, []);

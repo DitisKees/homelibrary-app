@@ -1,6 +1,6 @@
 import React from 'react';
 import { act, fireEvent, render } from '@testing-library/react-native';
-import { Keyboard, ScrollView, TextInput, type KeyboardEvent } from 'react-native';
+import { Keyboard, Platform, ScrollView, TextInput, type KeyboardEvent } from 'react-native';
 import KeyboardFormScrollView from './KeyboardFormScrollView';
 
 afterEach(() => jest.restoreAllMocks());
@@ -30,4 +30,12 @@ test('reveals the focused lower field on keyboard open, focus changes and resize
   expect(reveal).toHaveBeenCalledTimes(3);
   view.unmount();
   expect(remove).toHaveBeenCalled();
+});
+
+test('leaves browser input scrolling to the browser without calling native focus APIs', () => {
+  jest.replaceProperty(Platform, 'OS', 'web');
+  const focused = jest.spyOn(TextInput.State, 'currentlyFocusedInput');
+  const view = render(<KeyboardFormScrollView testID="web-form"><TextInput /></KeyboardFormScrollView>);
+  fireEvent(view.getByTestId('web-form'), 'focus', {});
+  expect(focused).not.toHaveBeenCalled();
 });
