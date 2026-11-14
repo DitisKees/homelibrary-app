@@ -80,15 +80,15 @@ The workflow:
 
 Build-tools 34.0.0 is intentionally used for signing because F-Droid's reproducible-build tooling supports signature copying from that `apksigner` format reliably.
 
-## First reproducible production release
+## Publish and verify the current release candidate
 
-After the 1.0.3 preparation PR is merged and all required checks are green, create and push the immutable `v1.0.3` tag. Do not run the permanent release from an unverified or moving branch reference.
+After the 1.0.14 preparation PR is merged and main checks are green, create and push the new immutable `v1.0.14` tag. Do not run the permanent release from an unverified or moving branch reference.
 
 When the tag workflow finishes, download the permanent release asset and independently verify:
 
 ```bash
-apksigner verify --verbose --print-certs HomeLibrary-1.0.11-arm64-v8a.apk
-sha256sum HomeLibrary-1.0.11-arm64-v8a.apk
+apksigner verify --verbose --print-certs HomeLibrary-1.0.14-arm64-v8a.apk
+sha256sum HomeLibrary-1.0.14-arm64-v8a.apk
 ```
 
 The signer certificate SHA-256 must equal `ANDROID_RELEASE_CERT_SHA256`.
@@ -96,7 +96,7 @@ The signer certificate SHA-256 must equal `ANDROID_RELEASE_CERT_SHA256`.
 The release APK URL is intentionally predictable:
 
 ```text
-https://github.com/DitisKees/homelibrary-app/releases/download/v1.0.11/HomeLibrary-1.0.11-arm64-v8a.apk
+https://github.com/DitisKees/homelibrary-app/releases/download/v1.0.14/HomeLibrary-1.0.14-arm64-v8a.apk
 ```
 
 This makes it suitable for F-Droid's `Binaries` reproducible-build verification.

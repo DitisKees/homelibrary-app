@@ -1,0 +1,1 @@
+Les champs restent visibles au-dessus du clavier : serveur, connexion, paramètres/clé API, ajout et modification de livres (emplacement et description compris), prêts et recherche. Défilement vers le champ actif. Comportement du navigateur et d’iOS préservé.

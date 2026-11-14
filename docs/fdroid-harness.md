@@ -428,8 +428,9 @@ The packaged dev-server resource check passed on both runners. No sorted
 directory preload was needed for this production comparison.
 
 This proves cross-runner determinism for that source tree. Release 1.0.10 subsequently passed source, scanner and signed-reference
-verification and was published immutably. The 1.0.11 candidate introduces R8
-and per-ABI packaging, so each new ABI must pass these gates again. Existing
+verification and was published immutably. Version 1.0.11 introduced R8
+and per-ABI packaging. Each new version, including the prepared 1.0.14 candidate,
+must pass these gates again. Existing
 tags and APKs must not be replaced.
 
 ## Desired end state

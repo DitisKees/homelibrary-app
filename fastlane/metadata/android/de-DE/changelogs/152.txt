@@ -1,0 +1,1 @@
+Eingabefelder bleiben über der Tastatur sichtbar: Servereinrichtung, Anmeldung, Einstellungen/API-Schlüssel, Bücher hinzufügen/bearbeiten (auch Standort und Beschreibung), Ausleihe und Suche. Untere Felder werden ins Bild gescrollt. Browser- und iOS-Verhalten bleiben erhalten.

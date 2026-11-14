@@ -16,9 +16,9 @@ RepoType: git
 Repo: https://github.com/DitisKees/homelibrary-app.git
 
 Builds:
-  - versionName: 1.0.13
-    versionCode: 141
-    commit: v1.0.13
+  - versionName: 1.0.14
+    versionCode: 151
+    commit: v1.0.14
     sudo:
       - echo "deb https://deb.debian.org/debian forky main" > /etc/apt/sources.list.d/forky.list
       - "printf 'Package: *\\nPin: release n=forky\\nPin-Priority: -1\\n' > /etc/apt/preferences.d/homelibrary-forky"
@@ -230,9 +230,9 @@ Builds:
         armeabi-v7a
       - test -s android/app/build/outputs/mapping/release/mapping.txt
 
-  - versionName: 1.0.13
-    versionCode: 142
-    commit: v1.0.13
+  - versionName: 1.0.14
+    versionCode: 152
+    commit: v1.0.14
     sudo:
       - echo "deb https://deb.debian.org/debian forky main" > /etc/apt/sources.list.d/forky.list
       - "printf 'Package: *\\nPin: release n=forky\\nPin-Priority: -1\\n' > /etc/apt/preferences.d/homelibrary-forky"
@@ -444,9 +444,9 @@ Builds:
         arm64-v8a
       - test -s android/app/build/outputs/mapping/release/mapping.txt
 
-  - versionName: 1.0.13
-    versionCode: 143
-    commit: v1.0.13
+  - versionName: 1.0.14
+    versionCode: 153
+    commit: v1.0.14
     sudo:
       - echo "deb https://deb.debian.org/debian forky main" > /etc/apt/sources.list.d/forky.list
       - "printf 'Package: *\\nPin: release n=forky\\nPin-Priority: -1\\n' > /etc/apt/preferences.d/homelibrary-forky"
@@ -658,9 +658,9 @@ Builds:
         x86
       - test -s android/app/build/outputs/mapping/release/mapping.txt
 
-  - versionName: 1.0.13
-    versionCode: 144
-    commit: v1.0.13
+  - versionName: 1.0.14
+    versionCode: 154
+    commit: v1.0.14
     sudo:
       - echo "deb https://deb.debian.org/debian forky main" > /etc/apt/sources.list.d/forky.list
       - "printf 'Package: *\\nPin: release n=forky\\nPin-Priority: -1\\n' > /etc/apt/preferences.d/homelibrary-forky"
@@ -922,5 +922,5 @@ VercodeOperation:
   - 10 * %c + 3
   - 10 * %c + 4
 UpdateCheckData: app.json|"versionCode":\s*(\d+)|app.json|"version":\s*"([\d.]+)"
-CurrentVersion: 1.0.13
-CurrentVersionCode: 144
+CurrentVersion: 1.0.14
+CurrentVersionCode: 154
