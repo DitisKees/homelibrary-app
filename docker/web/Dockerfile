@@ -10,7 +10,9 @@ COPY patches/ patches/
 COPY scripts/patch-expo-camera.mjs scripts/patch-expo-camera.mjs
 COPY scripts/generate-app-icons.mjs scripts/generate-app-icons.mjs
 COPY scripts/prepare-fastlane-icon.mjs scripts/prepare-fastlane-icon.mjs
-RUN npm ci
+COPY .nvmrc ./
+COPY scripts/check-node-toolchain.mjs scripts/node-toolchain.json scripts/
+RUN node scripts/check-node-toolchain.mjs && npm ci
 
 COPY . .
 RUN npm run build:web

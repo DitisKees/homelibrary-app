@@ -8,7 +8,21 @@ const count = (text, needle) => text.split(needle).length - 1;
 
 test('Node build tools use the patched October 2026 security release', () => {
   assert.equal(read('.nvmrc').trim(), '22.23.4');
-  assert.ok(read('docker/web/Dockerfile').includes('node:22.23.4-alpine AS build'));
+  const version = read('.nvmrc').trim();
+  const pin = JSON.parse(read('scripts/node-toolchain.json'));
+  assert.match(pin.npmVersion, /^\d+\.\d+\.\d+$/);
+  assert.match(pin.linuxX64Sha256, /^[a-f0-9]{64}$/);
+  assert.ok(read('docker/web/Dockerfile').includes(`node:${version}-alpine AS build`));
+  assert.ok(read('docker/web/Dockerfile').includes('RUN node scripts/check-node-toolchain.mjs && npm ci'));
+  const recipe = read('.fdroid.yml');
+  assert.equal(count(recipe, `https://nodejs.org/dist/v${version}/node-v${version}-linux-x64.tar.xz`), 4);
+  assert.equal(count(recipe, pin.linuxX64Sha256), 4);
+  for (const name of ['ci', 'android-release', 'android-release-smoke']) {
+    const workflow = read(`.github/workflows/${name}.yml`);
+    assert.ok(workflow.includes('node-version-file: .nvmrc'), name);
+    assert.ok(workflow.includes('node scripts/check-node-toolchain.mjs'), name);
+  }
+  assert.ok(read('.github/workflows/android-reproducibility.yml').includes('scripts/fdroid/install-node-toolchain.sh'));
 });
 
 test('PocketBase runtime and CI use the patched release', () => {

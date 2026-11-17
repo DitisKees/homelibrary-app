@@ -128,7 +128,12 @@ if (fs.existsSync(fdroidPath)) {
   expect(!fdroid.includes('/usr/share/maven-repo'), '.fdroid.yml must not write a processor into the system Maven repository');
   expect(!/^ {6}- node_modules$/m.test(fdroid), '.fdroid.yml must not use a blanket node_modules scanner deletion');
   expect(/:expo-image:homeLibraryGlideKspResolution\s+assembleRelease/.test(fdroid), '.fdroid.yml must verify local processor resolution before assembling');
-  expect(fdroid.includes('Pin-Priority: -1'), '.fdroid.yml must deny unreviewed Forky packages');
+  const nodeVersion = fs.readFileSync(path.join(root, '.nvmrc'), 'utf8').trim();
+  const nodePin = JSON.parse(fs.readFileSync(path.join(root, 'scripts/node-toolchain.json'), 'utf8'));
+  expect(fdroid.includes(`https://nodejs.org/dist/v${nodeVersion}/node-v${nodeVersion}-linux-x64.tar.xz`), '.fdroid.yml must pin the official Node archive');
+  expect(fdroid.includes(nodePin.linuxX64Sha256) && fdroid.includes('sha256sum -c -'), '.fdroid.yml must verify the pinned archive before extraction');
+  expect(!/forky|libnode|apt-get.*(?:nodejs|npm)/i.test(fdroid), '.fdroid.yml must not install Debian Node packages or add testing repositories');
+  expect(fdroid.includes('node scripts/check-node-toolchain.mjs'), '.fdroid.yml must verify runtime Node and npm versions');
   expect(fdroid.includes('bash scripts/prepare-android-gradle-properties.sh'), '.fdroid.yml must guard Expo Camera Gradle properties before and after appending build settings');
   expect(fdroid.includes('bash scripts/check-fdroid-android-dependencies.sh'), '.fdroid.yml must audit the final Android runtime dependency graph');
   expect(fdroid.includes('bash scripts/verify-fdroid-apk.sh'), '.fdroid.yml must verify the final APK for forbidden barcode artifacts');

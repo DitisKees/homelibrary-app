@@ -2,21 +2,25 @@
 """Validate parsed recipes and ensure new binary paths cannot be silently deleted."""
 from pathlib import Path
 import argparse
+import json
 import tempfile
 from fdroidserver import common, metadata, scanner
 
 root = Path(__file__).resolve().parents[2]
 app = metadata.parse_metadata(root / '.fdroid.yml')
-pins = (root / 'scripts/fdroid/debian-toolchain.lock').read_text().splitlines()
+version = (root / '.nvmrc').read_text().strip()
+pin = json.loads((root / 'scripts/node-toolchain.json').read_text())
+assert len(app.Builds) == 4
+assert all(build.sudo == app.Builds[0].sudo for build in app.Builds)
 for build in app.Builds:
     sudo = '\n'.join(build.sudo)
-    assert 'Pin-Priority: -1' in sudo
-    assert '-t forky' not in sudo
-    for pin in pins:
-        assert pin in sudo, f'Missing reviewed Debian pin: {pin}'
-    assert 'nodejs=24.22.2+dfsg+~cs24.19.2-1' in sudo
-    assert 'libnode137=24.22.2+dfsg+~cs24.19.2-1' in sudo
-    assert 'npm=12.2.0+ds1-1' in sudo
+    assert 'https://nodejs.org/dist/v' + version + '/node-v' + version + '-linux-x64.tar.xz' in sudo
+    assert pin['linuxX64Sha256'] in sudo
+    assert 'sha256sum -c -' in sudo
+    assert sudo.index('sha256sum -c -') < sudo.index('tar -xJf')
+    assert 'v' + version in sudo and pin['npmVersion'] in sudo
+    assert 'forky' not in sudo and 'apt-get' not in sudo and 'libnode' not in sudo
+    assert build.init[:2] == ['node scripts/check-node-toolchain.mjs', 'npm ci']
     assert not any('"node"' in step for step in build.init)
     assert not any('/usr/share/maven-repo' in step for step in build.sudo + build.build)
     assert 'node_modules' not in build.scandelete
@@ -43,4 +47,4 @@ with tempfile.TemporaryDirectory() as directory:
     assert new.exists(), 'A newly introduced binary was silently removed'
     assert not reviewed.exists(), 'Reviewed WASM deletion was not applied'
     assert messages.errors == [['Android AAR library', 'node_modules/new-unreviewed/prebuilt.aar']]
-print('Debian pins, local Maven policy and scanner fail-closed regression passed.')
+print('Official Node pins, local Maven policy and scanner fail-closed regression passed.')

@@ -16,7 +16,7 @@ jobs:
   reproducible-apk:
     runs-on: ubuntu-latest
     container:
-      image: debian:forky
+      image: debian:trixie
     timeout-minutes: 60
     defaults:
       run:
@@ -38,11 +38,12 @@ jobs:
         with:
           path: source-b
 
-      - name: Install F-Droid build prerequisites from Debian forky
+      - name: Install prerequisites and the verified official Node toolchain
         run: |
           set -euo pipefail
           apt-get update
-          apt-get install -y --no-install-recommends ca-certificates curl git openjdk-21-jdk-headless nodejs npm python3 unzip binutils fdroidserver
+          apt-get install -y --no-install-recommends ca-certificates curl git openjdk-21-jdk-headless python3 python3-yaml unzip xz-utils binutils fdroidserver
+          bash source-a/scripts/fdroid/install-node-toolchain.sh
           mkdir -p "$ANDROID_HOME/cmdline-tools"
           curl -fsSL https://dl.google.com/android/repository/commandlinetools-linux-13114758_latest.zip -o /tmp/cmdline-tools.zip
           unzip -q /tmp/cmdline-tools.zip -d /tmp/android-cli
@@ -51,8 +52,6 @@ jobs:
           "$ANDROID_HOME/cmdline-tools/latest/bin/sdkmanager" "platform-tools" "platforms;android-36" "build-tools;36.0.0" "ndk;27.1.12297006"
           export PATH="$JAVA_HOME/bin:$PATH"
           "$JAVA_HOME/bin/java" -version
-          node --version
-          npm --version
 
       - name: Prepare pinned Glide source and processor Gradle toolchain
         run: |

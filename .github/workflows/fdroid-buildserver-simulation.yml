@@ -28,12 +28,12 @@ jobs:
       - uses: actions/checkout@v4
       - name: Check pinned manifest exists before build matrix
         run: bash scripts/fdroid/preflight-image.sh
-      - name: Install exact Debian toolchain before the build matrix
+      - name: Install and verify official Node toolchain before the build matrix
         run: |
           source scripts/fdroid/pins.env
           docker run --rm --entrypoint /bin/bash \
             -v "$PWD:/workspace:ro" "$FDROID_BUILDSERVER_IMAGE" \
-            /workspace/scripts/fdroid/check-debian-toolchain.sh
+            /workspace/scripts/fdroid/check-node-toolchain.sh
 
   fdroid-buildserver:
     needs: [changes, image-preflight]

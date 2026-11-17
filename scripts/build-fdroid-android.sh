@@ -41,6 +41,7 @@ if [[ "$ROOT" != "$CANONICAL_ROOT" ]]; then
   exit 1
 fi
 
+node scripts/check-node-toolchain.mjs
 npm ci
 npm run audit:fdroid-npm
 npm run validate:android-release

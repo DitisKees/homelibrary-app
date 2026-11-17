@@ -15,7 +15,8 @@ export CPPFLAGS="${CPPFLAGS:-} $PREFIX_MAP_FLAGS"
 
 # Mirror the fdroiddata React Native recipe. Keep this deliberately simple:
 # dependency install, Expo source build/prebuild, signing cleanup, then Gradle.
-# Debian forky supplies Node.js/npm in CI and on the F-Droid builder.
+# The caller installs the same checksum-pinned official Node/npm as F-Droid.
+node scripts/check-node-toolchain.mjs
 
 npm ci
 

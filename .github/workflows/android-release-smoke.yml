@@ -29,6 +29,9 @@ jobs:
           node-version-file: .nvmrc
           cache: npm
 
+      - name: Verify pinned Node and bundled npm
+        run: node scripts/check-node-toolchain.mjs
+
       - name: Set up Java
         uses: actions/setup-java@v4
         with:
