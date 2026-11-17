@@ -8,8 +8,9 @@ import sys
 import yaml
 with open(sys.argv[1]) as handle:
     builds = yaml.safe_load(handle)['Builds']
+assert len(builds) == 4, 'Expected one recipe per ABI'
 commands = builds[0]['sudo']
-assert all(build['sudo'] == commands for build in builds)
+assert all(build['sudo'] == commands for build in builds), 'ABI toolchain recipes differ'
 subprocess.run(['bash', '-e', '-u', '-o', 'pipefail', '-c', '; '.join(commands)], check=True)
 PY
 node "$ROOT/scripts/check-node-toolchain.mjs"

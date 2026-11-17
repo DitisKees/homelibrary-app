@@ -19,7 +19,8 @@ for (const path of ['README.md', 'docs/self-hosting.md', 'docs/fdroid-harness.md
 for (const path of ['src/screens/BookList.tsx', 'App.tsx', 'assets/icon.png',
   'modules/zxing/android/build.gradle', 'patches/expo-camera.patch',
   'plugins/with-reproducible-native-builds.js', 'package-lock.json', '.nvmrc',
-  'tsconfig.json', 'scripts/patch-expo-camera.mjs', 'scripts/inject-web-runtime-config.mjs']) {
+  'tsconfig.json', 'scripts/patch-expo-camera.mjs', 'scripts/inject-web-runtime-config.mjs',
+  'scripts/check-node-toolchain.mjs', 'scripts/node-toolchain.json']) {
   test(`${path} retains quality, Android and Docker coverage`, () => assert.deepEqual(classify([path]), app));
 }
 for (const path of ['.fdroid.yml', 'scripts/fdroid/pins.env', 'scripts/fdroid/run-source-build.sh',

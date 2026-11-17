@@ -9,7 +9,7 @@ trap 'rm -rf "$WORK"' EXIT
 cp "$ROOT/package.json" "$ROOT/package-lock.json" "$WORK/"
 cd "$WORK"
 if ! npm ci --ignore-scripts --no-audit --no-fund; then
-  find /root/.npm/_logs -type f -name '*debug-0.log' -exec tail -n 80 {} +
+  find /root/.npm/_logs -type f -name '*debug-0.log' -exec tail -n 80 {} + || true
   exit 1
 fi
 

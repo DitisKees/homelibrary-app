@@ -7,16 +7,20 @@ const read = (path) => readFileSync(new URL(`../${path}`, import.meta.url), 'utf
 const count = (text, needle) => text.split(needle).length - 1;
 
 test('Node build tools use the patched October 2026 security release', () => {
-  assert.equal(read('.nvmrc').trim(), '22.23.4');
   const version = read('.nvmrc').trim();
+  assert.equal(version, '22.23.4');
   const pin = JSON.parse(read('scripts/node-toolchain.json'));
   assert.match(pin.npmVersion, /^\d+\.\d+\.\d+$/);
-  assert.match(pin.linuxX64Sha256, /^[a-f0-9]{64}$/);
+  assert.match(pin.linuxX64TarGzSha256, /^[a-f0-9]{64}$/);
   assert.ok(read('docker/web/Dockerfile').includes(`node:${version}-alpine AS build`));
   assert.ok(read('docker/web/Dockerfile').includes('RUN node scripts/check-node-toolchain.mjs && npm ci'));
   const recipe = read('.fdroid.yml');
-  assert.equal(count(recipe, `https://nodejs.org/dist/v${version}/node-v${version}-linux-x64.tar.xz`), 4);
-  assert.equal(count(recipe, pin.linuxX64Sha256), 4);
+  assert.equal(count(recipe, `https://nodejs.org/dist/v${version}/node-v${version}-linux-x64.tar.gz`), 4);
+  assert.equal(count(recipe, pin.linuxX64TarGzSha256), 4);
+  assert.equal(count(recipe, 'node scripts/check-node-toolchain.mjs'), 4);
+  assert.equal(count(recipe, 'tar -xzf'), 4);
+  assert.ok(!recipe.includes('tar -xJf'));
+  assert.ok(!recipe.includes('apt-get'));
   for (const name of ['ci', 'android-release', 'android-release-smoke']) {
     const workflow = read(`.github/workflows/${name}.yml`);
     assert.ok(workflow.includes('node-version-file: .nvmrc'), name);

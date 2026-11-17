@@ -21,7 +21,7 @@ const androidScripts = new Set([
 ]);
 const webScripts = new Set([
   'generate-app-icons.mjs', 'prepare-fastlane-icon.mjs', 'patch-expo-camera.mjs',
-  'inject-web-runtime-config.mjs',
+  'inject-web-runtime-config.mjs', 'check-node-toolchain.mjs', 'node-toolchain.json',
 ]);
 
 // Keep diagnostic tooling outside production build inputs. Unknown production

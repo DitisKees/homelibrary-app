@@ -10,16 +10,20 @@ root = Path(__file__).resolve().parents[2]
 app = metadata.parse_metadata(root / '.fdroid.yml')
 version = (root / '.nvmrc').read_text().strip()
 pin = json.loads((root / 'scripts/node-toolchain.json').read_text())
+# Exact commands are intentional: no apt sources, unverified downloads,
+# additional installers, or extraction before a successful checksum check.
+expected_sudo = [
+    'archive=$(mktemp)',
+    'trap \'rm -f "$archive"\' EXIT',
+    f'url=https://nodejs.org/dist/v{version}/node-v{version}-linux-x64.tar.gz',
+    f'sha256={pin["linuxX64TarGzSha256"]}',
+    'curl -fL --retry 3 -o "$archive" "$url"',
+    'echo "$sha256  $archive" | sha256sum -c -',
+    'tar -xzf "$archive" --no-same-owner --strip-components=1 -C /usr/local',
+]
 assert len(app.Builds) == 4
-assert all(build.sudo == app.Builds[0].sudo for build in app.Builds)
 for build in app.Builds:
-    sudo = '\n'.join(build.sudo)
-    assert 'https://nodejs.org/dist/v' + version + '/node-v' + version + '-linux-x64.tar.xz' in sudo
-    assert pin['linuxX64Sha256'] in sudo
-    assert 'sha256sum -c -' in sudo
-    assert sudo.index('sha256sum -c -') < sudo.index('tar -xJf')
-    assert 'v' + version in sudo and pin['npmVersion'] in sudo
-    assert 'forky' not in sudo and 'apt-get' not in sudo and 'libnode' not in sudo
+    assert build.sudo == expected_sudo, f'Unexpected sudo recipe for {build.versionCode}'
     assert build.init[:2] == ['node scripts/check-node-toolchain.mjs', 'npm ci']
     assert not any('"node"' in step for step in build.init)
     assert not any('/usr/share/maven-repo' in step for step in build.sudo + build.build)

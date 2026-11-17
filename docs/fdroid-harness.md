@@ -269,6 +269,12 @@ The fdroiddata parent pipeline should be confirmation, not the first place a fai
 
 ## Toolchain updates
 
+For Node.js changes, follow the official archive pinning and coordinated upgrade
+procedure in [fdroid.md](fdroid.md). The buildserver preflight executes the
+actual sudo command sequence, checks the runtime Node and bundled npm versions,
+and exercises the lockfile before the expensive ABI builds. Do not add Debian
+Node packages or change the buildserver OS to obtain a new Node version.
+
 The pins are intentionally not automatically refreshed.
 
 When F-Droid changes its production environment, create a dedicated maintenance PR that:

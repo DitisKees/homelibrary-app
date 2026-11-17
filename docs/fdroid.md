@@ -140,15 +140,16 @@ self-hostable PocketBase backend; see the release process for this disclosure.
 
 Issue #65 initially pinned Debian Forky packages. The later F-Droid maintainer
 feedback explicitly rejects Debian Node packages. Use the official Node.js
-22.23.4 Linux x64 archive with bundled npm 10.9.9 instead. No testing apt source,
+22.23.4 Linux x64 gzip archive with bundled npm 10.9.9 instead. No testing apt source,
 libnode dependency chain, or libc upgrade is needed. The previous release tags
 retain their original recipes; do not change their commit or signed APKs.
 
 The canonical Node version is `.nvmrc`; `scripts/node-toolchain.json` records
 bundled npm and the reviewed Linux x64 SHA-256 from the official Node release
 manifest (https://nodejs.org/download/release/v22.23.4/SHASUMS256.txt).
-The four literal sudo blocks must match because F-Droid runs sudo before
-checkout. The parsed-recipe test checks each block; the toolchain check
+The gzip archive avoids installing an additional decompression package on the
+minimal buildserver. The four literal sudo blocks must match because F-Droid
+runs sudo before checkout. The parsed-recipe test checks the exact command sequence; the toolchain check
 runs before npm ci in the recipe, regular CI, signing/smoke jobs and Docker.
 To upgrade Node, review the official release manifest and bundled npm version,
 update both pins, all four sudo blocks, the web Docker base, package engines,

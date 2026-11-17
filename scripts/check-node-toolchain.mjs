@@ -1,6 +1,9 @@
 import assert from 'node:assert/strict';
 import { execFileSync } from 'node:child_process';
 import { readFileSync } from 'node:fs';
+import { URL } from 'node:url';
+import process from 'node:process';
+import console from 'node:console';
 
 const version = readFileSync(new URL('../.nvmrc', import.meta.url), 'utf8').trim();
 const { npmVersion } = JSON.parse(readFileSync(new URL('./node-toolchain.json', import.meta.url), 'utf8'));
