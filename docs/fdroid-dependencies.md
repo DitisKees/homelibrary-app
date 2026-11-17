@@ -101,7 +101,7 @@ Expo Camera is source-built and configured with `barcodeScannerEnabled: false`; 
 A build machine needs only public tooling and repositories:
 
 - Git;
-- Node.js 22.23.4 and bundled npm 10.9.9 (see `.nvmrc` and `scripts/node-toolchain.json`);
+- Node.js 24.22.2 or newer within Node 24 and npm (see `.nvmrc`; Android production uses Debian Forky);
 - JDK 17;
 - an Android SDK containing the API/build tools needed by Expo SDK 57 (the produced app currently targets API 36);
 - Bash;

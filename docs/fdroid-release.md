@@ -135,7 +135,7 @@ a GitHub build in the same container alone does not establish remote parity.
 - [Anti-Features: non-free network services](https://f-droid.org/en/docs/Anti-Features/#non-free-network-services)
 - [React Native: other stores and ProGuard](https://reactnative.dev/docs/signed-apk-android)
 
-The existing build-from-source policy, exact Node/npm pins, NDK pin, Glide KSP
+The existing build-from-source policy, shared Debian Node/npm recipe, NDK pin, Glide KSP
 ordering fix, localhost dev-server resource, scanner gates and permanent signing
 identity remain part of every architecture's recipe. See `fdroid-harness.md` for
 pinning, diagnostics and the previous reproducibility investigation.
@@ -148,7 +148,8 @@ retains `NonFreeNet` to disclose the optional proprietary service. Manual entry 
 self-hosted PocketBase library remain usable without Google Books. No built-in
 API key or service dependency is added by this change.
 
-For the next release, use the official Node archive specified in `.fdroid.yml`,
-`.nvmrc` and `scripts/node-toolchain.json`, not Debian Node packages. Do not
-rewrite the 1.0.14 tag or its reference APKs. Validate all four ABI builds
-before creating a new immutable tag and syncing the F-Droid MR recipe.
+For the next release, follow the simple Debian Forky installation in
+`.fdroid.yml` without individual package pins. The live archive can drift,
+so record installed versions, run the preflight and both builds per ABI,
+and require independent signed-reference parity. Do not rewrite the
+1.0.14 tag or its reference APKs. Sync the F-Droid MR only for the new tag.

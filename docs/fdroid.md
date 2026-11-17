@@ -136,30 +136,36 @@ It is disabled by default, including on upgrades with a saved key. When enabled,
 Google Books is the fallback without a key; a configured key moves it first. Core library/manual entry use the
 self-hostable PocketBase backend; see the release process for this disclosure.
 
-## November 2026 recipe hardening and official Node migration
+## November 2026 recipe hardening and Debian Node simplification
 
-Issue #65 initially pinned Debian Forky packages. The later F-Droid maintainer
-feedback explicitly rejects Debian Node packages. Use the official Node.js
-22.23.4 Linux x64 gzip archive with bundled npm 10.9.9 instead. No testing apt source,
-libnode dependency chain, or libc upgrade is needed. The previous release tags
-retain their original recipes; do not change their commit or signed APKs.
+Issue #65 initially pinned individual Debian Forky packages. F-Droid's later
+clarification asks for Debian nodejs/npm, not maintained pins of individual
+Debian npm modules. Follow the accepted
+[Read Me recipe](https://gitlab.com/fdroid/fdroiddata/-/blob/master/metadata/io.loopstring.readme.yml):
+add the live Forky source, update apt, and install only nodejs and npm explicitly
+with `apt-get install -y -t forky nodejs npm`. APT resolves their dependencies.
+Application dependencies still come exclusively from `npm ci`.
 
-The canonical Node version is `.nvmrc`; `scripts/node-toolchain.json` records
-bundled npm and the reviewed Linux x64 SHA-256 from the official Node release
-manifest (https://nodejs.org/download/release/v22.23.4/SHASUMS256.txt).
-The gzip archive avoids installing an additional decompression package on the
-minimal buildserver. The four literal sudo blocks must match because F-Droid
-runs sudo before checkout. The parsed-recipe test checks the exact command sequence; the toolchain check
-runs before npm ci in the recipe, regular CI, signing/smoke jobs and Docker.
-To upgrade Node, review the official release manifest and bundled npm version,
-update both pins, all four sudo blocks, the web Docker base, package engines,
-and security test in one PR; run the preflight and all four two-copy ABI
-comparisons. Never use a floating version, install npm separately, or fall
-back to Debian Node.
+The upstream Android release and independent F-Droid build use the same
+recipe and pinned buildserver inputs. The live apt archive is deliberately
+unpinned pending reviewer feedback; package drift can still affect historical
+rebuilds. Record the actual Node/npm versions in build logs and check the
+candidate before publication. Never rewrite a previous release tag or APK.
+If the maintainers prefer timestamp-pinned snapshots, update the recipe in a
+separate reviewed change rather than reintroducing an individual package lock.
 
-The Android release and GitLab build must use identical recipe pins; publish a
-new release only after green candidate checks, then independently compare all
-four signed APKs in GitLab.
+The development baseline is Node 24.22.2 in `.nvmrc`, also used by regular
+GitHub CI and the web Docker image. `scripts/check-node-toolchain.mjs` rejects
+older or different-major versions and reports npm. The official Node
+distribution bundles npm 11.19.1; Debian Forky currently packages npm 12.2.0.
+Do not mistake matching Node versions for identical npm implementations.
+Android signed-reference parity depends on the Debian buildserver recipe,
+not the developer's local npm. Update `.nvmrc`, the web Docker base,
+package engines and security regression test together on Node upgrades.
+
+The Android release and GitLab build must use identical recipe commands;
+publish a new release only after green candidate checks, then independently
+compare all four signed APKs in GitLab.
 
 The source-built processor remains in `build/repro-maven`. The reviewed init
 script has a targeted scanner exception for its dynamic local Maven URL.
@@ -192,6 +198,6 @@ GitLab source build. A release tag and submitted metadata must follow successful
 candidate checks; signed-reference comparisons require the published release
 assets. Do not claim a previous version's results as signed-reference evidence for a new candidate.
 
-The toolchain preflight verifies the archive and actual Node/npm versions, then
+The toolchain preflight executes the actual Debian installation commands, reports package versions, then
 runs `npm ci --ignore-scripts` on the candidate lockfile before the ABI matrix.
 Normal CI and production builds still exercise postinstall.

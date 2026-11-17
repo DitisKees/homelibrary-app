@@ -68,3 +68,23 @@ test('pre-build guard rejects missing, duplicate, and overridden dev-server IPs'
     fs.rmSync(dir, { recursive: true, force: true });
   }
 });
+
+test('production Gradle settings preserve the guarded properties and exact build limits', () => {
+  const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'homelibrary-fdroid-settings-'));
+  const file = path.join(dir, 'gradle.properties');
+  const run = () => spawnSync('bash', [path.join(scriptDir, 'configure-fdroid-gradle.sh'), file]);
+  try {
+    const original = 'expo.camera.barcode-scanner-enabled=false\nreactNativeDevServerIp=localhost';
+    fs.writeFileSync(file, original);
+    assert.equal(run().status, 0);
+    assert.equal(fs.readFileSync(file, 'utf8'), original + '\n' +
+      'org.gradle.jvmargs=-Xmx3g -XX:MaxMetaspaceSize=1g -Dfile.encoding=UTF-8\n' +
+      'org.gradle.workers.max=2\n' +
+      'kotlin.compiler.execution.strategy=in-process\n');
+    fs.writeFileSync(file, 'reactNativeDevServerIp=localhost\n');
+    assert.notEqual(run().status, 0);
+    assert.equal(fs.readFileSync(file, 'utf8'), 'reactNativeDevServerIp=localhost\n');
+  } finally {
+    fs.rmSync(dir, { recursive: true, force: true });
+  }
+});

@@ -33,16 +33,11 @@ Builds:
       - Glide@ebbf7e2680e0a5812bdb428034aa38fb9260dba7
     prebuild:
       - bash scripts/prepare-glide-ksp-source.sh $$Glide$$
-      - find node_modules -type d -name local-maven-repo -prune -exec rm -rf {} +
+      - bash scripts/prepare-fdroid-source-tree.sh
       - sed -i '/jvmToolchain\|JavaVersion/s/17/21/' node_modules/@react-native/gradle-plugin/*/build.gradle.kts
         node_modules/@react-native/gradle-plugin/react-native-gradle-plugin/src/main/kotlin/com/facebook/react/utils/JdkConfiguratorUtils.kt
       - npx expo prebuild -p android --clean
-      - bash scripts/prepare-android-gradle-properties.sh
-      - echo 'org.gradle.jvmargs=-Xmx3g -XX:MaxMetaspaceSize=1g -Dfile.encoding=UTF-8'
-        >> android/gradle.properties
-      - echo 'org.gradle.workers.max=2' >> android/gradle.properties
-      - echo 'kotlin.compiler.execution.strategy=in-process' >> android/gradle.properties
-      - bash scripts/prepare-android-gradle-properties.sh
+      - bash scripts/configure-fdroid-gradle.sh
       - bash scripts/check-fdroid-android-dependencies.sh
       - sed -i -e '/signingConfig /d' android/app/build.gradle
     scanignore:
@@ -111,16 +106,11 @@ Builds:
       - Glide@ebbf7e2680e0a5812bdb428034aa38fb9260dba7
     prebuild:
       - bash scripts/prepare-glide-ksp-source.sh $$Glide$$
-      - find node_modules -type d -name local-maven-repo -prune -exec rm -rf {} +
+      - bash scripts/prepare-fdroid-source-tree.sh
       - sed -i '/jvmToolchain\|JavaVersion/s/17/21/' node_modules/@react-native/gradle-plugin/*/build.gradle.kts
         node_modules/@react-native/gradle-plugin/react-native-gradle-plugin/src/main/kotlin/com/facebook/react/utils/JdkConfiguratorUtils.kt
       - npx expo prebuild -p android --clean
-      - bash scripts/prepare-android-gradle-properties.sh
-      - echo 'org.gradle.jvmargs=-Xmx3g -XX:MaxMetaspaceSize=1g -Dfile.encoding=UTF-8'
-        >> android/gradle.properties
-      - echo 'org.gradle.workers.max=2' >> android/gradle.properties
-      - echo 'kotlin.compiler.execution.strategy=in-process' >> android/gradle.properties
-      - bash scripts/prepare-android-gradle-properties.sh
+      - bash scripts/configure-fdroid-gradle.sh
       - bash scripts/check-fdroid-android-dependencies.sh
       - sed -i -e '/signingConfig /d' android/app/build.gradle
     scanignore:
@@ -189,16 +179,11 @@ Builds:
       - Glide@ebbf7e2680e0a5812bdb428034aa38fb9260dba7
     prebuild:
       - bash scripts/prepare-glide-ksp-source.sh $$Glide$$
-      - find node_modules -type d -name local-maven-repo -prune -exec rm -rf {} +
+      - bash scripts/prepare-fdroid-source-tree.sh
       - sed -i '/jvmToolchain\|JavaVersion/s/17/21/' node_modules/@react-native/gradle-plugin/*/build.gradle.kts
         node_modules/@react-native/gradle-plugin/react-native-gradle-plugin/src/main/kotlin/com/facebook/react/utils/JdkConfiguratorUtils.kt
       - npx expo prebuild -p android --clean
-      - bash scripts/prepare-android-gradle-properties.sh
-      - echo 'org.gradle.jvmargs=-Xmx3g -XX:MaxMetaspaceSize=1g -Dfile.encoding=UTF-8'
-        >> android/gradle.properties
-      - echo 'org.gradle.workers.max=2' >> android/gradle.properties
-      - echo 'kotlin.compiler.execution.strategy=in-process' >> android/gradle.properties
-      - bash scripts/prepare-android-gradle-properties.sh
+      - bash scripts/configure-fdroid-gradle.sh
       - bash scripts/check-fdroid-android-dependencies.sh
       - sed -i -e '/signingConfig /d' android/app/build.gradle
     scanignore:
@@ -267,16 +252,11 @@ Builds:
       - Glide@ebbf7e2680e0a5812bdb428034aa38fb9260dba7
     prebuild:
       - bash scripts/prepare-glide-ksp-source.sh $$Glide$$
-      - find node_modules -type d -name local-maven-repo -prune -exec rm -rf {} +
+      - bash scripts/prepare-fdroid-source-tree.sh
       - sed -i '/jvmToolchain\|JavaVersion/s/17/21/' node_modules/@react-native/gradle-plugin/*/build.gradle.kts
         node_modules/@react-native/gradle-plugin/react-native-gradle-plugin/src/main/kotlin/com/facebook/react/utils/JdkConfiguratorUtils.kt
       - npx expo prebuild -p android --clean
-      - bash scripts/prepare-android-gradle-properties.sh
-      - echo 'org.gradle.jvmargs=-Xmx3g -XX:MaxMetaspaceSize=1g -Dfile.encoding=UTF-8'
-        >> android/gradle.properties
-      - echo 'org.gradle.workers.max=2' >> android/gradle.properties
-      - echo 'kotlin.compiler.execution.strategy=in-process' >> android/gradle.properties
-      - bash scripts/prepare-android-gradle-properties.sh
+      - bash scripts/configure-fdroid-gradle.sh
       - bash scripts/check-fdroid-android-dependencies.sh
       - sed -i -e '/signingConfig /d' android/app/build.gradle
     scanignore:

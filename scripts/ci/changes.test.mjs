@@ -20,11 +20,11 @@ for (const path of ['src/screens/BookList.tsx', 'App.tsx', 'assets/icon.png',
   'modules/zxing/android/build.gradle', 'patches/expo-camera.patch',
   'plugins/with-reproducible-native-builds.js', 'package-lock.json', '.nvmrc',
   'tsconfig.json', 'scripts/patch-expo-camera.mjs', 'scripts/inject-web-runtime-config.mjs',
-  'scripts/check-node-toolchain.mjs', 'scripts/node-toolchain.json']) {
+  'scripts/check-node-toolchain.mjs']) {
   test(`${path} retains quality, Android and Docker coverage`, () => assert.deepEqual(classify([path]), app));
 }
 for (const path of ['.fdroid.yml', 'scripts/fdroid/pins.env', 'scripts/fdroid/run-source-build.sh',
-  'scripts/scan-fdroid-apk.sh', 'scripts/glide-ksp-repro.init.gradle',
+  'scripts/scan-fdroid-apk.sh', 'scripts/glide-ksp-repro.init.gradle', 'scripts/configure-fdroid-gradle.sh',
   '.github/workflows/fdroid-buildserver-simulation.yml']) {
   test(`${path} runs Android and source checks, without Docker`, () => {
     assert.deepEqual(classify([path]), { ...none, source: true, android: true });

@@ -62,7 +62,7 @@ PocketBase's production guidance currently recommends rate limiting and supports
 - PocketBase **0.40.6** was built with the Go crypto/x509 mitigations for
   the eMudhra certificate compromise. The backend container and web container
   explicitly require Alpine `ca-certificates>=20261020-r0` during builds.
-- The web bundle is compiled with **Node.js 22.23.4** (patched for the
+- The web bundle is compiled with **Node.js 24.22.2** (patched for the
   October 21, 2026 security advisories), but nginx serves static assets
   without Node.js at runtime.
 - After the patch is merged and container images are published, operators

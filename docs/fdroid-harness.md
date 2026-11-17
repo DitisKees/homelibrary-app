@@ -269,11 +269,12 @@ The fdroiddata parent pipeline should be confirmation, not the first place a fai
 
 ## Toolchain updates
 
-For Node.js changes, follow the official archive pinning and coordinated upgrade
-procedure in [fdroid.md](fdroid.md). The buildserver preflight executes the
-actual sudo command sequence, checks the runtime Node and bundled npm versions,
-and exercises the lockfile before the expensive ABI builds. Do not add Debian
-Node packages or change the buildserver OS to obtain a new Node version.
+For Node.js changes, follow the Debian toolchain procedure in
+[fdroid.md](fdroid.md). The buildserver preflight executes the actual sudo
+command sequence, reports the installed Debian Node/npm versions and exercises
+the lockfile before the expensive ABI builds. Do not add individually managed
+Debian npm module pins. The live archive can drift; the independently verified
+signed APK remains the final release compatibility check.
 
 The pins are intentionally not automatically refreshed.
 
