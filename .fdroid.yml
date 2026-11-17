@@ -31,7 +31,7 @@ Builds:
       - node scripts/check-node-toolchain.mjs
       - npm ci
     output: android/app/build/outputs/apk/release/app-release-unsigned.apk
-    binary:
+    binary: 
       https://github.com/DitisKees/homelibrary-app/releases/download/v%v/HomeLibrary-%v-armeabi-v7a.apk
     srclibs:
       - Glide@ebbf7e2680e0a5812bdb428034aa38fb9260dba7
@@ -113,7 +113,7 @@ Builds:
       - node scripts/check-node-toolchain.mjs
       - npm ci
     output: android/app/build/outputs/apk/release/app-release-unsigned.apk
-    binary:
+    binary: 
       https://github.com/DitisKees/homelibrary-app/releases/download/v%v/HomeLibrary-%v-arm64-v8a.apk
     srclibs:
       - Glide@ebbf7e2680e0a5812bdb428034aa38fb9260dba7
@@ -195,7 +195,7 @@ Builds:
       - node scripts/check-node-toolchain.mjs
       - npm ci
     output: android/app/build/outputs/apk/release/app-release-unsigned.apk
-    binary:
+    binary: 
       https://github.com/DitisKees/homelibrary-app/releases/download/v%v/HomeLibrary-%v-x86.apk
     srclibs:
       - Glide@ebbf7e2680e0a5812bdb428034aa38fb9260dba7
@@ -277,7 +277,7 @@ Builds:
       - node scripts/check-node-toolchain.mjs
       - npm ci
     output: android/app/build/outputs/apk/release/app-release-unsigned.apk
-    binary:
+    binary: 
       https://github.com/DitisKees/homelibrary-app/releases/download/v%v/HomeLibrary-%v-x86_64.apk
     srclibs:
       - Glide@ebbf7e2680e0a5812bdb428034aa38fb9260dba7
