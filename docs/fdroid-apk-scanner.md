@@ -64,7 +64,7 @@ layer must include app.json, the reviewed patch/checksum files, the patcher,
 and Git before npm ci. Copying the application only after dependency
 installation omits required inputs.
 
-Installing Debian forky's fdroidserver can also install a newer default JDK.
+The diagnostic Debian trixie environment installs fdroidserver and explicitly selects JDK 21.
 The legacy Android reproducibility job therefore selects Java 21 explicitly
 through JAVA_HOME; package-manager alternatives must not choose Gradle's JVM.
 

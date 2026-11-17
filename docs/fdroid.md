@@ -35,7 +35,7 @@ npm run build:fdroid-android
 
 The script stages source-controlled inputs at the fixed `/tmp/homelibrary-fdroid-source` path, installs pinned npm dependencies, runs the FLOSS/native dependency guards, performs Expo prebuild, builds the unsigned release APK, and verifies package metadata. The fixed path removes checkout-location differences from native ELF objects.
 
-Upstream CI runs two independent F-Droid buildserver source builds for each ABI as the automatic Android build and reproducibility gate. The alternate Debian forky two-clean-checkout workflow is available manually for checkout-path and toolchain diagnosis. The harness pins the buildserver image by digest plus exact fdroidserver/fdroiddata commits, derives source-test metadata structurally with fdroidserver itself, runs the live scanner and `fdroid build --refresh-scanner --on-server`, and requires both unsigned APKs to be byte-for-byte identical before release. Release verification is a separate path that uses canonical `.fdroid.yml` unchanged. These checks prove determinism on the GitHub-hosted harness, not automatic parity with F-Droid's GitLab SaaS runner.
+Upstream CI runs two independent F-Droid buildserver source builds for each ABI as the automatic Android build and reproducibility gate. The alternate Debian trixie two-clean-checkout workflow is available manually for checkout-path and toolchain diagnosis. The harness pins the buildserver image by digest plus exact fdroidserver/fdroiddata commits, derives source-test metadata structurally with fdroidserver itself, runs the live scanner and `fdroid build --refresh-scanner --on-server`, and requires both unsigned APKs to be byte-for-byte identical before release. Release verification is a separate path that uses canonical `.fdroid.yml` unchanged. These checks prove determinism on the GitHub-hosted harness, not automatic parity with F-Droid's GitLab SaaS runner.
 
 ### Glide KSP reproducibility backport
 
@@ -136,29 +136,29 @@ It is disabled by default, including on upgrades with a saved key. When enabled,
 Google Books is the fallback without a key; a configured key moves it first. Core library/manual entry use the
 self-hostable PocketBase backend; see the release process for this disclosure.
 
-## November 2026 recipe hardening (1.0.13)
+## November 2026 recipe hardening and official Node migration
 
-Issue #65 keeps Debian Forky as requested by F-Droid. The last successful
-1.0.12 GitLab log used `nodejs=24.21.0+dfsg+~cs24.13.4-1` and
-`npm=12.2.0+ds1-1`. The old Node package has left the live Forky index.
-The new recipe explicitly requests `nodejs` and its ABI-coupled `libnode137`
-at `24.22.2+dfsg+~cs24.19.2-1`, plus `npm=12.2.0+ds1-1`.
-Upstream now supports patched Node 22 and 24 without a recipe-side engine patch.
-Release APKs on GitHub and GitLab both use the Debian recipe; `.nvmrc` remains
-the supported Node 22 toolchain for source checks/web builds.
+Issue #65 initially pinned Debian Forky packages. The later F-Droid maintainer
+feedback explicitly rejects Debian Node packages. Use the official Node.js
+22.23.4 Linux x64 archive with bundled npm 10.9.9 instead. No testing apt source,
+libnode dependency chain, or libc upgrade is needed. The previous release tags
+retain their original recipes; do not change their commit or signed APKs.
 
-`scripts/fdroid/debian-toolchain.lock` records the reviewed Forky dependency
-allowlist. Its exact version pins are rendered into each `sudo` block because
-F-Droid runs that block before checking out app sources. Keep both in sync;
-`test-recipe-hardening.py` checks every lock entry. Unlisted Forky packages have
-priority -1; there is no `-t forky` or general upgrade. Debian's Node 24 library
-requires libc6 2.43 and additional runtime libraries. Those are explicitly
-allowlisted dependencies, rather than an unrestricted partial upgrade. A local
-apt solver check against current Trixie/Forky indexes accepted this set. The
-actual pinned buildserver remains the required installation/build test.
-Missing exact versions must fail installation. Future maintainers must review
-and regenerate the dependency set when the live archive removes pinned versions;
-there is intentionally no fallback to newer packages.
+The canonical Node version is `.nvmrc`; `scripts/node-toolchain.json` records
+bundled npm and the reviewed Linux x64 SHA-256 from the official Node release
+manifest (https://nodejs.org/download/release/v22.23.4/SHASUMS256.txt).
+The four literal sudo blocks must match because F-Droid runs sudo before
+checkout. The parsed-recipe test checks each block; the toolchain check
+runs before npm ci in the recipe, regular CI, signing/smoke jobs and Docker.
+To upgrade Node, review the official release manifest and bundled npm version,
+update both pins, all four sudo blocks, the web Docker base, package engines,
+and security test in one PR; run the preflight and all four two-copy ABI
+comparisons. Never use a floating version, install npm separately, or fall
+back to Debian Node.
+
+The Android release and GitLab build must use identical recipe pins; publish a
+new release only after green candidate checks, then independently compare all
+four signed APKs in GitLab.
 
 The source-built processor remains in `build/repro-maven`. The reviewed init
 script has a targeted scanner exception for its dynamic local Maven URL.
@@ -191,9 +191,6 @@ GitLab source build. A release tag and submitted metadata must follow successful
 candidate checks; signed-reference comparisons require the published release
 assets. Do not claim a previous version's results as signed-reference evidence for a new candidate.
 
-The toolchain preflight also performs `npm ci --ignore-scripts` on the candidate
-lockfile. Checking only `npm --version` misses incompatibilities in Debian's
-split JavaScript dependencies: for example, Trixie's node-semver expects the
-older lru-cache constructor. The allowlist therefore pins the complete npm
-JavaScript dependency set selected from Forky, not just packages with explicit
-minimum-version requirements. The same source checks still exercise postinstall.
+The toolchain preflight verifies the archive and actual Node/npm versions, then
+runs `npm ci --ignore-scripts` on the candidate lockfile before the ABI matrix.
+Normal CI and production builds still exercise postinstall.

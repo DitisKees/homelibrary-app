@@ -3,7 +3,7 @@
 The prepared candidate is **1.0.14**, base Android code **15**. Version 1.0.13
 and all other existing tags/assets remain immutable. This release includes the
 keyboard corrections from PR #68, verified by the author on a real ARM64 device.
-The pinned Debian toolchain, local Glide processor, scanner rules and production
+For the immutable 1.0.14 tag, the pinned Debian toolchain, local Glide processor, scanner rules and production
 signing identity from the preceding recipe remain in place. Do not describe this
 candidate as published or verified against signed references until its own gates pass.
 
@@ -135,7 +135,7 @@ a GitHub build in the same container alone does not establish remote parity.
 - [Anti-Features: non-free network services](https://f-droid.org/en/docs/Anti-Features/#non-free-network-services)
 - [React Native: other stores and ProGuard](https://reactnative.dev/docs/signed-apk-android)
 
-The existing build-from-source policy, Debian Node/npm, NDK pin, Glide KSP
+The existing build-from-source policy, exact Node/npm pins, NDK pin, Glide KSP
 ordering fix, localhost dev-server resource, scanner gates and permanent signing
 identity remain part of every architecture's recipe. See `fdroid-harness.md` for
 pinning, diagnostics and the previous reproducibility investigation.
@@ -147,3 +147,8 @@ is tried first; with a user-provided API key, Google Books is tried first. The c
 retains `NonFreeNet` to disclose the optional proprietary service. Manual entry and the
 self-hosted PocketBase library remain usable without Google Books. No built-in
 API key or service dependency is added by this change.
+
+For the next release, use the official Node archive specified in `.fdroid.yml`,
+`.nvmrc` and `scripts/node-toolchain.json`, not Debian Node packages. Do not
+rewrite the 1.0.14 tag or its reference APKs. Validate all four ABI builds
+before creating a new immutable tag and syncing the F-Droid MR recipe.
