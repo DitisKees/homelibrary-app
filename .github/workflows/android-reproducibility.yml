@@ -38,7 +38,7 @@ jobs:
         with:
           path: source-b
 
-      - name: Install prerequisites and the verified official Node toolchain
+      - name: Install prerequisites and Debian Node toolchain
         run: |
           set -euo pipefail
           apt-get update

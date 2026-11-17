@@ -32,7 +32,7 @@ jobs:
           node-version-file: .nvmrc
           cache: npm
 
-      - name: Verify pinned Node and bundled npm
+      - name: Check Node baseline and report npm version
         run: node scripts/check-node-toolchain.mjs
 
       - name: Install dependencies

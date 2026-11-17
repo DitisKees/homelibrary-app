@@ -1,6 +1,6 @@
 # syntax=docker/dockerfile:1.7
 
-FROM --platform=$BUILDPLATFORM node:22.23.4-alpine AS build
+FROM --platform=$BUILDPLATFORM node:24.22.2-alpine AS build
 WORKDIR /app
 
 RUN apk add --no-cache git 'ca-certificates>=20261020-r0'
@@ -11,7 +11,7 @@ COPY scripts/patch-expo-camera.mjs scripts/patch-expo-camera.mjs
 COPY scripts/generate-app-icons.mjs scripts/generate-app-icons.mjs
 COPY scripts/prepare-fastlane-icon.mjs scripts/prepare-fastlane-icon.mjs
 COPY .nvmrc ./
-COPY scripts/check-node-toolchain.mjs scripts/node-toolchain.json scripts/
+COPY scripts/check-node-toolchain.mjs scripts/
 RUN node scripts/check-node-toolchain.mjs && npm ci
 
 COPY . .

@@ -5,10 +5,12 @@ import { URL } from 'node:url';
 import process from 'node:process';
 import console from 'node:console';
 
-const version = readFileSync(new URL('../.nvmrc', import.meta.url), 'utf8').trim();
-const { npmVersion } = JSON.parse(readFileSync(new URL('./node-toolchain.json', import.meta.url), 'utf8'));
-assert.match(version, /^\d+\.\d+\.\d+$/);
-assert.equal(process.version, `v${version}`, 'Unexpected Node.js version; use .nvmrc');
-const actualNpm = execFileSync('npm', ['--version'], { encoding: 'utf8', shell: process.platform === 'win32' }).trim();
-assert.equal(actualNpm, npmVersion, 'Unexpected npm version; use the bundled npm from the pinned Node release');
-console.log(`Node.js ${process.version}; npm ${actualNpm}; executable ${process.execPath}`);
+// .nvmrc is the patched development baseline, not a pin on Debian packages.
+// Permit newer patches/minors in Node 24: Forky moves independently of upstream.
+const baseline = readFileSync(new URL('../.nvmrc', import.meta.url), 'utf8').trim();
+const [major, minor, patch] = baseline.split('.').map(Number);
+const [actualMajor, actualMinor, actualPatch] = process.versions.node.split('.').map(Number);
+assert.ok(actualMajor === major && (actualMinor > minor || (actualMinor === minor && actualPatch >= patch)),
+  `Node ${baseline} or newer within major ${major} required; found ${process.version}`);
+const npm = execFileSync('npm', ['--version'], { encoding: 'utf8', shell: process.platform === 'win32' }).trim();
+console.log(`Node.js ${process.version}; npm ${npm}; executable ${process.execPath}`);

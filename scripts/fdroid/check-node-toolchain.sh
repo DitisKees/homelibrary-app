@@ -3,7 +3,7 @@
 set -euo pipefail
 ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/../.." && pwd -P)"
 bash "$ROOT/scripts/fdroid/install-node-toolchain.sh"
-# Exercise the actual installer and lockfile before launching the ABI matrix.
+# Exercise Debian npm and the application lockfile before launching the ABI matrix.
 WORK="$(mktemp -d)"
 trap 'rm -rf "$WORK"' EXIT
 cp "$ROOT/package.json" "$ROOT/package-lock.json" "$WORK/"

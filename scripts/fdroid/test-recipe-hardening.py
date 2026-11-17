@@ -2,24 +2,16 @@
 """Validate parsed recipes and ensure new binary paths cannot be silently deleted."""
 from pathlib import Path
 import argparse
-import json
 import tempfile
 from fdroidserver import common, metadata, scanner
 
 root = Path(__file__).resolve().parents[2]
 app = metadata.parse_metadata(root / '.fdroid.yml')
-version = (root / '.nvmrc').read_text().strip()
-pin = json.loads((root / 'scripts/node-toolchain.json').read_text())
-# Exact commands are intentional: no apt sources, unverified downloads,
-# additional installers, or extraction before a successful checksum check.
+# Match Read Me's accepted recipe; no individually managed Debian npm modules.
 expected_sudo = [
-    'archive=$(mktemp)',
-    'trap \'rm -f "$archive"\' EXIT',
-    f'url=https://nodejs.org/dist/v{version}/node-v{version}-linux-x64.tar.gz',
-    f'sha256={pin["linuxX64TarGzSha256"]}',
-    'curl -fL --retry 3 -o "$archive" "$url"',
-    'echo "$sha256  $archive" | sha256sum -c -',
-    'tar -xzf "$archive" --no-same-owner --strip-components=1 -C /usr/local',
+    "echo \"deb https://deb.debian.org/debian forky main\" > /etc/apt/sources.list.d/forky.list",
+    'apt-get update',
+    'apt-get install -y -t forky nodejs npm',
 ]
 assert len(app.Builds) == 4
 for build in app.Builds:
@@ -51,4 +43,4 @@ with tempfile.TemporaryDirectory() as directory:
     assert new.exists(), 'A newly introduced binary was silently removed'
     assert not reviewed.exists(), 'Reviewed WASM deletion was not applied'
     assert messages.errors == [['Android AAR library', 'node_modules/new-unreviewed/prebuilt.aar']]
-print('Official Node pins, local Maven policy and scanner fail-closed regression passed.')
+print('Simple Debian Node recipe, local Maven policy and scanner fail-closed regression passed.')

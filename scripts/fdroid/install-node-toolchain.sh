@@ -14,3 +14,4 @@ assert all(build['sudo'] == commands for build in builds), 'ABI toolchain recipe
 subprocess.run(['bash', '-e', '-u', '-o', 'pipefail', '-c', '; '.join(commands)], check=True)
 PY
 node "$ROOT/scripts/check-node-toolchain.mjs"
+dpkg-query -W nodejs npm
