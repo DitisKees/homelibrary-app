@@ -128,7 +128,7 @@ if (fs.existsSync(fdroidPath)) {
   expect(!fdroid.includes('/usr/share/maven-repo'), '.fdroid.yml must not write a processor into the system Maven repository');
   expect(!/^ {6}- node_modules$/m.test(fdroid), '.fdroid.yml must not use a blanket node_modules scanner deletion');
   expect(/:expo-image:homeLibraryGlideKspResolution\s+assembleRelease/.test(fdroid), '.fdroid.yml must verify local processor resolution before assembling');
-  expect((fdroid.match(/^      - apt-get install -y -t forky nodejs npm$/gm) ?? []).length === splitCodes.length, 'Every ABI must use the simple Debian Forky nodejs/npm recipe');
+  expect((fdroid.match(/^ {6}- apt-get install -y -t forky nodejs npm$/gm) ?? []).length === splitCodes.length, 'Every ABI must use the simple Debian Forky nodejs/npm recipe');
   expect(!/nodejs\.org|Pin-Priority|nodejs=|npm=|libnode/.test(fdroid), 'Do not use an external Node archive or individual Debian package pins');
   expect(fdroid.includes('node scripts/check-node-toolchain.mjs'), '.fdroid.yml must check and report the runtime toolchain');
   expect((fdroid.match(/bash scripts\/configure-fdroid-gradle\.sh/g) ?? []).length === splitCodes.length, '.fdroid.yml must use the shared guarded Gradle configuration for every ABI');

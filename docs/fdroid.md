@@ -147,17 +147,19 @@ with `apt-get install -y -t forky nodejs npm`. APT resolves their dependencies.
 Application dependencies still come exclusively from `npm ci`.
 
 The upstream Android release and independent F-Droid build use the same
-recipe and pinned buildserver inputs. The live apt archive is deliberately
-unpinned pending reviewer feedback; package drift can still affect historical
-rebuilds. Record the actual Node/npm versions in build logs and check the
-candidate before publication. Never rewrite a previous release tag or APK.
-If the maintainers prefer timestamp-pinned snapshots, update the recipe in a
-separate reviewed change rather than reintroducing an individual package lock.
+recipe and pinned buildserver inputs. Both F-Droid reviewers explicitly
+[accepted live, unpinned Forky](https://gitlab.com/fdroid/fdroiddata/-/merge_requests/48673#note_4259297241)
+on 17 November 2026. Do not introduce a Debian snapshot or individual package
+allowlist. The live archive can drift: the signed-reference comparison rejects
+a mismatching APK, and future source builds can fail. Run the production
+buildserver simulation before tagging and record actual installed versions.
+Never rewrite a previous release tag or APK.
 
 The development baseline is Node 24.22.2 in `.nvmrc`, also used by regular
 GitHub CI and the web Docker image. `scripts/check-node-toolchain.mjs` rejects
 older or different-major versions and reports npm. The official Node
-distribution bundles npm 11.19.1; Debian Forky currently packages npm 12.2.0.
+distribution bundles npm 11.19.1; the successful 17 November buildserver
+preflight resolved Debian npm 12.2.2 (not a pin).
 Do not mistake matching Node versions for identical npm implementations.
 Android signed-reference parity depends on the Debian buildserver recipe,
 not the developer's local npm. Update `.nvmrc`, the web Docker base,
