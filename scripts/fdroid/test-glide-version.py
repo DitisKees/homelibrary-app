@@ -13,6 +13,14 @@ with tempfile.TemporaryDirectory() as directory:
     root = Path(directory)
     for name in ('app', 'expo-image'):
         (root / name).mkdir()
+    # F-Droid's gradlew-fdroid launcher needs a text-only Gradle version
+    # declaration, even for this isolated fixture. Use the same known-working
+    # Gradle version as the preceding buildserver regression.
+    wrapper = root / 'gradle/wrapper'
+    wrapper.mkdir(parents=True)
+    (wrapper / 'gradle-wrapper.properties').write_text(
+        'distributionUrl=https\\://services.gradle.org/distributions/gradle-8.14.3-bin.zip\n'
+    )
     (root / 'settings.gradle').write_text("rootProject.name='fixture'\ninclude ':app', ':expo-image'\n")
     (root / 'glide-version.gradle').write_text(source.read_text())
     (root / 'build.gradle').write_text(
