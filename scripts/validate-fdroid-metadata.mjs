@@ -128,8 +128,12 @@ if (fs.existsSync(fdroidPath)) {
   expect(!fdroid.includes('/usr/share/maven-repo'), '.fdroid.yml must not write a processor into the system Maven repository');
   expect(!/^ {6}- node_modules$/m.test(fdroid), '.fdroid.yml must not use a blanket node_modules scanner deletion');
   expect(/:expo-image:homeLibraryGlideKspResolution\s+assembleRelease/.test(fdroid), '.fdroid.yml must verify local processor resolution before assembling');
-  expect(fdroid.includes('Pin-Priority: -1'), '.fdroid.yml must deny unreviewed Forky packages');
-  expect(fdroid.includes('bash scripts/prepare-android-gradle-properties.sh'), '.fdroid.yml must guard Expo Camera Gradle properties before and after appending build settings');
+  expect((fdroid.match(/^ {6}- apt-get install -y -t forky nodejs npm$/gm) ?? []).length === splitCodes.length, 'Every ABI must use the simple Debian Forky nodejs/npm recipe');
+  expect(!/nodejs\.org|Pin-Priority|nodejs=|npm=|libnode/.test(fdroid), 'Do not use an external Node archive or individual Debian package pins');
+  expect(fdroid.includes('node scripts/check-node-toolchain.mjs'), '.fdroid.yml must check and report the runtime toolchain');
+  expect((fdroid.match(/bash scripts\/configure-fdroid-gradle\.sh/g) ?? []).length === splitCodes.length, '.fdroid.yml must use the shared guarded Gradle configuration for every ABI');
+  expect(fs.existsSync(path.join(root, 'scripts', 'configure-fdroid-gradle.sh')), 'shared production Gradle configuration helper missing');
+  expect(fdroid.includes('bash scripts/prepare-fdroid-source-tree.sh'), '.fdroid.yml must remove bundled Maven repositories through the shared source helper');
   expect(fdroid.includes('bash scripts/check-fdroid-android-dependencies.sh'), '.fdroid.yml must audit the final Android runtime dependency graph');
   expect(fdroid.includes('bash scripts/verify-fdroid-apk.sh'), '.fdroid.yml must verify the final APK for forbidden barcode artifacts');
   expect(fdroid.includes('node_modules/hermes-compiler/hermesc/linux64-bin/hermesc'), '.fdroid.yml must use the current Hermes scanner path');

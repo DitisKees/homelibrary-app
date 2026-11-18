@@ -35,8 +35,8 @@ Android builds require Android 10 (API 29) or newer. Cover selection uses the sy
 
 For application development:
 
-- Node.js 22.13 or newer, but below Node 23
-- npm
+- Node.js 24.22.2 or newer within Node 24 (see `.nvmrc`)
+- npm (bundled with Node for local development)
 - PocketBase 0.40.6 for a manually run development backend
 
 If you use `nvm`, run:
@@ -103,7 +103,7 @@ For the canonical source-only Android release path:
 npm run build:fdroid-android
 ```
 
-CI runs the fast source checks and web export, and verifies all committed PocketBase migrations against PocketBase 0.40.6. For Android changes, the F-Droid buildserver workflow owns native compilation, dependency checks, APK scanning, reproducibility and emulator startup verification. It builds two independent copies of each of the four ABIs in a buildserver image pinned by digest and requires each pair to match byte-for-byte. The harness also pins fdroidserver/fdroiddata revisions and derives temporary source metadata structurally with fdroidserver itself. The alternate Debian forky two-checkout reproducibility workflow remains available manually for diagnosis. Docker self-hosting changes run the backup/restore smoke test, then build each multi-architecture image once; pushes publish those builds to GHCR.
+Regular CI and the web image use the Node 24 baseline in `.nvmrc`. Android releases and F-Droid both install Debian Forky Node/npm using the same recipe. CI runs the fast source checks and web export, and verifies all committed PocketBase migrations against PocketBase 0.40.6. For Android changes, the F-Droid buildserver workflow owns native compilation, dependency checks, APK scanning, reproducibility and emulator startup verification. It builds two independent copies of each of the four ABIs in a buildserver image pinned by digest and requires each pair to match byte-for-byte. The harness also pins fdroidserver/fdroiddata revisions and derives temporary source metadata structurally with fdroidserver itself. The alternate Debian trixie two-checkout reproducibility workflow remains available manually for diagnosis. Docker self-hosting changes run the backup/restore smoke test, then build each multi-architecture image once; pushes publish those builds to GHCR.
 
 Workflow routing, stable status checks, cancellation and diagnostic conventions are documented in [docs/ci-workflows.md](docs/ci-workflows.md). Documentation-only and diagnostic-only changes run lightweight entry checks without starting the application build suites.
 

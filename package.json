@@ -4,7 +4,7 @@
   "private": true,
   "main": "node_modules/expo/AppEntry.js",
   "engines": {
-    "node": ">=22.23.4 <23 || >=24.22.2 <25"
+    "node": ">=24.22.2 <25"
   },
   "overrides": {
     "glob": "14.0.3",

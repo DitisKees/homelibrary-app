@@ -6,9 +6,25 @@ import test from 'node:test';
 const read = (path) => readFileSync(new URL(`../${path}`, import.meta.url), 'utf8');
 const count = (text, needle) => text.split(needle).length - 1;
 
-test('Node build tools use the patched October 2026 security release', () => {
-  assert.equal(read('.nvmrc').trim(), '22.23.4');
-  assert.ok(read('docker/web/Dockerfile').includes('node:22.23.4-alpine AS build'));
+test('Node build tools use the patched Node 24 baseline and simple Debian recipe', () => {
+  const version = read('.nvmrc').trim();
+  assert.equal(version, '24.22.2');
+  const pkg = JSON.parse(read('package.json'));
+  assert.equal(pkg.engines.node, `>=${version} <25`);
+  assert.equal(JSON.parse(read('package-lock.json')).packages[''].engines.node, pkg.engines.node);
+  assert.ok(read('docker/web/Dockerfile').includes(`node:${version}-alpine AS build`));
+  const recipe = read('.fdroid.yml');
+  assert.equal(count(recipe, 'apt-get install -y -t forky nodejs npm'), 4);
+  assert.equal(count(recipe, 'node scripts/check-node-toolchain.mjs'), 4);
+  assert.ok(!recipe.includes('nodejs.org'));
+  assert.ok(!recipe.includes('Pin-Priority'));
+  assert.ok(!recipe.includes('nodejs='));
+  for (const name of ['ci', 'android-release', 'android-release-smoke']) {
+    const workflow = read(`.github/workflows/${name}.yml`);
+    assert.ok(workflow.includes('node-version-file: .nvmrc'), name);
+    assert.ok(workflow.includes('node scripts/check-node-toolchain.mjs'), name);
+  }
+  assert.ok(read('.github/workflows/android-reproducibility.yml').includes('scripts/fdroid/install-node-toolchain.sh'));
 });
 
 test('PocketBase runtime and CI use the patched release', () => {

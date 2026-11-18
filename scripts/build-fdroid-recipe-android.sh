@@ -15,7 +15,8 @@ export CPPFLAGS="${CPPFLAGS:-} $PREFIX_MAP_FLAGS"
 
 # Mirror the fdroiddata React Native recipe. Keep this deliberately simple:
 # dependency install, Expo source build/prebuild, signing cleanup, then Gradle.
-# Debian forky supplies Node.js/npm in CI and on the F-Droid builder.
+# The caller installs Node/npm using the same Debian Forky recipe as F-Droid.
+node scripts/check-node-toolchain.mjs
 
 npm ci
 
@@ -36,7 +37,7 @@ fs.writeFileSync('package.json', JSON.stringify(p, null, 2) + '\n');
 NODE
 
 # Do not use bundled Expo Maven AARs.
-find node_modules -type d -name local-maven-repo -prune -exec rm -rf {} +
+bash scripts/prepare-fdroid-source-tree.sh
 
 npx expo prebuild -p android --clean
 

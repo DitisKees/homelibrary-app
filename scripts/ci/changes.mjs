@@ -13,7 +13,7 @@ const androidScripts = new Set([
   'build-glide-ksp-repro.sh', 'check-fdroid-android-dependencies.sh', 'check-glide-version.init.gradle',
   'check-fdroid-icons.mjs', 'check-fdroid-npm-dependencies.mjs',
   'fdroid-reviewed-native-groups.txt', 'glide-ksp-repro.init.gradle',
-  'normalize-fdroid-apk-build-ids.py', 'prepare-android-gradle-properties.sh',
+  'normalize-fdroid-apk-build-ids.py', 'prepare-android-gradle-properties.sh', 'configure-fdroid-gradle.sh',
   'prepare-fdroid-source-tree.sh', 'scan-fdroid-apk.sh', 'smoke-android-startup.sh',
   'validate-android-release.mjs', 'validate-fdroid-metadata.mjs',
   'verify-android-abi-apk.py', 'verify-android-abi-apk.sh', 'verify-fdroid-apk.sh',
@@ -21,7 +21,7 @@ const androidScripts = new Set([
 ]);
 const webScripts = new Set([
   'generate-app-icons.mjs', 'prepare-fastlane-icon.mjs', 'patch-expo-camera.mjs',
-  'inject-web-runtime-config.mjs',
+  'inject-web-runtime-config.mjs', 'check-node-toolchain.mjs',
 ]);
 
 // Keep diagnostic tooling outside production build inputs. Unknown production
