@@ -9,10 +9,10 @@ See [`fdroid-dependencies.md`](./fdroid-dependencies.md) for the dependency/lice
 The prepared, not-yet-published F-Droid candidate is:
 
 ```text
-versionName: 1.0.14
-base versionCode: 15
-ABI versionCodes: 151, 152, 153, 154
-tag: v1.0.14
+versionName: 1.0.15
+base versionCode: 16
+ABI versionCodes: 161, 162, 163, 164
+tag: v1.0.15
 ```
 
 `v1.0.7` / versionCode 8 is immutable and its source builds successfully on F-Droid, but its published signed APK does not reproduce F-Droid's buildserver output. The published 1.0.9 APK subsequently failed the binary scanner on disabled Google barcode references. Version 1.0.10 removed those references and added strict APK scanning gates; 1.0.11 introduced R8 and ABI-specific packaging; all existing tags and APKs remain immutable. For this candidate, upstream will sign the exact unsigned APK produced by the same F-Droid buildserver/scanner path used for official verification.
@@ -43,7 +43,7 @@ The earlier workaround for Expo Image's Glide 5.0.5 processor is documented in [
 
 Expo Image still requests 5.0.5 and Expo SDK 57 compiles against Android API 36. The Android AARs from Glide 5.0.8 and 5.0.9 require compileSdk 37, as confirmed by the upstream release notes and the production build's AAR metadata check. Do not upgrade the SDK/AGP or suppress that check for a processor-only reproducibility fix.
 
-The Expo config plugin applies scripts/glide-version.gradle to upgrade only com.github.bumptech.glide:ksp in :expo-image to the official 5.0.9 JVM JAR; runtime Glide and integrations retain 5.0.5. Upstream source comparison shows the annotation API is unchanged and the processor's runtime references are unchanged apart from the deterministic ordering fix and formatting. Its processor-classpath annotations resolve independently at 5.0.9. Mixed-version compatibility is a candidate hypothesis requiring successful native compilation and runtime/reproducibility tests, not an upstream guarantee. Older transitive runtime requests still use normal Gradle conflict resolution. The audit rejects selected runtime versions other than 5.0.5, selected processor Glide versions other than 5.0.9, or changed direct Expo Image declarations. Remove the override when Expo ships a fixed compatible Glide release. No custom processor build, srclib, local Maven mirror, JAR normalization or Glide scanner exception is needed.
+The Expo config plugin applies scripts/glide-version.gradle to upgrade only com.github.bumptech.glide:ksp in :expo-image to the official 5.0.9 JVM JAR; runtime Glide and integrations retain 5.0.5. Upstream source comparison shows the annotation API is unchanged and the processor's runtime references are unchanged apart from the deterministic ordering fix and formatting. Its processor-classpath annotations resolve independently at 5.0.9. The mixed-version combination passed native builds, four-ABI GitHub/GitLab unsigned APK parity ([GitLab #125](https://gitlab.com/keesvan.tslot/fdroiddata/-/pipelines/3083454118)) and ARM64 device testing on PR #72, before the version bump. This is verified application compatibility, not an upstream guarantee; repeat version-specific build and signed-reference gates. Older transitive runtime requests still use normal Gradle conflict resolution. The audit rejects selected runtime versions other than 5.0.5, selected processor Glide versions other than 5.0.9, or changed direct Expo Image declarations. Remove the override when Expo ships a fixed compatible Glide release. No custom processor build, srclib, local Maven mirror, JAR normalization or Glide scanner exception is needed.
 
 The prebuild dependency audit runs the project-owned Gradle tasks homeLibraryVerifyGlideKsp and homeLibraryVerifyGlideRuntime, checking the declared Expo coordinates, selected runtime graph and actual KSP processor classpath. The stock KSP POM uses Kotlin 2.2.10, KotlinPoet 1.12.0 and KSP API 2.0.20-1.0.25. Full native/toolchain compatibility, independent GitHub and GitLab byte-for-byte APK equality, scanner checks and cover-image device testing are release gates, not implied by the upstream fix alone.
 
@@ -99,7 +99,7 @@ CI verifies, among other things:
 
 ## F-Droid submission status
 
-The official fdroiddata submission is already open as `fdroid/fdroiddata!48673`. Version 1.0.7 exposed a cross-environment reproducibility gap; the current recipe retains those fixes and the barcode scanner corrections. The 1.0.14 candidate adds device-verified keyboard handling, but still needs version-specific release verification before the MR is updated:
+The official fdroiddata submission is already open as `fdroid/fdroiddata!48673`. Version 1.0.7 exposed a cross-environment reproducibility gap; the current recipe retains those fixes and the barcode scanner corrections. The 1.0.15 candidate retains the device-verified 1.0.14 keyboard fixes, simplifies Debian Node/npm installation and removes custom Glide processor infrastructure. Its own version-specific release verification must pass before the MR is updated:
 
 - [x] Public GPL-3.0-or-later source repository
 - [x] Permanent Android application ID
@@ -167,7 +167,7 @@ The Android release and GitLab build must use identical recipe commands;
 publish a new release only after green candidate checks, then independently
 compare all four signed APKs in GitLab.
 
-The candidate uses the official Glide dependencies described above. The prebuild audit checks that all relevant Glide modules resolve consistently and that the official KSP processor is present. No custom Maven repository or processor-specific scanner exception is required.
+The candidate uses the official Glide dependencies described above. The prebuild audit requires Glide runtime modules to resolve at 5.0.5 and the official KSP processor and its private annotations at 5.0.9. No custom Maven repository or processor-specific scanner exception is required.
 
 The scanner deletion list is based on the last successful GitLab build log:
 unused Apple prebuilds/macros, non-Linux Hermes, bundled dotSlash executables,
@@ -184,7 +184,7 @@ The old global glob 13 override is advanced to 14.0.3 to match current Expo tool
 Remaining npm audit findings require separate compatibility review; no forced
 major-version downgrade or incompatible Zod replacement is applied.
 
-Validation of every subsequent candidate, including 1.0.14, must include the normal CI gate, the two
+Validation of every subsequent candidate, including 1.0.15, must include the normal CI gate, the two
 independent buildserver copies for each ABI, emulator startup, and an independent
 GitLab source build. A release tag and submitted metadata must follow successful
 candidate checks; signed-reference comparisons require the published release

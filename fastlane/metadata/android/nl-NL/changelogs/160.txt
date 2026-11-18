@@ -1,0 +1,1 @@
+Vereenvoudig de Android/F-Droid-builds: gebruik de officiële deterministische Glide KSP-processor en Debian Node/npm in plaats van eigen buildoplossingen. Behoud het laden van afbeeldingen, toetsenbordverbeteringen en vier architecturen. Reproduceerbaarheid van de wijzigingen is gecontroleerd op GitHub en GitLab.

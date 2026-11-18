@@ -16,9 +16,9 @@ RepoType: git
 Repo: https://github.com/DitisKees/homelibrary-app.git
 
 Builds:
-  - versionName: 1.0.14
-    versionCode: 151
-    commit: v1.0.14
+  - versionName: 1.0.15
+    versionCode: 161
+    commit: v1.0.15
     sudo:
       - echo "deb https://deb.debian.org/debian forky main" > /etc/apt/sources.list.d/forky.list
       - apt-get update
@@ -83,9 +83,9 @@ Builds:
         armeabi-v7a
       - test -s android/app/build/outputs/mapping/release/mapping.txt
 
-  - versionName: 1.0.14
-    versionCode: 152
-    commit: v1.0.14
+  - versionName: 1.0.15
+    versionCode: 162
+    commit: v1.0.15
     sudo:
       - echo "deb https://deb.debian.org/debian forky main" > /etc/apt/sources.list.d/forky.list
       - apt-get update
@@ -150,9 +150,9 @@ Builds:
         arm64-v8a
       - test -s android/app/build/outputs/mapping/release/mapping.txt
 
-  - versionName: 1.0.14
-    versionCode: 153
-    commit: v1.0.14
+  - versionName: 1.0.15
+    versionCode: 163
+    commit: v1.0.15
     sudo:
       - echo "deb https://deb.debian.org/debian forky main" > /etc/apt/sources.list.d/forky.list
       - apt-get update
@@ -217,9 +217,9 @@ Builds:
         x86
       - test -s android/app/build/outputs/mapping/release/mapping.txt
 
-  - versionName: 1.0.14
-    versionCode: 154
-    commit: v1.0.14
+  - versionName: 1.0.15
+    versionCode: 164
+    commit: v1.0.15
     sudo:
       - echo "deb https://deb.debian.org/debian forky main" > /etc/apt/sources.list.d/forky.list
       - apt-get update
@@ -323,5 +323,5 @@ VercodeOperation:
   - 10 * %c + 3
   - 10 * %c + 4
 UpdateCheckData: app.json|"versionCode":\s*(\d+)|app.json|"version":\s*"([\d.]+)"
-CurrentVersion: 1.0.14
-CurrentVersionCode: 154
+CurrentVersion: 1.0.15
+CurrentVersionCode: 164

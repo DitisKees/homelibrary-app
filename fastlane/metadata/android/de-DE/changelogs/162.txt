@@ -1,0 +1,1 @@
+Vereinfachte Android-/F-Droid-Builds: offizieller deterministischer Glide-KSP-Prozessor und Debian-Node/npm statt eigener Build-Workarounds. Bildanzeige, Tastaturkorrekturen und vier Architekturen bleiben erhalten. Die Änderungen wurden auf GitHub und GitLab auf Reproduzierbarkeit geprüft.
