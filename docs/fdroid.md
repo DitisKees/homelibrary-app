@@ -43,7 +43,7 @@ The earlier workaround for Expo Image's Glide 5.0.5 processor is documented in [
 
 Expo Image still requests 5.0.5. The checked-in Expo config plugin applies scripts/glide-version.gradle to the generated root project, selecting the official 5.0.9 artifacts for the Glide dependencies on all Android paths. The rule fails on unexpected versions rather than silently masking an upstream upgrade. Remove the override once Expo selects a suitable fixed version itself. No custom processor, srclib, local Maven mirror, JAR normalization or Glide scanner exception is needed in the candidate recipe.
 
-The prebuild dependency audit runs homeLibraryVerifyGlide, checking the declared Expo coordinates, selected runtime graph and actual KSP processor classpath. The stock KSP POM uses Kotlin 2.2.10, KotlinPoet 1.12.0 and KSP API 2.0.20-1.0.25. Full native/toolchain compatibility, independent GitHub and GitLab byte-for-byte APK equality, scanner checks and cover-image device testing are release gates, not implied by the upstream fix alone.
+The prebuild dependency audit runs the project-owned Gradle tasks homeLibraryVerifyGlideKsp and homeLibraryVerifyGlideRuntime, checking the declared Expo coordinates, selected runtime graph and actual KSP processor classpath. The stock KSP POM uses Kotlin 2.2.10, KotlinPoet 1.12.0 and KSP API 2.0.20-1.0.25. Full native/toolchain compatibility, independent GitHub and GitLab byte-for-byte APK equality, scanner checks and cover-image device testing are release gates, not implied by the upstream fix alone.
 
 ## Production signing and reproducible verification
 

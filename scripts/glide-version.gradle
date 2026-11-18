@@ -23,50 +23,61 @@ allprojects {
     }
 }
 
-tasks.register('homeLibraryVerifyGlide') {
-    group = 'verification'
-    description = 'Verify official Glide runtime and KSP dependency resolution'
-    doLast {
-        def expoImage = rootProject.project(':expo-image')
-        def declared = expoImage.configurations.collectMany { it.dependencies.toList() }
-            .findAll { it.group == glideGroup }
-        if (declared.collect { it.name }.toSet() != expoModules ||
-                declared.any { it.version != expoGlideVersion }) {
-            throw new GradleException("Expo Image Glide declarations changed: ${declared}. Review or remove the override.")
-        }
+// The graph must be resolved in a task owned by the configuration's project.
+// Gradle 9 rejects cross-project configuration resolution at task execution.
+def verifyGraph = { configuration, required ->
+    def graph = configuration.incoming.resolutionResult
+    def unresolved = graph.allDependencies.findAll {
+        it instanceof org.gradle.api.artifacts.result.UnresolvedDependencyResult
+    }
+    if (!unresolved.empty) {
+        throw new GradleException("Unresolved ${configuration.name} dependencies: ${unresolved*.attempted}")
+    }
+    def modules = graph.allComponents.collect { it.id }.findAll {
+        it instanceof org.gradle.api.artifacts.component.ModuleComponentIdentifier &&
+            it.group == glideGroup
+    }
+    if (!modules*.module.containsAll(required) ||
+            modules.any { it.version != fixedGlideVersion }) {
+        throw new GradleException("Unexpected Glide graph on ${configuration.name}: ${modules}")
+    }
+    println("HOMELIBRARY_GLIDE_GRAPH ${configuration.name}: ${modules.sort { it.module }}")
+}
 
-        def verifyGraph = { configuration, required ->
-            def graph = configuration.incoming.resolutionResult
-            def unresolved = graph.allDependencies.findAll {
-                it instanceof org.gradle.api.artifacts.result.UnresolvedDependencyResult
-            }
-            if (!unresolved.empty) {
-                throw new GradleException("Unresolved ${configuration.name} dependencies: ${unresolved*.attempted}")
-            }
-            def modules = graph.allComponents.collect { it.id }.findAll {
-                it instanceof org.gradle.api.artifacts.component.ModuleComponentIdentifier &&
-                    it.group == glideGroup
-            }
-            if (!modules*.module.containsAll(required) ||
-                    modules.any { it.version != fixedGlideVersion }) {
-                throw new GradleException("Unexpected Glide graph on ${configuration.name}: ${modules}")
-            }
-            println("HOMELIBRARY_GLIDE_GRAPH ${configuration.name}: ${modules.sort { it.module }}")
+project(':app') { app ->
+    app.tasks.register('homeLibraryVerifyGlideRuntime') {
+        group = 'verification'
+        description = 'Verify official Glide runtime dependency resolution'
+        doLast {
+            verifyGraph(app.configurations.getByName('releaseRuntimeClasspath'),
+                ['glide', 'avif-integration', 'okhttp3-integration'])
         }
+    }
+}
 
-        verifyGraph(rootProject.project(':app').configurations.getByName('releaseRuntimeClasspath'),
-            ['glide', 'avif-integration', 'okhttp3-integration'])
-        def processor = expoImage.configurations.getByName('kspReleaseKotlinProcessorClasspath')
-        verifyGraph(processor, ['ksp'])
-        def artifacts = processor.incoming.artifacts.artifacts
-        def ksp = artifacts.findAll {
-            def id = it.id.componentIdentifier
-            id instanceof org.gradle.api.artifacts.component.ModuleComponentIdentifier &&
-                id.group == glideGroup && id.module == 'ksp' && id.version == fixedGlideVersion
+project(':expo-image') { expoImage ->
+    expoImage.tasks.register('homeLibraryVerifyGlideKsp') {
+        group = 'verification'
+        description = 'Verify declared Expo Image Glide versions and resolved KSP processor'
+        doLast {
+            def declared = expoImage.configurations.collectMany { it.dependencies.toList() }
+                .findAll { it.group == glideGroup }
+            if (declared.collect { it.name }.toSet() != expoModules ||
+                    declared.any { it.version != expoGlideVersion }) {
+                throw new GradleException("Expo Image Glide declarations changed: ${declared}. Review or remove the override.")
+            }
+            def processor = expoImage.configurations.getByName('kspReleaseKotlinProcessorClasspath')
+            verifyGraph(processor, ['ksp'])
+            def ksp = processor.incoming.artifactView {
+                componentFilter { id ->
+                    id instanceof org.gradle.api.artifacts.component.ModuleComponentIdentifier &&
+                        id.group == glideGroup && id.module == 'ksp'
+                }
+            }.artifacts.artifacts
+            if (ksp.size() != 1 || ksp.first().file.name != "ksp-${fixedGlideVersion}.jar") {
+                throw new GradleException("Expected the official Glide KSP JAR, found: ${ksp}")
+            }
+            println("HOMELIBRARY_GLIDE_KSP=${ksp.first().file.name}")
         }
-        if (ksp.size() != 1 || ksp[0].file.name != "ksp-${fixedGlideVersion}.jar") {
-            throw new GradleException("Expected the official Glide KSP JAR, found: ${ksp}")
-        }
-        println("HOMELIBRARY_GLIDE_KSP=${ksp[0].file.name}")
     }
 }

@@ -32,13 +32,17 @@ TMP_OUTPUT="$(mktemp)"
 TMP_MODULES="$(mktemp)"
 trap 'rm -f "$TMP_OUTPUT" "$TMP_MODULES"' EXIT
 
-(
+if ! (
   cd "$ANDROID_DIR"
-  "${GRADLE_CMD[@]}" :homeLibraryVerifyGlide :app:dependencies \
+  "${GRADLE_CMD[@]}" :expo-image:homeLibraryVerifyGlideKsp :app:homeLibraryVerifyGlideRuntime :app:dependencies \
     --configuration releaseRuntimeClasspath \
     --console=plain \
     --no-daemon
-) >"$TMP_OUTPUT"
+) >"$TMP_OUTPUT" 2>&1; then
+  cat "$TMP_OUTPUT" >&2
+  exit 1
+fi
+grep "^HOMELIBRARY_GLIDE_" "$TMP_OUTPUT"
 
 for forbidden in \
   'com.google.android.gms:' \

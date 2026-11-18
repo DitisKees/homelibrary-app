@@ -14,12 +14,12 @@ with tempfile.TemporaryDirectory() as directory:
     for name in ('app', 'expo-image'):
         (root / name).mkdir()
     # F-Droid's gradlew-fdroid launcher needs a text-only Gradle version
-    # declaration, even for this isolated fixture. Use the same known-working
-    # Gradle version as the preceding buildserver regression.
+    # declaration. Match the actual Expo SDK 57 Android wrapper version so
+    # Gradle 9's project-lock checks are exercised before the full ABI matrix.
     wrapper = root / 'gradle/wrapper'
     wrapper.mkdir(parents=True)
     (wrapper / 'gradle-wrapper.properties').write_text(
-        'distributionUrl=https\\://services.gradle.org/distributions/gradle-8.14.3-bin.zip\n'
+        'distributionUrl=https\\://services.gradle.org/distributions/gradle-9.3.1-bin.zip\n'
     )
     (root / 'settings.gradle').write_text("rootProject.name='fixture'\ninclude ':app', ':expo-image'\n")
     (root / 'glide-version.gradle').write_text(source.read_text())
@@ -63,12 +63,14 @@ with tempfile.TemporaryDirectory() as directory:
     )
     def run():
         return subprocess.run(
-            [gradle, '--offline', '--no-daemon', ':homeLibraryVerifyGlide'],
+            [gradle, '--offline', '--no-daemon', '--parallel',
+             ':expo-image:homeLibraryVerifyGlideKsp', ':app:homeLibraryVerifyGlideRuntime'],
             cwd=root, text=True, stdout=subprocess.PIPE, stderr=subprocess.STDOUT,
         )
     good = run()
     assert good.returncode == 0, good.stdout
     assert 'HOMELIBRARY_GLIDE_KSP=ksp-5.0.9.jar' in good.stdout, good.stdout
+    assert 'HOMELIBRARY_GLIDE_GRAPH releaseRuntimeClasspath:' in good.stdout, good.stdout
     original = expo.read_text()
     expo.write_text(original.replace(':ksp:5.0.5', ':ksp:5.0.10'))
     bad = run()
