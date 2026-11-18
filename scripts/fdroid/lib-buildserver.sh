@@ -146,6 +146,15 @@ fdroid_build() {
   local build_spec="${APP_ID}:${version_code}"
 
   pushd "${home_vagrant}" >/dev/null
+  # Despite the name, fetchsrclibs also prepares the application's source
+  # checkout. --on-server expects it to exist before SOURCE_DATE_EPOCH is
+  # calculated, even when the recipe has no srclib dependencies.
+  fdroid_as_vagrant fetchsrclibs "${build_spec}" --verbose
+  if ! sudo --user vagrant git -C "${home_vagrant}/build/${APP_ID}" rev-parse --verify HEAD >/dev/null; then
+    echo "[FAIL] F-Droid source checkout missing after fetchsrclibs: ${build_spec}" >&2
+    exit 2
+  fi
+
   set +e
   (
     unset CI
