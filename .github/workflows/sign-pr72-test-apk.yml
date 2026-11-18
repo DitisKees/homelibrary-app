@@ -1,0 +1,64 @@
+name: Sign verified PR 72 test APK
+
+on:
+  push:
+    branches: [test-apk-pr72]
+
+permissions:
+  contents: read
+  actions: read
+
+jobs:
+  sign:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - name: Download verified ARM64 release payload
+        uses: actions/download-artifact@v4
+        with:
+          name: fdroid-buildserver-unsigned-arm64-v8a-a
+          run-id: 44270848571
+          github-token: ${{ github.token }}
+          path: input
+      - name: Confirm exact reproducibility-tested payload
+        run: |
+          echo '9503421da86c4fff9ec1af04a950c006b60487a3b3b2113ea17ae161d5774d09  input/app-release-unsigned.apk' | sha256sum -c -
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '21'
+      - uses: android-actions/setup-android@v4
+        with:
+          packages: 'build-tools;34.0.0'
+          log-accepted-android-sdk-licenses: false
+      - name: Sign with persistent test key and verify
+        env:
+          TEST_KEYSTORE: ${{ secrets.ANDROID_TEST_KEYSTORE_BASE64 }}
+          TEST_STOREPASS: ${{ secrets.ANDROID_TEST_KEYSTORE_PASSWORD }}
+          TEST_ALIAS: ${{ secrets.ANDROID_TEST_KEY_ALIAS }}
+          TEST_KEYPASS: ${{ secrets.ANDROID_TEST_KEY_PASSWORD }}
+        run: |
+          set -euo pipefail
+          for name in TEST_KEYSTORE TEST_STOREPASS TEST_ALIAS TEST_KEYPASS; do
+            test -n "${!name:-}" || { echo "Missing test signing secret: $name" >&2; exit 1; }
+          done
+          KEYSTORE="$(mktemp)"
+          trap 'rm -f "$KEYSTORE"' EXIT
+          chmod 600 "$KEYSTORE"
+          printf '%s' "$TEST_KEYSTORE" | base64 --decode > "$KEYSTORE"
+          keytool -list -v -keystore "$KEYSTORE" -storepass:env TEST_STOREPASS -alias "$TEST_ALIAS" |
+            grep -F 'SHA256: 0A:E7:21:EA:71:E0:24:65:A2:61:E5:61:25:F2:19:E6:9D:8C:92:1E:CA:91:F3:0C:9D:5C:FE:E8:9D:3B:46:61'
+          mkdir output
+          APK="output/HomeLibrary-PR72-arm64-test.apk"
+          SIGNER="$ANDROID_HOME/build-tools/34.0.0/apksigner"
+          "$SIGNER" sign --ks "$KEYSTORE" --ks-key-alias "$TEST_ALIAS" --ks-pass env:TEST_STOREPASS --key-pass env:TEST_KEYPASS --out "$APK" input/app-release-unsigned.apk
+          "$SIGNER" verify --verbose --print-certs "$APK" | tee output/apksigner.txt
+          grep -qi '0ae721ea71e02465a261e56125f219e69d8c921eca91f30c9d5cfee89d3b4661' output/apksigner.txt
+          (cd output; sha256sum HomeLibrary-PR72-arm64-test.apk > HomeLibrary-PR72-arm64-test.apk.sha256)
+      - name: Upload signed test artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: HomeLibrary-PR72-arm64-test
+          path: output/
+          if-no-files-found: error
+          retention-days: 14
