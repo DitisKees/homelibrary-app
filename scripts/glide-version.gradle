@@ -9,15 +9,14 @@ def expoModules = ['glide', 'ksp', 'avif-integration', 'okhttp3-integration'] as
 allprojects {
     configurations.configureEach { configuration ->
         resolutionStrategy.eachDependency { details ->
-            if (details.requested.group == glideGroup) {
-                def requested = details.requested.version
-                if (!(requested in [expoGlideVersion, fixedGlideVersion])) {
-                    throw new GradleException("Unexpected Glide dependency ${details.requested}; review the HomeLibrary version override")
-                }
-                if (requested == expoGlideVersion) {
-                    details.useVersion(fixedGlideVersion)
-                    details.because('Glide annotation processors must generate deterministic module order')
-                }
+            // Only replace the obsolete Expo version. Other requests (including
+            // older transitive Glide 4.x dependencies) must participate in
+            // Gradle's normal conflict resolution. Validate the selected graph,
+            // not every incoming version selector.
+            if (details.requested.group == glideGroup &&
+                    details.requested.version == expoGlideVersion) {
+                details.useVersion(fixedGlideVersion)
+                details.because('Glide annotation processors must generate deterministic module order')
             }
         }
     }
@@ -31,7 +30,8 @@ def verifyGraph = { configuration, required ->
         it instanceof org.gradle.api.artifacts.result.UnresolvedDependencyResult
     }
     if (!unresolved.empty) {
-        throw new GradleException("Unresolved ${configuration.name} dependencies: ${unresolved*.attempted}")
+        throw new GradleException("Unresolved ${configuration.name} dependencies: " +
+            unresolved.collect { "${it.from.id} -> ${it.attempted}: ${it.failure.message}" }.join("\n"))
     }
     def modules = graph.allComponents.collect { it.id }.findAll {
         it instanceof org.gradle.api.artifacts.component.ModuleComponentIdentifier &&
