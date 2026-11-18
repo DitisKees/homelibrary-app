@@ -37,17 +37,15 @@ The script stages source-controlled inputs at the fixed `/tmp/homelibrary-fdroid
 
 Upstream CI runs two independent F-Droid buildserver source builds for each ABI as the automatic Android build and reproducibility gate. The alternate Debian trixie two-clean-checkout workflow is available manually for checkout-path and toolchain diagnosis. The harness pins the buildserver image by digest plus exact fdroidserver/fdroiddata commits, derives source-test metadata structurally with fdroidserver itself, runs the live scanner and `fdroid build --refresh-scanner --on-server`, and requires both unsigned APKs to be byte-for-byte identical before release. Release verification is a separate path that uses canonical `.fdroid.yml` unchanged. These checks prove determinism on the GitHub-hosted harness, not automatic parity with F-Droid's GitLab SaaS runner.
 
-### Glide KSP reproducibility backport
+### Official Glide KSP reproducibility fix
 
-Expo Image resolves Glide 5.0.5's KSP processor. Cross-runner diagnostics isolated a nondeterministic iteration in Glide's `LibraryGlideModules.parseUnique`: the generated `GlideIndexer` could enumerate library modules in a different order on GitHub and GitLab, changing downstream DEX output.
+The earlier workaround for Expo Image's Glide 5.0.5 processor is documented in [PR #47](https://github.com/DitisKees/homelibrary-app/pull/47) and the historical evidence in fdroid-harness.md. Glide [5.0.8](https://github.com/bumptech/glide/releases/tag/v5.0.8) restored deterministic module sorting; the same fix is included in [5.0.9](https://github.com/bumptech/glide/releases/tag/v5.0.9).
 
-HomeLibrary keeps the stock Glide 5.0.5 runtime and backports only deterministic ordering to its KSP processor. Maven's unpatched processor enumerates modules in host-dependent order, which changes generated code and APK bytes. F-Droid fetches the Glide srclib at release commit `ebbf7e2680e0a5812bdb428034aa38fb9260dba7`. `scripts/prepare-glide-ksp-source.sh` checks the revision and copies all annotation/processor compilation inputs into `build/glide-source` during prebuild, before F-Droid scans the app tree. Only the processor sources are needed; unrelated Android integrations, samples, tests and publishing plugins are excluded. The checked-in processor-only Gradle project retains upstream Kotlin, KSP and dependency versions and the existing one-line ordering backport.
+Expo Image still requests 5.0.5 and Expo SDK 57 compiles against Android API 36. The Android AARs from Glide 5.0.8 and 5.0.9 require compileSdk 37, as confirmed by the upstream release notes and the production build's AAR metadata check. Do not upgrade the SDK/AGP or suppress that check for a processor-only reproducibility fix.
 
-After scanning, `scripts/build-glide-ksp-repro.sh` compiles those staged sources using the buildserver's `gradle` command. It performs no source fetch and invokes no dependency wrapper. The upstream text Gradle version declaration selects buildserver-managed Gradle 8.14.3. One JDK, buildserver Java 21, runs both the processor and application builds; the processor retains Java 11 bytecode, while its compile-time annotation project uses Java 8 because JDK 21 no longer accepts Java 7 source. No JDK 11/17 packages or obsolete Debian releases are needed.
+The Expo config plugin applies scripts/glide-version.gradle to upgrade only com.github.bumptech.glide:ksp in :expo-image to the official 5.0.9 JVM JAR; runtime Glide and integrations retain 5.0.5. Upstream source comparison shows the annotation API is unchanged and the processor's runtime references are unchanged apart from the deterministic ordering fix and formatting. Its processor-classpath annotations resolve independently at 5.0.9. Mixed-version compatibility is a candidate hypothesis requiring successful native compilation and runtime/reproducibility tests, not an upstream guarantee. Older transitive runtime requests still use normal Gradle conflict resolution. The audit rejects selected runtime versions other than 5.0.5, selected processor Glide versions other than 5.0.9, or changed direct Expo Image declarations. Remove the override when Expo ships a fixed compatible Glide release. No custom processor build, srclib, local Maven mirror, JAR normalization or Glide scanner exception is needed.
 
-JAR ZIP normalization and exclusive Maven resolution remain unchanged. The unmodified upstream KSP POM is checked in at `scripts/glide-ksp/ksp-5.0.5.pom` (SHA-256 `f182a3aba6a4574dc484fb3b4e534ab9460b19f94a031a0172b544d3acd51376`), preserving its transitive dependency graph without a build-time POM download. `scripts/glide-ksp-repro.init.gradle` restricts the build-local mirror to `com.github.bumptech.glide:ksp:5.0.5`. The srclib definition in `scripts/fdroid/srclibs/Glide.yml` must accompany the app metadata in fdroiddata; the GitHub harness installs the same file before fetching srclibs.
-
-The focused proof generated the same Glide indexer on independent GitHub and GitLab environments, SHA-256 `bb57a537b3084dc8845d11f01e167df3c61675a22ffbc7655f1f9de60e41627a`. The current recipe stages sources before scanning and builds the processor afterward using buildserver Gradle and JDK 21; it does not install JDK 11/17 or write into the system Maven repository.
+The prebuild dependency audit runs the project-owned Gradle tasks homeLibraryVerifyGlideKsp and homeLibraryVerifyGlideRuntime, checking the declared Expo coordinates, selected runtime graph and actual KSP processor classpath. The stock KSP POM uses Kotlin 2.2.10, KotlinPoet 1.12.0 and KSP API 2.0.20-1.0.25. Full native/toolchain compatibility, independent GitHub and GitLab byte-for-byte APK equality, scanner checks and cover-image device testing are release gates, not implied by the upstream fix alone.
 
 ## Production signing and reproducible verification
 
@@ -169,15 +167,7 @@ The Android release and GitLab build must use identical recipe commands;
 publish a new release only after green candidate checks, then independently
 compare all four signed APKs in GitLab.
 
-The source-built processor remains in `build/repro-maven`. The reviewed init
-script has a targeted scanner exception for its dynamic local Maven URL.
-`exclusiveContent` serves only `com.github.bumptech.glide:ksp`; the explicit
-`homeLibraryGlideKspResolution` task verifies its version, local JAR path and
-KotlinPoet transitive dependency before APK assembly. No system Maven writes or
-ownership changes remain. `check-glide-version.init.gradle` inspects Expo Image's
-Gradle dependency objects during the existing prebuild dependency audit, before
-processor compilation, and rejects missing or changed Glide modules with update
-instructions for the srclib commit and processor setup.
+The candidate uses the official Glide dependencies described above. The prebuild audit checks that all relevant Glide modules resolve consistently and that the official KSP processor is present. No custom Maven repository or processor-specific scanner exception is required.
 
 The scanner deletion list is based on the last successful GitLab build log:
 unused Apple prebuilds/macros, non-Linux Hermes, bundled dotSlash executables,

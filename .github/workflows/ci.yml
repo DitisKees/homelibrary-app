@@ -42,7 +42,7 @@ jobs:
         run: node --test scripts/test-security-toolchain.mjs
 
       - name: Check reproducible Gradle configuration
-        run: node --test scripts/test-reproducible-gradle.mjs scripts/test-android-release-packaging.mjs scripts/test-android-permissions.mjs scripts/test-glide-source.mjs
+        run: node --test scripts/test-reproducible-gradle.mjs scripts/test-android-release-packaging.mjs scripts/test-android-permissions.mjs scripts/test-glide-version.mjs
 
       - name: Check ABI APK verification
         run: python3 scripts/test-verify-android-abi-apk.py

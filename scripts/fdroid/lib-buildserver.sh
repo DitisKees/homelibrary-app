@@ -80,12 +80,6 @@ fdroid_prepare_environment() {
 
   fdroid_clone_exact     "https://gitlab.com/fdroid/fdroiddata.git"     "${FDROIDDATA_DIR}"     "${FDROIDDATA_COMMIT}"
 
-  # Install the new srclib alongside the pinned fdroiddata checkout. The same
-  # definition is submitted to fdroiddata after upstream release verification.
-  mkdir -p "${home_vagrant}/srclibs"
-  cp "${REPO_ROOT}/scripts/fdroid/srclibs/Glide.yml" "${FDROIDDATA_DIR}/srclibs/Glide.yml"
-  cp "${REPO_ROOT}/scripts/fdroid/srclibs/Glide.yml" "${home_vagrant}/srclibs/Glide.yml"
-
   mkdir -p     "${home_vagrant}/build"     "${home_vagrant}/logs"     "${home_vagrant}/tmp"     "${home_vagrant}/unsigned"     "${home_vagrant}/.android"     "${home_vagrant}/.gradle"     "${home_vagrant}/metadata"
 
   if [[ ! -d "${home_vagrant}/gradlew-fdroid" ]]; then
@@ -152,7 +146,14 @@ fdroid_build() {
   local build_spec="${APP_ID}:${version_code}"
 
   pushd "${home_vagrant}" >/dev/null
+  # Despite the name, fetchsrclibs also prepares the application's source
+  # checkout. --on-server expects it to exist before SOURCE_DATE_EPOCH is
+  # calculated, even when the recipe has no srclib dependencies.
   fdroid_as_vagrant fetchsrclibs "${build_spec}" --verbose
+  if ! sudo --user vagrant git -C "${home_vagrant}/build/${APP_ID}" rev-parse --verify HEAD >/dev/null; then
+    echo "[FAIL] F-Droid source checkout missing after fetchsrclibs: ${build_spec}" >&2
+    exit 2
+  fi
 
   set +e
   (

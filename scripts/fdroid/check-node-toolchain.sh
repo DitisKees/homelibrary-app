@@ -17,4 +17,4 @@ if [[ -f /etc/profile.d/bsenv.sh ]]; then
   # shellcheck disable=SC1091
   source /etc/profile.d/bsenv.sh
 fi
-python3 "$ROOT/scripts/fdroid/test-glide-repository.py" "$(command -v gradle)"
+python3 "$ROOT/scripts/fdroid/test-glide-version.py" "$(command -v gradle)"
