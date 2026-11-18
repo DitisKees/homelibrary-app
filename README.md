@@ -2,7 +2,7 @@
 
 HomeLibrary is a cross-platform client for managing a shared, self-hosted household book collection backed by PocketBase.
 
-> **Release preparation:** **1.0.14 / base code 15 (ABI codes 151–154)** contains the keyboard fixes verified on a real ARM64 device. The official [F-Droid submission](https://gitlab.com/fdroid/fdroiddata/-/merge_requests/48673) remains open. This version is prepared, not published: version-specific CI, immutable publication and all signed-reference checks must pass before updating that submission. Existing releases remain immutable.
+> **Release preparation:** **1.0.15 / base code 16 (ABI codes 161–164)** simplifies the F-Droid Node/npm recipe and replaces the custom Glide build with the official deterministic KSP processor; the underlying changes passed four-ABI GitHub/GitLab parity and ARM64 device testing. The official [F-Droid submission](https://gitlab.com/fdroid/fdroiddata/-/merge_requests/48673) remains open. This version is prepared, not published: version-specific CI, immutable publication and all signed-reference checks must pass before updating that submission. Existing releases remain immutable.
 
 ## Features
 
@@ -21,7 +21,7 @@ HomeLibrary is a cross-platform client for managing a shared, self-hosted househ
 
 ## Development status
 
-HomeLibrary is early-stage software, but the current source is functional. Android releases use the pinned F-Droid buildserver/scanner path with two independent builds per ABI. The earlier 1.0.13 preparation demonstrated GitHub/GitLab unsigned parity on all four ABIs; each new release still requires its own build and signed-reference evidence. See `docs/fdroid.md`, `docs/fdroid-release.md`, and `docs/fdroid-harness.md` for the release gates.
+HomeLibrary is early-stage software, but the current source is functional. Android releases use the pinned F-Droid buildserver/scanner path with two independent builds per ABI. The merged 1.0.15 implementation (PR #72) demonstrated GitHub/GitLab unsigned parity on all four ABIs in [GitLab pipeline #125](https://gitlab.com/keesvan.tslot/fdroiddata/-/pipelines/3083454118), before the version bump; every release still requires its own build and signed-reference evidence. See `docs/fdroid.md`, `docs/fdroid-release.md`, and `docs/fdroid-harness.md` for the release gates.
 
 The permanent Android application ID is:
 
@@ -158,6 +158,13 @@ See [`docs/fdroid.md`](docs/fdroid.md), [`docs/fdroid-release.md`](docs/fdroid-r
 ## License
 
 HomeLibrary is free software licensed under **GNU General Public License v3.0 or later (`GPL-3.0-or-later`)**. See [`LICENSE`](LICENSE).
+
+## 1.0.15 release notes
+
+- Replace the custom-built Glide annotation processor with official Glide KSP 5.0.9 while retaining the Expo-compatible 5.0.5 runtime on Android API 36.
+- Simplify F-Droid Node/npm installation using the reviewer-approved Debian Forky recipe.
+- Remove the custom Glide source library, Maven staging and processor-specific scanner exceptions.
+- Confirm independent unsigned APK parity across GitHub and GitLab for all four ABIs and successful ARM64 device testing of PR #72. Version-specific release and signed-reference checks remain required.
 
 ## 1.0.14 release notes
 

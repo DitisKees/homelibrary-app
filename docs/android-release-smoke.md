@@ -124,7 +124,11 @@ submit without dismissing it first, trigger validation errors, and dismiss/reope
 the keyboard. Verify the viewport restores and inactive screens do not scroll.
 Repeat on iOS and the web; the browser must not call native focus APIs.
 
-The author's locally signed PR test APKs use a different test certificate from
+## Glide regression coverage (1.0.15)
+
+On 18 November 2026 the author confirmed the signed ARM64 [PR #72 test APK](https://github.com/DitisKees/homelibrary-app/actions/runs/44283112066) worked on a real device. The APK is the reproducibility-tested source build with official KSP 5.0.9 and runtime Glide 5.0.5, signed using the repository's persistent test key. Repeat cover loading, thumbnail scrolling, image caching/offline behavior, ISBN lookup and startup checks after any future image-library upgrade. This evidence predates the final 1.0.15 version bump.
+
+The author's historical locally signed PR test APKs use a different test certificate from
 the GitHub smoke-workflow identity documented above. Only APKs signed with the
 **same** test key can update each other. Neither test key can update the permanent
 production installation. Signing an existing CI APK must preserve every original

@@ -1,11 +1,14 @@
 # F-Droid release process
 
-The prepared candidate is **1.0.14**, base Android code **15**. Version 1.0.13
+The prepared candidate is **1.0.15**, base Android code **16**. Version 1.0.14
 and all other existing tags/assets remain immutable. This release includes the
-keyboard corrections from PR #68, verified by the author on a real ARM64 device.
-For the immutable 1.0.14 tag, the pinned Debian toolchain, local Glide processor, scanner rules and production
-signing identity from the preceding recipe remain in place. Do not describe this
-candidate as published or verified against signed references until its own gates pass.
+reviewer-approved Debian Forky Node/npm simplification (PR #70) and official
+Glide KSP 5.0.9 processor (PR #72), retaining the Expo-compatible Glide 5.0.5
+runtime and Android API 36. The merged implementation passed four-ABI
+GitHub/GitLab unsigned APK parity and ARM64 device testing before the version
+bump. Existing scanner rules, production signing identity and buildserver pins
+remain in place. Do not describe the 1.0.15 candidate as published or verified
+against signed references until its own gates pass.
 
 ## Version and APK identity
 
@@ -14,16 +17,16 @@ candidate as published or verified against signed references until its own gates
 `plugins/with-android-release-packaging.js` generates release configuration
 upstream; fdroiddata does not patch the generated Gradle version or optimizer.
 
-| ABI | Code (`10 * base + suffix`) | Asset for 1.0.14 |
+| ABI | Code (`10 * base + suffix`) | Asset for 1.0.15 |
 | --- | --- | --- |
-| armeabi-v7a | 151 | HomeLibrary-1.0.14-armeabi-v7a.apk |
-| arm64-v8a | 152 | HomeLibrary-1.0.14-arm64-v8a.apk |
-| x86 | 153 | HomeLibrary-1.0.14-x86.apk |
-| x86_64 | 154 | HomeLibrary-1.0.14-x86_64.apk |
+| armeabi-v7a | 161 | HomeLibrary-1.0.15-armeabi-v7a.apk |
+| arm64-v8a | 162 | HomeLibrary-1.0.15-arm64-v8a.apk |
+| x86 | 163 | HomeLibrary-1.0.15-x86.apk |
+| x86_64 | 164 | HomeLibrary-1.0.15-x86_64.apk |
 
 Each is a standalone installable APK, built with React Native's supported
 `-PreactNativeArchitectures=<abi>` property. These are not APK-set fragments.
-An ordinary all-ABI developer/smoke build retains a universal APK, code 150.
+An ordinary all-ABI developer/smoke build retains a universal APK, code 160.
 The production workflow publishes the four smaller ABI APKs.
 
 For each new release:
@@ -82,8 +85,8 @@ Once the PR is merged and main is green, create the **new** immutable tag:
 ```bash
 git switch main
 git pull --ff-only
-git tag v1.0.14
-git push origin v1.0.14
+git tag v1.0.15
+git push origin v1.0.15
 ```
 
 Never move/recreate an existing tag or replace an existing APK with different
@@ -120,7 +123,7 @@ Copy canonical `.fdroid.yml` to `metadata/io.github.ditiskees.homelibrary.yml` i
 the fdroiddata fork, resolving all four `commit` entries to the full new tag SHA.
 Retain the four `binary` URLs, `VercodeOperation`, production signer and reviewed
 scanner exceptions. Run `fdroid rewritemeta`, `fdroid lint`, `fdroid checkupdates`
-and each of the four build specifications (151, 152, 153, 154).
+and each of the four build specifications (161, 162, 163, 164).
 
 Report the exact immutable source, per-ABI codes, sizes, SHA-256 values, signer
 and verification runs. The remote F-Droid runner remains the final parity check;

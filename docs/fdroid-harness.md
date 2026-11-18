@@ -436,9 +436,15 @@ directory preload was needed for this production comparison.
 
 This proves cross-runner determinism for that source tree. Release 1.0.10 subsequently passed source, scanner and signed-reference
 verification and was published immutably. Version 1.0.11 introduced R8
-and per-ABI packaging. Each new version, including the prepared 1.0.14 candidate,
+and per-ABI packaging. Each new version, including the prepared 1.0.15 candidate,
 must pass these gates again. Existing
 tags and APKs must not be replaced.
+
+### Official Glide processor and simplified Node recipe (2026-11-18)
+
+PR #70 adopts the reviewer-approved live Debian Forky Node/npm recipe. PR #72 replaces the custom Glide 5.0.5 processor build with official KSP 5.0.9, retaining the Android runtime at 5.0.5 because API 36 cannot consume the newer API 37 AARs. The custom source staging, local Maven repository, srclib and processor scanner exceptions are removed; F-Droid's fetchsrclibs source-checkout preparation remains necessary.
+
+[GitHub simulation 44270848571](https://github.com/DitisKees/homelibrary-app/actions/runs/44270848571) and [GitLab pipeline #125](https://gitlab.com/keesvan.tslot/fdroiddata/-/pipelines/3083454118) produced identical full unsigned APKs for all four ABIs at source 82a22428077ad7b8d0e36c2c562d8e71d38af00f, whose tree 451b46a11ebd6e80eb526d5c31e38722fa91da5c is identical to merged c907fa90174fb3de3a0ab235853bec058b763b55. The signed ARM64 test APK also passed real-device testing. These are pre-version-bump results; require fresh version-specific CI, production signing, signed-reference verification and remote F-Droid parity for 1.0.15.
 
 ## Desired end state
 

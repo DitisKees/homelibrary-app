@@ -1,0 +1,1 @@
+Simplify Android/F-Droid builds: use the official deterministic Glide KSP processor and Debian Node/npm recipe instead of custom build workarounds. Preserve existing image loading, keyboard fixes and four-architecture support. Reproducibility verified across GitHub and GitLab for the underlying changes.

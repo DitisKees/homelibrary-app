@@ -1,0 +1,1 @@
+Simplification des builds Android/F-Droid : processeur Glide KSP déterministe officiel et Node/npm de Debian, sans contournements personnalisés. Chargement des images, corrections du clavier et quatre architectures conservés. Reproductibilité des changements vérifiée sur GitHub et GitLab.

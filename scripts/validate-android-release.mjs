@@ -6,6 +6,7 @@ import process from 'node:process';
 const root = process.cwd();
 const app = JSON.parse(fs.readFileSync(path.join(root, 'app.json'), 'utf8'));
 const pkg = JSON.parse(fs.readFileSync(path.join(root, 'package.json'), 'utf8'));
+const lock = JSON.parse(fs.readFileSync(path.join(root, 'package-lock.json'), 'utf8'));
 
 const errors = [];
 const expect = (condition, message) => {
@@ -22,6 +23,8 @@ expect(expo.name === 'HomeLibrary', 'expo.name must be HomeLibrary');
 expect(android.package === 'io.github.ditiskees.homelibrary', 'android.package must be io.github.ditiskees.homelibrary');
 expect(Number.isInteger(android.versionCode) && android.versionCode >= 1, 'android.versionCode must be a positive integer');
 expect(typeof expo.version === 'string' && /^\d+\.\d+\.\d+/.test(expo.version), 'expo.version must use a semantic x.y.z version');
+expect(pkg.version === expo.version, 'package.json version must match app.json expo.version');
+expect(lock.version === expo.version && lock.packages?.['']?.version === expo.version, 'package-lock.json root versions must match app.json expo.version');
 expect(/^~57\./.test(expoDependency), `release validation assumes Expo SDK 57; found ${expoDependency || 'no Expo dependency'}. Re-review Android target API and native compatibility requirements after an SDK change.`);
 expect(/^~57\./.test(secureStoreDependency), `native auth requires the Expo SDK 57 compatible expo-secure-store package; found ${secureStoreDependency || 'no expo-secure-store dependency'}`);
 
