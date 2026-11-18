@@ -10,9 +10,9 @@ const appFiles = new Set([
 ]);
 const androidScripts = new Set([
   'android-release-abis.json', 'build-fdroid-android.sh', 'build-fdroid-recipe-android.sh',
-  'build-glide-ksp-repro.sh', 'check-fdroid-android-dependencies.sh', 'check-glide-version.init.gradle',
+  'check-fdroid-android-dependencies.sh', 'glide-version.gradle',
   'check-fdroid-icons.mjs', 'check-fdroid-npm-dependencies.mjs',
-  'fdroid-reviewed-native-groups.txt', 'glide-ksp-repro.init.gradle',
+  'fdroid-reviewed-native-groups.txt',
   'normalize-fdroid-apk-build-ids.py', 'prepare-android-gradle-properties.sh', 'configure-fdroid-gradle.sh',
   'prepare-fdroid-source-tree.sh', 'scan-fdroid-apk.sh', 'smoke-android-startup.sh',
   'validate-android-release.mjs', 'validate-fdroid-metadata.mjs',

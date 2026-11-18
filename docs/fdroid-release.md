@@ -135,7 +135,7 @@ a GitHub build in the same container alone does not establish remote parity.
 - [Anti-Features: non-free network services](https://f-droid.org/en/docs/Anti-Features/#non-free-network-services)
 - [React Native: other stores and ProGuard](https://reactnative.dev/docs/signed-apk-android)
 
-The existing build-from-source policy, shared Debian Node/npm recipe, NDK pin, Glide KSP
+The existing build-from-source policy, shared Debian Node/npm recipe, NDK pin, official Glide KSP
 ordering fix, localhost dev-server resource, scanner gates and permanent signing
 identity remain part of every architecture's recipe. See `fdroid-harness.md` for
 pinning, diagnostics and the previous reproducibility investigation.

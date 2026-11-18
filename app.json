@@ -58,6 +58,7 @@
         }
       ],
       "./plugins/with-reproducible-native-builds",
+      "./plugins/with-glide-version",
       "./plugins/with-android-release-packaging",
       "./plugins/with-android-permissions"
     ]

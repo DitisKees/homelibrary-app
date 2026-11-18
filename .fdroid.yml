@@ -29,10 +29,7 @@ Builds:
     output: android/app/build/outputs/apk/release/app-release-unsigned.apk
     binary: 
       https://github.com/DitisKees/homelibrary-app/releases/download/v%v/HomeLibrary-%v-armeabi-v7a.apk
-    srclibs:
-      - Glide@ebbf7e2680e0a5812bdb428034aa38fb9260dba7
     prebuild:
-      - bash scripts/prepare-glide-ksp-source.sh $$Glide$$
       - bash scripts/prepare-fdroid-source-tree.sh
       - sed -i '/jvmToolchain\|JavaVersion/s/17/21/' node_modules/@react-native/gradle-plugin/*/build.gradle.kts
         node_modules/@react-native/gradle-plugin/react-native-gradle-plugin/src/main/kotlin/com/facebook/react/utils/JdkConfiguratorUtils.kt
@@ -46,7 +43,6 @@ Builds:
       - node_modules/@react-native-async-storage/async-storage/android/build.gradle
       - node_modules/react-native-safe-area-context/android/build.gradle
       - node_modules/react-native-screens/android/build.gradle
-      - scripts/glide-ksp-repro.init.gradle
     scandelete:
       - node_modules/@expo/expo-modules-macros-plugin/apple/ExpoModulesMacros-tool
       - node_modules/@react-native/gradle-plugin/react-native-gradle-plugin/build
@@ -77,10 +73,8 @@ Builds:
       - node_modules/zxing-wasm/dist/reader/zxing_reader.wasm
       - node_modules/zxing-wasm/dist/writer/zxing_writer.wasm
     build:
-      - bash scripts/build-glide-ksp-repro.sh
       - cd android/app
-      - gradle -I ../../scripts/glide-ksp-repro.init.gradle :expo-image:homeLibraryGlideKspResolution
-        assembleRelease -PreactNativeArchitectures=armeabi-v7a
+      - gradle assembleRelease -PreactNativeArchitectures=armeabi-v7a
     ndk: r27b
     postbuild:
       - python3 scripts/normalize-fdroid-apk-build-ids.py android/app/build/outputs/apk/release/app-release-unsigned.apk
@@ -102,10 +96,7 @@ Builds:
     output: android/app/build/outputs/apk/release/app-release-unsigned.apk
     binary: 
       https://github.com/DitisKees/homelibrary-app/releases/download/v%v/HomeLibrary-%v-arm64-v8a.apk
-    srclibs:
-      - Glide@ebbf7e2680e0a5812bdb428034aa38fb9260dba7
     prebuild:
-      - bash scripts/prepare-glide-ksp-source.sh $$Glide$$
       - bash scripts/prepare-fdroid-source-tree.sh
       - sed -i '/jvmToolchain\|JavaVersion/s/17/21/' node_modules/@react-native/gradle-plugin/*/build.gradle.kts
         node_modules/@react-native/gradle-plugin/react-native-gradle-plugin/src/main/kotlin/com/facebook/react/utils/JdkConfiguratorUtils.kt
@@ -119,7 +110,6 @@ Builds:
       - node_modules/@react-native-async-storage/async-storage/android/build.gradle
       - node_modules/react-native-safe-area-context/android/build.gradle
       - node_modules/react-native-screens/android/build.gradle
-      - scripts/glide-ksp-repro.init.gradle
     scandelete:
       - node_modules/@expo/expo-modules-macros-plugin/apple/ExpoModulesMacros-tool
       - node_modules/@react-native/gradle-plugin/react-native-gradle-plugin/build
@@ -150,10 +140,8 @@ Builds:
       - node_modules/zxing-wasm/dist/reader/zxing_reader.wasm
       - node_modules/zxing-wasm/dist/writer/zxing_writer.wasm
     build:
-      - bash scripts/build-glide-ksp-repro.sh
       - cd android/app
-      - gradle -I ../../scripts/glide-ksp-repro.init.gradle :expo-image:homeLibraryGlideKspResolution
-        assembleRelease -PreactNativeArchitectures=arm64-v8a
+      - gradle assembleRelease -PreactNativeArchitectures=arm64-v8a
     ndk: r27b
     postbuild:
       - python3 scripts/normalize-fdroid-apk-build-ids.py android/app/build/outputs/apk/release/app-release-unsigned.apk
@@ -175,10 +163,7 @@ Builds:
     output: android/app/build/outputs/apk/release/app-release-unsigned.apk
     binary: 
       https://github.com/DitisKees/homelibrary-app/releases/download/v%v/HomeLibrary-%v-x86.apk
-    srclibs:
-      - Glide@ebbf7e2680e0a5812bdb428034aa38fb9260dba7
     prebuild:
-      - bash scripts/prepare-glide-ksp-source.sh $$Glide$$
       - bash scripts/prepare-fdroid-source-tree.sh
       - sed -i '/jvmToolchain\|JavaVersion/s/17/21/' node_modules/@react-native/gradle-plugin/*/build.gradle.kts
         node_modules/@react-native/gradle-plugin/react-native-gradle-plugin/src/main/kotlin/com/facebook/react/utils/JdkConfiguratorUtils.kt
@@ -192,7 +177,6 @@ Builds:
       - node_modules/@react-native-async-storage/async-storage/android/build.gradle
       - node_modules/react-native-safe-area-context/android/build.gradle
       - node_modules/react-native-screens/android/build.gradle
-      - scripts/glide-ksp-repro.init.gradle
     scandelete:
       - node_modules/@expo/expo-modules-macros-plugin/apple/ExpoModulesMacros-tool
       - node_modules/@react-native/gradle-plugin/react-native-gradle-plugin/build
@@ -223,10 +207,8 @@ Builds:
       - node_modules/zxing-wasm/dist/reader/zxing_reader.wasm
       - node_modules/zxing-wasm/dist/writer/zxing_writer.wasm
     build:
-      - bash scripts/build-glide-ksp-repro.sh
       - cd android/app
-      - gradle -I ../../scripts/glide-ksp-repro.init.gradle :expo-image:homeLibraryGlideKspResolution
-        assembleRelease -PreactNativeArchitectures=x86
+      - gradle assembleRelease -PreactNativeArchitectures=x86
     ndk: r27b
     postbuild:
       - python3 scripts/normalize-fdroid-apk-build-ids.py android/app/build/outputs/apk/release/app-release-unsigned.apk
@@ -248,10 +230,7 @@ Builds:
     output: android/app/build/outputs/apk/release/app-release-unsigned.apk
     binary: 
       https://github.com/DitisKees/homelibrary-app/releases/download/v%v/HomeLibrary-%v-x86_64.apk
-    srclibs:
-      - Glide@ebbf7e2680e0a5812bdb428034aa38fb9260dba7
     prebuild:
-      - bash scripts/prepare-glide-ksp-source.sh $$Glide$$
       - bash scripts/prepare-fdroid-source-tree.sh
       - sed -i '/jvmToolchain\|JavaVersion/s/17/21/' node_modules/@react-native/gradle-plugin/*/build.gradle.kts
         node_modules/@react-native/gradle-plugin/react-native-gradle-plugin/src/main/kotlin/com/facebook/react/utils/JdkConfiguratorUtils.kt
@@ -265,7 +244,6 @@ Builds:
       - node_modules/@react-native-async-storage/async-storage/android/build.gradle
       - node_modules/react-native-safe-area-context/android/build.gradle
       - node_modules/react-native-screens/android/build.gradle
-      - scripts/glide-ksp-repro.init.gradle
     scandelete:
       - node_modules/@expo/expo-modules-macros-plugin/apple/ExpoModulesMacros-tool
       - node_modules/@react-native/gradle-plugin/react-native-gradle-plugin/build
@@ -296,10 +274,8 @@ Builds:
       - node_modules/zxing-wasm/dist/reader/zxing_reader.wasm
       - node_modules/zxing-wasm/dist/writer/zxing_writer.wasm
     build:
-      - bash scripts/build-glide-ksp-repro.sh
       - cd android/app
-      - gradle -I ../../scripts/glide-ksp-repro.init.gradle :expo-image:homeLibraryGlideKspResolution
-        assembleRelease -PreactNativeArchitectures=x86_64
+      - gradle assembleRelease -PreactNativeArchitectures=x86_64
     ndk: r27b
     postbuild:
       - python3 scripts/normalize-fdroid-apk-build-ids.py android/app/build/outputs/apk/release/app-release-unsigned.apk
@@ -314,16 +290,11 @@ MaintainerNotes: |
   Expo generates android/ during prebuild, so no subdir is declared.
   Bundled Expo AARs are removed and native modules are built from source.
   The React Native Java 17 toolchain declarations are adjusted to the
-  buildserver JDK 21. Glide KSP also builds on JDK 21, targeting Java 11.
+  buildserver JDK 21.
 
-  Glide 5.0.5 KSP has nondeterministic module ordering. The commit-pinned
-  Glide srclib supplies annotation and processor sources, copied into
-  build/glide-source before scanning. The processor-only Gradle project
-  avoids unrelated samples and publishing plugins. The one-line ordering
-  backport is applied before scanning; compilation uses buildserver Gradle.
-  Only the processor JAR is replaced in build/repro-maven; its
-  checked-in upstream POM retains the original transitive dependencies.
-  The runtime Glide dependency is unchanged.
+  Expo Image declares Glide 5.0.5. The upstream Expo config plugin selects
+  official Glide 5.0.9 artifacts, including KSP with deterministic module
+  ordering. Prebuild checks the resolved runtime and processor classpaths.
 
   Reviewed React Native Gradle files use scanignore to preserve their
   legacy Maven declarations from scanner rewriting. The upstream Expo
@@ -339,10 +310,6 @@ MaintainerNotes: |
   APT resolves their dependencies; npm ci installs application dependencies.
   Upstream Android releases use this same F-Droid build recipe.
 
-  The reviewed Glide init script needs scanignore for its dynamic local
-  Maven URL. exclusiveContent limits it to the rebuilt KSP coordinate, and
-  homeLibraryGlideKspResolution verifies the actual resolved artifact.
-  Gradle checks declared Glide versions before processor compilation.
   Targeted scandelete paths cover unused Apple/Windows/WASM tools and
   generated Gradle outputs identified in the successful four-ABI build log.
   New paths outside this list fail the normal source scanner.

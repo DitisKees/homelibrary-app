@@ -21,8 +21,10 @@ for build in app.Builds:
     assert not any('/usr/share/maven-repo' in step for step in build.sudo + build.build)
     assert 'node_modules' not in build.scandelete
     assert all(path.startswith('node_modules/') for path in build.scandelete)
-    assert 'scripts/glide-ksp-repro.init.gradle' in build.scanignore
-    assert ':expo-image:homeLibraryGlideKspResolution assembleRelease' in '\n'.join(build.build)
+    assert not build.srclibs
+    assert not any('glide' in path.lower() for path in build.scanignore)
+    assert 'bash scripts/check-fdroid-android-dependencies.sh' in build.prebuild
+    assert 'gradle assembleRelease' in '\n'.join(build.build)
 
 # Use the actual pinned scanner's rule matcher: known binaries are deleted,
 # while an unrelated new AAR produces an error and remains for inspection.
@@ -43,4 +45,4 @@ with tempfile.TemporaryDirectory() as directory:
     assert new.exists(), 'A newly introduced binary was silently removed'
     assert not reviewed.exists(), 'Reviewed WASM deletion was not applied'
     assert messages.errors == [['Android AAR library', 'node_modules/new-unreviewed/prebuilt.aar']]
-print('Simple Debian Node recipe, local Maven policy and scanner fail-closed regression passed.')
+print('Simple Debian Node recipe, official Glide policy and scanner fail-closed regression passed.')

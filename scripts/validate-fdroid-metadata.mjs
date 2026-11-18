@@ -122,12 +122,13 @@ if (fs.existsSync(fdroidPath)) {
   expect(!/^\s*subdir:/m.test(fdroid), '.fdroid.yml must not declare subdir because Expo generates android/ after checkout');
   expect(fdroid.includes('output: android/app/build/outputs/apk/release/app-release-unsigned.apk'), '.fdroid.yml must declare the generated unsigned APK output');
   expect(fdroid.includes('cd android/app'), '.fdroid.yml must build from the generated Android app directory');
-  expect(/gradle\s+(?:-I\s+\S+\s+)?(?::expo-image:homeLibraryGlideKspResolution\s+)?assembleRelease/.test(fdroid), '.fdroid.yml must use F-Droid system Gradle after scanner removes the wrapper');
+  expect(/gradle\s+assembleRelease/.test(fdroid), '.fdroid.yml must use F-Droid system Gradle after scanner removes the wrapper');
   expect(fdroid.includes("jvmToolchain\\|JavaVersion/s/17/21/"), '.fdroid.yml must apply F-Droid React Native Java 17-to-21 toolchain compatibility');
   expect(!fdroid.includes('s/"node"'), '.fdroid.yml must not patch the upstream Node engine constraint');
   expect(!fdroid.includes('/usr/share/maven-repo'), '.fdroid.yml must not write a processor into the system Maven repository');
   expect(!/^ {6}- node_modules$/m.test(fdroid), '.fdroid.yml must not use a blanket node_modules scanner deletion');
-  expect(/:expo-image:homeLibraryGlideKspResolution\s+assembleRelease/.test(fdroid), '.fdroid.yml must verify local processor resolution before assembling');
+  expect((fdroid.match(/^ {6}- bash scripts\/check-fdroid-android-dependencies\.sh$/gm) ?? []).length === splitCodes.length, 'Every ABI must verify official Glide and runtime dependencies in prebuild');
+  expect(!/Glide@|glide-ksp-repro|prepare-glide-ksp-source/.test(fdroid), '.fdroid.yml must not rebuild or substitute the Glide processor');
   expect((fdroid.match(/^ {6}- apt-get install -y -t forky nodejs npm$/gm) ?? []).length === splitCodes.length, 'Every ABI must use the simple Debian Forky nodejs/npm recipe');
   expect(!/nodejs\.org|Pin-Priority|nodejs=|npm=|libnode/.test(fdroid), 'Do not use an external Node archive or individual Debian package pins');
   expect(fdroid.includes('node scripts/check-node-toolchain.mjs'), '.fdroid.yml must check and report the runtime toolchain');
@@ -228,7 +229,7 @@ if (fs.existsSync(fdroidReleaseRunnerPath)) {
 
 if (fs.existsSync(buildScriptPath)) {
   const buildScript = fs.readFileSync(buildScriptPath, 'utf8');
-  expect(buildScript.includes('./gradlew -I ../scripts/glide-ksp-repro.init.gradle :app:assembleRelease --no-daemon'), 'F-Droid recipe build script must assemble the release APK');
+  expect(buildScript.includes('./gradlew :app:assembleRelease --no-daemon'), 'F-Droid recipe build script must assemble the release APK');
   expect(buildScript.includes('android/app/build/outputs/apk/release/app-release-unsigned.apk'), 'F-Droid recipe build script must use the exact unsigned release APK path');
   expect(!/python3\s+-[^\n]*<<['"]?PY/m.test(buildScript), 'F-Droid recipe build script must not embed Python scripts');
   expect(buildScript.includes('bash scripts/prepare-android-gradle-properties.sh'), 'F-Droid recipe build script must guard generated Expo Camera Gradle properties');
