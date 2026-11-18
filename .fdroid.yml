@@ -292,9 +292,10 @@ MaintainerNotes: |
   The React Native Java 17 toolchain declarations are adjusted to the
   buildserver JDK 21.
 
-  Expo Image declares Glide 5.0.5. The upstream Expo config plugin selects
-  official Glide 5.0.9 artifacts, including KSP with deterministic module
-  ordering. Prebuild checks the resolved runtime and processor classpaths.
+  Expo Image uses Glide 5.0.5 runtime libraries on compileSdk 36.
+  The Expo config plugin selects only official KSP 5.0.9 for deterministic
+  module ordering; newer runtime AARs require compileSdk 37. Prebuild
+  checks the resolved runtime and processor classpaths separately.
 
   Reviewed React Native Gradle files use scanignore to preserve their
   legacy Maven declarations from scanner rewriting. The upstream Expo

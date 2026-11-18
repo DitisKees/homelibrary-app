@@ -1,22 +1,21 @@
-// Expo Image still declares 5.0.5. Glide 5.0.8 restored deterministic module
-// sorting in KSP; use the official 5.0.9 artifacts for the complete Glide graph.
-// Remove this compatibility rule when upgrading to a fixed Expo dependency.
+// Expo SDK 57 compiles against API 36; Glide 5.0.8+ Android AARs require
+// API 37. Retain Expo's runtime 5.0.5 and upgrade only the JVM processor.
+// The 5.0.9 processor contains the deterministic module ordering fix; its
+// annotation API and generated runtime references are unchanged from 5.0.5.
+// Remove this override once Expo upgrades its Android toolchain and Glide.
 def glideGroup = 'com.github.bumptech.glide'
 def expoGlideVersion = '5.0.5'
-def fixedGlideVersion = '5.0.9'
+def fixedKspVersion = '5.0.9'
 def expoModules = ['glide', 'ksp', 'avif-integration', 'okhttp3-integration'] as Set
 
-allprojects {
-    configurations.configureEach { configuration ->
+project(':expo-image') { expoImage ->
+    expoImage.configurations.configureEach {
         resolutionStrategy.eachDependency { details ->
-            // Only replace the obsolete Expo version. Other requests (including
-            // older transitive Glide 4.x dependencies) must participate in
-            // Gradle's normal conflict resolution. Validate the selected graph,
-            // not every incoming version selector.
             if (details.requested.group == glideGroup &&
+                    details.requested.name == 'ksp' &&
                     details.requested.version == expoGlideVersion) {
-                details.useVersion(fixedGlideVersion)
-                details.because('Glide annotation processors must generate deterministic module order')
+                details.useVersion(fixedKspVersion)
+                details.because('Glide KSP must generate deterministic module order')
             }
         }
     }
@@ -24,7 +23,7 @@ allprojects {
 
 // The graph must be resolved in a task owned by the configuration's project.
 // Gradle 9 rejects cross-project configuration resolution at task execution.
-def verifyGraph = { configuration, required ->
+def verifyGraph = { configuration, required, expectedVersion ->
     def graph = configuration.incoming.resolutionResult
     def unresolved = graph.allDependencies.findAll {
         it instanceof org.gradle.api.artifacts.result.UnresolvedDependencyResult
@@ -38,7 +37,7 @@ def verifyGraph = { configuration, required ->
             it.group == glideGroup
     }
     if (!modules*.module.containsAll(required) ||
-            modules.any { it.version != fixedGlideVersion }) {
+            modules.any { it.version != expectedVersion }) {
         throw new GradleException("Unexpected Glide graph on ${configuration.name}: ${modules}")
     }
     println("HOMELIBRARY_GLIDE_GRAPH ${configuration.name}: ${modules.sort { it.module }}")
@@ -50,7 +49,7 @@ project(':app') { app ->
         description = 'Verify official Glide runtime dependency resolution'
         doLast {
             verifyGraph(app.configurations.getByName('releaseRuntimeClasspath'),
-                ['glide', 'avif-integration', 'okhttp3-integration'])
+                ['glide', 'avif-integration', 'okhttp3-integration'], expoGlideVersion)
         }
     }
 }
@@ -67,14 +66,14 @@ project(':expo-image') { expoImage ->
                 throw new GradleException("Expo Image Glide declarations changed: ${declared}. Review or remove the override.")
             }
             def processor = expoImage.configurations.getByName('kspReleaseKotlinProcessorClasspath')
-            verifyGraph(processor, ['ksp'])
+            verifyGraph(processor, ['ksp', 'annotations'], fixedKspVersion)
             def ksp = processor.incoming.artifactView {
                 componentFilter { id ->
                     id instanceof org.gradle.api.artifacts.component.ModuleComponentIdentifier &&
                         id.group == glideGroup && id.module == 'ksp'
                 }
             }.artifacts.artifacts
-            if (ksp.size() != 1 || ksp.first().file.name != "ksp-${fixedGlideVersion}.jar") {
+            if (ksp.size() != 1 || ksp.first().file.name != "ksp-${fixedKspVersion}.jar") {
                 throw new GradleException("Expected the official Glide KSP JAR, found: ${ksp}")
             }
             println("HOMELIBRARY_GLIDE_KSP=${ksp.first().file.name}")

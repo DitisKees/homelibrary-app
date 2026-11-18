@@ -42,13 +42,15 @@ with tempfile.TemporaryDirectory() as directory:
         )
         with zipfile.ZipFile(path / f'{name}-{version}.jar', 'w') as jar:
             jar.writestr('fixture.txt', name)
-    artifact('annotations')
-    artifact('glide', ((group, 'annotations', '5.0.9'),))
+    # Runtime AAR coordinates stay on Expo's 5.0.5; only the JVM processor
+    # and its private annotation dependency use 5.0.9.
+    artifact('annotations', version='5.0.5')
+    artifact('annotations', version='5.0.9')
+    artifact('glide', ((group, 'annotations', '5.0.5'),), version='5.0.5')
     artifact('ksp', ((group, 'annotations', '5.0.9'),))
-    artifact('avif-integration', ((group, 'glide', '5.0.9'),))
-    artifact('okhttp3-integration', ((group, 'glide', '5.0.9'),))
-    # Mirror the actual SDK 57 graph: external image integrations request older
-    # Glide core versions. They must resolve to 5.0.9, not fail at selection.
+    artifact('avif-integration', ((group, 'glide', '5.0.5'),), version='5.0.5')
+    artifact('okhttp3-integration', ((group, 'glide', '5.0.5'),), version='5.0.5')
+    # Older requests must converge on the original runtime, not 5.0.9.
     for version in ('4.11.0', '4.12.0', '5.0.10'):
         artifact('glide', version=version)
     artifact('legacy-image-a', ((group, 'glide', '4.11.0'),),
@@ -82,7 +84,9 @@ with tempfile.TemporaryDirectory() as directory:
     assert good.returncode == 0, good.stdout
     assert 'HOMELIBRARY_GLIDE_KSP=ksp-5.0.9.jar' in good.stdout, good.stdout
     assert 'HOMELIBRARY_GLIDE_GRAPH releaseRuntimeClasspath:' in good.stdout, good.stdout
-    assert 'com.github.bumptech.glide:glide:5.0.9' in good.stdout, good.stdout
+    assert 'com.github.bumptech.glide:glide:5.0.5' in good.stdout, good.stdout
+    assert 'com.github.bumptech.glide:glide:5.0.9' not in good.stdout, good.stdout
+    assert 'com.github.bumptech.glide:annotations:5.0.9' in good.stdout, good.stdout
     original = expo.read_text()
     expo.write_text(original.replace(':ksp:5.0.5', ':ksp:5.0.10'))
     bad = run()
