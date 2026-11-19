@@ -44,34 +44,7 @@ Builds:
       - node_modules/react-native-safe-area-context/android/build.gradle
       - node_modules/react-native-screens/android/build.gradle
     scandelete:
-      - node_modules/@expo/expo-modules-macros-plugin/apple/ExpoModulesMacros-tool
-      - node_modules/@react-native/gradle-plugin/react-native-gradle-plugin/build
-      - node_modules/@react-native/gradle-plugin/settings-plugin/build
-      - node_modules/@react-native/gradle-plugin/shared/build
-      - node_modules/expo-camera/prebuilds
-      - node_modules/expo-file-system/prebuilds
-      - node_modules/expo-font/prebuilds
-      - node_modules/expo-image-manipulator/prebuilds
-      - node_modules/expo-image/prebuilds
-      - node_modules/expo-modules-autolinking/android/expo-gradle-plugin/expo-autolinking-plugin-shared/build
-      - node_modules/expo-modules-autolinking/android/expo-gradle-plugin/expo-autolinking-plugin/build
-      - node_modules/expo-modules-autolinking/android/expo-gradle-plugin/expo-autolinking-settings-plugin/build
-      - node_modules/expo-modules-autolinking/android/expo-gradle-plugin/expo-max-sdk-override-plugin/build
-      - node_modules/expo-modules-core/expo-module-gradle-plugin/build
-      - node_modules/expo-modules-core/prebuilds
-      - node_modules/expo/template.tgz
-      - node_modules/fb-dotslash/bin/linux-musl.aarch64/dotslash
-      - node_modules/fb-dotslash/bin/linux-musl.x86_64/dotslash
-      - node_modules/fb-dotslash/bin/macos/dotslash
-      - node_modules/fb-dotslash/bin/windows-arm64/dotslash.exe
-      - node_modules/fb-dotslash/bin/windows/dotslash.exe
-      - node_modules/hermes-compiler/hermesc/osx-bin/hermesc
-      - node_modules/hermes-compiler/hermesc/win64-bin/hermesc.exe
-      - node_modules/react-native/React/I18n/strings/*/fbt_language_pack.bin
-      - node_modules/react-native/ReactAndroid/publish.gradle
-      - node_modules/zxing-wasm/dist/full/zxing_full.wasm
-      - node_modules/zxing-wasm/dist/reader/zxing_reader.wasm
-      - node_modules/zxing-wasm/dist/writer/zxing_writer.wasm
+      - node_modules
     build:
       - cd android/app
       - gradle assembleRelease -PreactNativeArchitectures=armeabi-v7a
@@ -111,34 +84,7 @@ Builds:
       - node_modules/react-native-safe-area-context/android/build.gradle
       - node_modules/react-native-screens/android/build.gradle
     scandelete:
-      - node_modules/@expo/expo-modules-macros-plugin/apple/ExpoModulesMacros-tool
-      - node_modules/@react-native/gradle-plugin/react-native-gradle-plugin/build
-      - node_modules/@react-native/gradle-plugin/settings-plugin/build
-      - node_modules/@react-native/gradle-plugin/shared/build
-      - node_modules/expo-camera/prebuilds
-      - node_modules/expo-file-system/prebuilds
-      - node_modules/expo-font/prebuilds
-      - node_modules/expo-image-manipulator/prebuilds
-      - node_modules/expo-image/prebuilds
-      - node_modules/expo-modules-autolinking/android/expo-gradle-plugin/expo-autolinking-plugin-shared/build
-      - node_modules/expo-modules-autolinking/android/expo-gradle-plugin/expo-autolinking-plugin/build
-      - node_modules/expo-modules-autolinking/android/expo-gradle-plugin/expo-autolinking-settings-plugin/build
-      - node_modules/expo-modules-autolinking/android/expo-gradle-plugin/expo-max-sdk-override-plugin/build
-      - node_modules/expo-modules-core/expo-module-gradle-plugin/build
-      - node_modules/expo-modules-core/prebuilds
-      - node_modules/expo/template.tgz
-      - node_modules/fb-dotslash/bin/linux-musl.aarch64/dotslash
-      - node_modules/fb-dotslash/bin/linux-musl.x86_64/dotslash
-      - node_modules/fb-dotslash/bin/macos/dotslash
-      - node_modules/fb-dotslash/bin/windows-arm64/dotslash.exe
-      - node_modules/fb-dotslash/bin/windows/dotslash.exe
-      - node_modules/hermes-compiler/hermesc/osx-bin/hermesc
-      - node_modules/hermes-compiler/hermesc/win64-bin/hermesc.exe
-      - node_modules/react-native/React/I18n/strings/*/fbt_language_pack.bin
-      - node_modules/react-native/ReactAndroid/publish.gradle
-      - node_modules/zxing-wasm/dist/full/zxing_full.wasm
-      - node_modules/zxing-wasm/dist/reader/zxing_reader.wasm
-      - node_modules/zxing-wasm/dist/writer/zxing_writer.wasm
+      - node_modules
     build:
       - cd android/app
       - gradle assembleRelease -PreactNativeArchitectures=arm64-v8a
@@ -178,34 +124,7 @@ Builds:
       - node_modules/react-native-safe-area-context/android/build.gradle
       - node_modules/react-native-screens/android/build.gradle
     scandelete:
-      - node_modules/@expo/expo-modules-macros-plugin/apple/ExpoModulesMacros-tool
-      - node_modules/@react-native/gradle-plugin/react-native-gradle-plugin/build
-      - node_modules/@react-native/gradle-plugin/settings-plugin/build
-      - node_modules/@react-native/gradle-plugin/shared/build
-      - node_modules/expo-camera/prebuilds
-      - node_modules/expo-file-system/prebuilds
-      - node_modules/expo-font/prebuilds
-      - node_modules/expo-image-manipulator/prebuilds
-      - node_modules/expo-image/prebuilds
-      - node_modules/expo-modules-autolinking/android/expo-gradle-plugin/expo-autolinking-plugin-shared/build
-      - node_modules/expo-modules-autolinking/android/expo-gradle-plugin/expo-autolinking-plugin/build
-      - node_modules/expo-modules-autolinking/android/expo-gradle-plugin/expo-autolinking-settings-plugin/build
-      - node_modules/expo-modules-autolinking/android/expo-gradle-plugin/expo-max-sdk-override-plugin/build
-      - node_modules/expo-modules-core/expo-module-gradle-plugin/build
-      - node_modules/expo-modules-core/prebuilds
-      - node_modules/expo/template.tgz
-      - node_modules/fb-dotslash/bin/linux-musl.aarch64/dotslash
-      - node_modules/fb-dotslash/bin/linux-musl.x86_64/dotslash
-      - node_modules/fb-dotslash/bin/macos/dotslash
-      - node_modules/fb-dotslash/bin/windows-arm64/dotslash.exe
-      - node_modules/fb-dotslash/bin/windows/dotslash.exe
-      - node_modules/hermes-compiler/hermesc/osx-bin/hermesc
-      - node_modules/hermes-compiler/hermesc/win64-bin/hermesc.exe
-      - node_modules/react-native/React/I18n/strings/*/fbt_language_pack.bin
-      - node_modules/react-native/ReactAndroid/publish.gradle
-      - node_modules/zxing-wasm/dist/full/zxing_full.wasm
-      - node_modules/zxing-wasm/dist/reader/zxing_reader.wasm
-      - node_modules/zxing-wasm/dist/writer/zxing_writer.wasm
+      - node_modules
     build:
       - cd android/app
       - gradle assembleRelease -PreactNativeArchitectures=x86
@@ -245,34 +164,7 @@ Builds:
       - node_modules/react-native-safe-area-context/android/build.gradle
       - node_modules/react-native-screens/android/build.gradle
     scandelete:
-      - node_modules/@expo/expo-modules-macros-plugin/apple/ExpoModulesMacros-tool
-      - node_modules/@react-native/gradle-plugin/react-native-gradle-plugin/build
-      - node_modules/@react-native/gradle-plugin/settings-plugin/build
-      - node_modules/@react-native/gradle-plugin/shared/build
-      - node_modules/expo-camera/prebuilds
-      - node_modules/expo-file-system/prebuilds
-      - node_modules/expo-font/prebuilds
-      - node_modules/expo-image-manipulator/prebuilds
-      - node_modules/expo-image/prebuilds
-      - node_modules/expo-modules-autolinking/android/expo-gradle-plugin/expo-autolinking-plugin-shared/build
-      - node_modules/expo-modules-autolinking/android/expo-gradle-plugin/expo-autolinking-plugin/build
-      - node_modules/expo-modules-autolinking/android/expo-gradle-plugin/expo-autolinking-settings-plugin/build
-      - node_modules/expo-modules-autolinking/android/expo-gradle-plugin/expo-max-sdk-override-plugin/build
-      - node_modules/expo-modules-core/expo-module-gradle-plugin/build
-      - node_modules/expo-modules-core/prebuilds
-      - node_modules/expo/template.tgz
-      - node_modules/fb-dotslash/bin/linux-musl.aarch64/dotslash
-      - node_modules/fb-dotslash/bin/linux-musl.x86_64/dotslash
-      - node_modules/fb-dotslash/bin/macos/dotslash
-      - node_modules/fb-dotslash/bin/windows-arm64/dotslash.exe
-      - node_modules/fb-dotslash/bin/windows/dotslash.exe
-      - node_modules/hermes-compiler/hermesc/osx-bin/hermesc
-      - node_modules/hermes-compiler/hermesc/win64-bin/hermesc.exe
-      - node_modules/react-native/React/I18n/strings/*/fbt_language_pack.bin
-      - node_modules/react-native/ReactAndroid/publish.gradle
-      - node_modules/zxing-wasm/dist/full/zxing_full.wasm
-      - node_modules/zxing-wasm/dist/reader/zxing_reader.wasm
-      - node_modules/zxing-wasm/dist/writer/zxing_writer.wasm
+      - node_modules
     build:
       - cd android/app
       - gradle assembleRelease -PreactNativeArchitectures=x86_64
@@ -311,9 +203,9 @@ MaintainerNotes: |
   APT resolves their dependencies; npm ci installs application dependencies.
   Upstream Android releases use this same F-Droid build recipe.
 
-  Targeted scandelete paths cover unused Apple/Windows/WASM tools and
-  generated Gradle outputs identified in the successful four-ABI build log.
-  New paths outside this list fail the normal source scanner.
+  node_modules is removed by scandelete after npm ci, following maintainer
+  guidance. Reviewed React Native Gradle files remain explicitly preserved
+  through scanignore before the Android build.
 
 AutoUpdateMode: Version
 UpdateCheckMode: Tags ^v[0-9]+\.[0-9]+\.[0-9]+$
