@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Validate parsed recipes and ensure new binary paths cannot be silently deleted."""
+"""Validate parsed recipes and the maintainer-approved scanner deletion policy."""
 from pathlib import Path
 import argparse
 import tempfile
@@ -19,30 +19,34 @@ for build in app.Builds:
     assert build.init[:2] == ['node scripts/check-node-toolchain.mjs', 'npm ci']
     assert not any('"node"' in step for step in build.init)
     assert not any('/usr/share/maven-repo' in step for step in build.sudo + build.build)
-    assert 'node_modules' not in build.scandelete
-    assert all(path.startswith('node_modules/') for path in build.scandelete)
+    assert build.scandelete == ['node_modules']
     assert not build.srclibs
     assert not any('glide' in path.lower() for path in build.scanignore)
     assert 'bash scripts/check-fdroid-android-dependencies.sh' in build.prebuild
     assert 'gradle assembleRelease' in '\n'.join(build.build)
 
-# Use the actual pinned scanner's rule matcher: known binaries are deleted,
-# while an unrelated new AAR produces an error and remains for inspection.
+# Exercise the actual pinned scanner behavior. The maintainer-approved blanket
+# deletion removes npm-installed node_modules before scanning, while scanner
+# findings elsewhere in the source tree must still fail closed.
 common.options = argparse.Namespace(verbose=False, json=True, refresh_scanner=False)
 common.config = common.read_config()
 with tempfile.TemporaryDirectory() as directory:
     work = Path(directory)
-    new = work / 'node_modules/new-unreviewed/prebuilt.aar'
-    new.parent.mkdir(parents=True)
-    new.write_bytes(b'new binary dependency')
+    npm_binary = work / 'node_modules/new-unreviewed/prebuilt.aar'
+    npm_binary.parent.mkdir(parents=True)
+    npm_binary.write_bytes(b'new binary dependency')
     reviewed = work / 'node_modules/zxing-wasm/dist/reader/zxing_reader.wasm'
     reviewed.parent.mkdir(parents=True)
     reviewed.write_bytes(b'\x00asm\x01\x00\x00\x00')
+    outside = work / 'vendor/new-unreviewed/prebuilt.aar'
+    outside.parent.mkdir(parents=True)
+    outside.write_bytes(b'outside node_modules')
     build = metadata.Build()
-    build.scandelete = [p for p in app.Builds[0].scandelete if 'zxing_reader.wasm' in p]
+    build.scandelete = ['node_modules']
     messages = scanner.MessageStore()
     assert scanner.scan_source(directory, build, messages) == 1
-    assert new.exists(), 'A newly introduced binary was silently removed'
-    assert not reviewed.exists(), 'Reviewed WASM deletion was not applied'
-    assert messages.errors == [['Android AAR library', 'node_modules/new-unreviewed/prebuilt.aar']]
-print('Simple Debian Node recipe, official Glide policy and scanner fail-closed regression passed.')
+    assert not npm_binary.exists(), 'node_modules scandelete was not applied'
+    assert not reviewed.exists(), 'node_modules scandelete did not remove reviewed WASM'
+    assert outside.exists(), 'scanner unexpectedly deleted a binary outside node_modules'
+    assert messages.errors == [['Android AAR library', 'vendor/new-unreviewed/prebuilt.aar']]
+print('Simple Debian Node recipe, official Glide policy and maintainer-approved scanner regression passed.')
