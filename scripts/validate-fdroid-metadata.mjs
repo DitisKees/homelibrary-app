@@ -126,7 +126,7 @@ if (fs.existsSync(fdroidPath)) {
   expect(fdroid.includes("jvmToolchain\\|JavaVersion/s/17/21/"), '.fdroid.yml must apply F-Droid React Native Java 17-to-21 toolchain compatibility');
   expect(!fdroid.includes('s/"node"'), '.fdroid.yml must not patch the upstream Node engine constraint');
   expect(!fdroid.includes('/usr/share/maven-repo'), '.fdroid.yml must not write a processor into the system Maven repository');
-  expect(!/^ {6}- node_modules$/m.test(fdroid), '.fdroid.yml must not use a blanket node_modules scanner deletion');
+  expect((fdroid.match(/^ {6}- node_modules$/gm) ?? []).length === splitCodes.length, 'Every ABI must use the maintainer-approved node_modules scanner deletion');
   expect((fdroid.match(/^ {6}- bash scripts\/check-fdroid-android-dependencies\.sh$/gm) ?? []).length === splitCodes.length, 'Every ABI must verify official Glide and runtime dependencies in prebuild');
   expect(!/Glide@|glide-ksp-repro|prepare-glide-ksp-source/.test(fdroid), '.fdroid.yml must not rebuild or substitute the Glide processor');
   expect((fdroid.match(/^ {6}- apt-get install -y -t forky nodejs npm$/gm) ?? []).length === splitCodes.length, 'Every ABI must use the simple Debian Forky nodejs/npm recipe');
